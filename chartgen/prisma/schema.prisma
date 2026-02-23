@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- Enums ---
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum AmountEaten {
+  ZERO
+  TWENTY_FIVE
+  FIFTY
+  SEVENTY_FIVE
+  ONE_HUNDRED
+  REFUSED
+}
+
+enum SwallowObservation {
+  NONE
+  COUGHING
+  GAGGING
+  CHOKING
+  WATERY_EYES
+  MULTIPLE_SWALLOWS
+  THROAT_CLEARING
+}
+
+enum MARStatus {
+  ADMINISTERED
+  REFUSED
+}
+
+// --- Models ---
+
+model Participant {
+  id                      String    @id @default(uuid())
+  name                    String
+  
+  // Default IDDSI levels for the participant's Mealtime Management Plan
+  defaultFoodTexture      Int
+  defaultFluidThickness   Int
+
+  mealLogs                MealLog[]
+  marLogs                 MARLog[]
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model MealLog {
+  id                      String               @id @default(uuid())
+  participant             Participant          @relation(fields: [participantId], references: [id])
+  participantId           String
+  timestamp               DateTime             @default(now())
+  mealType                MealType
+  
+  // IDDSI Food Texture Level (3-7)
+  foodTexture             Int
+  
+  // IDDSI Fluid Thickness Level (0-4)
+  fluidThickness          Int
+  
+  volumeMl                Int
+  amountEaten             AmountEaten
+  swallowingObservations  SwallowObservation[]
+
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+}
+
+model MARLog {
+  id                      String    @id @default(uuid())
+  participant             Participant @relation(fields: [participantId], references: [id])
+  participantId           String
+  
+  scheduledAdminTime      DateTime
+  actualAdminTime         DateTime
+  
+  medicationName          String
+  dosage                  String
+  route                   String
+  
+  status                  MARStatus
+  omissionReason          String?
+  workerSignatureId       String
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
