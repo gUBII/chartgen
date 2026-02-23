@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
 
 export const runtime = "nodejs";
 
 const ALLOWED_COMMIT_ROLES = new Set(["SUPERVISOR", "CLINICAL_LEAD"]);
-const PRIMARY_COMMITTED_STATUS = "COMPLETED";
-const FALLBACK_COMMITTED_STATUS = "APPROVED";
+const COMMITTED_STATUS = "APPROVED";
 
 type CommitRequestBody = {
   batchId?: string;
@@ -106,27 +106,16 @@ const updateBatchAsCommitted = async (
   actorStaffId: string,
   reviewedAt: Date
 ): Promise<string> => {
-  try {
-    await tx.restorationBatch.update({
-      where: { id: batchId },
-      data: {
-        status: PRIMARY_COMMITTED_STATUS,
-        reviewedByStaffId: actorStaffId,
-        reviewedAt,
-      },
-    });
-    return PRIMARY_COMMITTED_STATUS;
-  } catch {
-    await tx.restorationBatch.update({
-      where: { id: batchId },
-      data: {
-        status: FALLBACK_COMMITTED_STATUS,
-        reviewedByStaffId: actorStaffId,
-        reviewedAt,
-      },
-    });
-    return FALLBACK_COMMITTED_STATUS;
-  }
+  await tx.restorationBatch.update({
+    where: { id: batchId },
+    data: {
+      // CandidateStatus enum currently uses APPROVED to represent committed review state.
+      status: COMMITTED_STATUS,
+      reviewedByStaffId: actorStaffId,
+      reviewedAt,
+    },
+  });
+  return COMMITTED_STATUS;
 };
 
 const parseBody = async (request: NextRequest): Promise<Required<CommitRequestBody>> => {
@@ -344,6 +333,19 @@ export async function POST(request: NextRequest) {
           },
         },
         { status: error.status }
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "DATABASE_UNAVAILABLE",
+            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+          },
+        },
+        { status: 503 }
       );
     }
 

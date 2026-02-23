@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { MealType } from "@prisma/client";
+import { MealType, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { RestorationEngine } from "../../../../services/restoration/restorationEngine";
@@ -313,6 +313,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "DATABASE_UNAVAILABLE",
+            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+          },
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       {
         ok: false,
@@ -489,6 +502,19 @@ export async function PATCH(request: NextRequest) {
           },
         },
         { status: error.status }
+      );
+    }
+
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "DATABASE_UNAVAILABLE",
+            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+          },
+        },
+        { status: 503 }
       );
     }
 

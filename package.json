@@ -21,6 +21,9 @@
     "url": "https://github.com/gUBII/chartgen/issues"
   },
   "homepage": "https://github.com/gUBII/chartgen#readme",
+  "prisma": {
+    "seed": "node prisma/seed.cjs"
+  },
   "dependencies": {
     "@prisma/client": "^6.17.1",
     "next": "^16.1.6",
