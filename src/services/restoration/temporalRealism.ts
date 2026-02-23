@@ -1,50 +1,62 @@
-// --- Configuration ---
+import { randomInt } from "node:crypto";
 
-const VARIANCE_MINUTES = 15;
+const DEFAULT_VARIANCE_MINUTES = 15;
+const RNG_SCALE = 1_000_000;
 
-// --- Temporal Realism Generator ---
-
-/**
- * Introduces a realistic, random time variance to a scheduled time.
- * This function simulates the natural deviations that occur in a real-world
- * clinical setting when administering medication.
- *
- * @param scheduledTime The original, scheduled time of an event.
- * @returns A new Date object with a variance of +/- 15 minutes.
- */
-export const generateTemporalRealism = (scheduledTime: Date): Date => {
-  // Calculate the maximum variance in milliseconds (15 minutes * 60 seconds/min * 1000 ms/sec)
-  const maxVarianceMs = VARIANCE_MINUTES * 60 * 1000;
-
-  // Generate a random variance between -maxVarianceMs and +maxVarianceMs
-  // Math.random() returns a value between 0 and 1.
-  // (Math.random() * 2) gives a range of 0 to 2.
-  // ((Math.random() * 2) - 1) shifts the range to -1 to 1.
-  const variance = (Math.random() * 2 - 1) * maxVarianceMs;
-
-  // Create a new Date object with the applied variance
-  const actualTime = new Date(scheduledTime.getTime() + variance);
-
-  return actualTime;
-};
-
-// --- Example Usage ---
-/*
-const scheduledTime = new Date('2024-08-15T12:00:00.000Z'); // 12:00 PM
-
-console.log('Scheduled Time:   ', scheduledTime.toISOString());
-
-for (let i = 0; i < 5; i++) {
-  const actualTime = generateTemporalRealism(scheduledTime);
-  console.log(`Generated Time #${i + 1}: `, actualTime.toISOString());
+export interface TemporalRealismOptions {
+  maxEarlyMinutes?: number;
+  maxLateMinutes?: number;
+  lateBias?: number;
+  roundToMinutes?: number;
 }
 
-// Expected Output (will vary due to randomness):
-//
-// Scheduled Time:    2024-08-15T12:00:00.000Z
-// Generated Time #1:  2024-08-15T12:08:31.123Z  (e.g., ~8 mins after)
-// Generated Time #2:  2024-08-15T11:51:45.456Z  (e.g., ~8 mins before)
-// Generated Time #3:  2024-08-15T12:01:10.789Z  (e.g., ~1 min after)
-// Generated Time #4:  2024-08-15T11:45:00.000Z  (e.g., exactly 15 mins before)
-// Generated Time #5:  2024-08-15T12:14:59.999Z  (e.g., almost 15 mins after)
-*/
+const clamp = (value: number, min: number, max: number): number => {
+  return Math.min(Math.max(value, min), max);
+};
+
+const secureUnitRandom = (): number => {
+  return randomInt(0, RNG_SCALE) / RNG_SCALE;
+};
+
+// Triangular sampling produces less-extreme values than uniform random and can be skewed.
+const sampleTriangular = (min: number, mode: number, max: number): number => {
+  if (min === max) {
+    return min;
+  }
+
+  const boundedMode = clamp(mode, min, max);
+  const u = secureUnitRandom();
+  const c = (boundedMode - min) / (max - min);
+
+  if (u <= c) {
+    return min + Math.sqrt(u * (max - min) * (boundedMode - min));
+  }
+
+  return max - Math.sqrt((1 - u) * (max - min) * (max - boundedMode));
+};
+
+/**
+ * Generates a more human-like admin timestamp around the scheduled time.
+ * The distribution is intentionally slightly late-biased by default and rounded
+ * to reduce synthetic-looking millisecond patterns.
+ */
+export const generateTemporalRealism = (
+  scheduledTime: Date,
+  options: TemporalRealismOptions = {}
+): Date => {
+  const maxEarlyMinutes = Math.max(1, Math.floor(options.maxEarlyMinutes ?? DEFAULT_VARIANCE_MINUTES));
+  const maxLateMinutes = Math.max(1, Math.floor(options.maxLateMinutes ?? DEFAULT_VARIANCE_MINUTES));
+  const lateBias = clamp(options.lateBias ?? 0.58, 0.05, 0.95);
+  const roundToMinutes = Math.max(1, Math.floor(options.roundToMinutes ?? 1));
+
+  const min = -maxEarlyMinutes;
+  const max = maxLateMinutes;
+  const mode = min + (max - min) * lateBias;
+  const deltaMinutes = sampleTriangular(min, mode, max);
+
+  const shiftedMs = scheduledTime.getTime() + deltaMinutes * 60 * 1000;
+  const roundingMs = roundToMinutes * 60 * 1000;
+  const roundedMs = Math.round(shiftedMs / roundingMs) * roundingMs;
+
+  return new Date(roundedMs);
+};

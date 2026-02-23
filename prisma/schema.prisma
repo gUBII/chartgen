@@ -46,57 +46,57 @@ enum MARStatus {
 // --- Models ---
 
 model Participant {
-  id                      String    @id @default(uuid())
-  name                    String
-  
+  id   String @id @default(uuid())
+  name String
+
   // Default IDDSI levels for the participant's Mealtime Management Plan
-  defaultFoodTexture      Int
-  defaultFluidThickness   Int
+  defaultFoodTexture    Int
+  defaultFluidThickness Int
 
-  mealLogs                MealLog[]
-  marLogs                 MARLog[]
+  mealLogs MealLog[]
+  marLogs  MARLog[]
 
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MealLog {
-  id                      String               @id @default(uuid())
-  participant             Participant          @relation(fields: [participantId], references: [id])
-  participantId           String
-  timestamp               DateTime             @default(now())
-  mealType                MealType
-  
-  // IDDSI Food Texture Level (3-7)
-  foodTexture             Int
-  
-  // IDDSI Fluid Thickness Level (0-4)
-  fluidThickness          Int
-  
-  volumeMl                Int
-  amountEaten             AmountEaten
-  swallowingObservations  SwallowObservation[]
+  id            String      @id @default(uuid())
+  participant   Participant @relation(fields: [participantId], references: [id])
+  participantId String
+  timestamp     DateTime    @default(now())
+  mealType      MealType
 
-  createdAt               DateTime             @default(now())
-  updatedAt               DateTime             @updatedAt
+  // IDDSI Food Texture Level (3-7)
+  foodTexture Int
+
+  // IDDSI Fluid Thickness Level (0-4)
+  fluidThickness Int
+
+  volumeMl               Int
+  amountEaten            AmountEaten
+  swallowingObservations SwallowObservation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MARLog {
-  id                      String    @id @default(uuid())
-  participant             Participant @relation(fields: [participantId], references: [id])
-  participantId           String
-  
-  scheduledAdminTime      DateTime
-  actualAdminTime         DateTime
-  
-  medicationName          String
-  dosage                  String
-  route                   String
-  
-  status                  MARStatus
-  omissionReason          String?
-  workerSignatureId       String
+  id            String      @id @default(uuid())
+  participant   Participant @relation(fields: [participantId], references: [id])
+  participantId String
 
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  scheduledAdminTime DateTime
+  actualAdminTime    DateTime
+
+  medicationName String
+  dosage         String
+  route          String
+
+  status            MARStatus
+  omissionReason    String?
+  workerSignatureId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
