@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -9,8 +6,6 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
-
-// --- Enums ---
 
 enum MealType {
   BREAKFAST
@@ -43,60 +38,226 @@ enum MARStatus {
   REFUSED
 }
 
-// --- Models ---
+enum StaffRole {
+  SUPPORT_WORKER
+  SUPERVISOR
+  CLINICAL_LEAD
+}
+
+enum EntrySource {
+  LIVE
+  RESTORED_APPROVED
+}
+
+enum CandidateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AuditAction {
+  CANDIDATE_CREATED
+  CANDIDATE_APPROVED
+  CANDIDATE_REJECTED
+  LEDGER_WRITTEN
+}
 
 model Participant {
-  id   String @id @default(uuid())
-  name String
-
-  // Default IDDSI levels for the participant's Mealtime Management Plan
+  id                    String  @id @default(uuid())
+  externalReference     String? @unique
+  fullName              String
   defaultFoodTexture    Int
   defaultFluidThickness Int
 
-  mealLogs MealLog[]
-  marLogs  MARLog[]
+  mealLogs           MealLog[]
+  marLogs            MARLog[]
+  restorationBatches RestorationBatch[]
+  mealCandidates     RestoredMealCandidate[]
+  marCandidates      RestoredMARCandidate[]
+  auditEvents        AuditEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model MealLog {
-  id            String      @id @default(uuid())
-  participant   Participant @relation(fields: [participantId], references: [id])
-  participantId String
-  timestamp     DateTime    @default(now())
-  mealType      MealType
+model Staff {
+  id           String    @id @default(uuid())
+  workerNumber String    @unique
+  displayName  String
+  role         StaffRole
 
-  // IDDSI Food Texture Level (3-7)
-  foodTexture Int
+  createdMealLogs             MealLog[]               @relation("MealCreatedBy")
+  approvedMealLogs            MealLog[]               @relation("MealApprovedBy")
+  createdMARLogs              MARLog[]                @relation("MARCreatedBy")
+  approvedMARLogs             MARLog[]                @relation("MARApprovedBy")
+  requestedRestorationBatches RestorationBatch[]      @relation("BatchRequestedBy")
+  reviewedRestorationBatches  RestorationBatch[]      @relation("BatchReviewedBy")
+  generatedMealCandidates     RestoredMealCandidate[] @relation("MealCandidateGeneratedBy")
+  reviewedMealCandidates      RestoredMealCandidate[] @relation("MealCandidateReviewedBy")
+  generatedMARCandidates      RestoredMARCandidate[]  @relation("MARCandidateGeneratedBy")
+  reviewedMARCandidates       RestoredMARCandidate[]  @relation("MARCandidateReviewedBy")
+  auditEvents                 AuditEvent[]
 
-  // IDDSI Fluid Thickness Level (0-4)
-  fluidThickness Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
+model RestorationBatch {
+  id                 String          @id @default(uuid())
+  participantId      String
+  participant        Participant     @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  requestedByStaffId String
+  requestedByStaff   Staff           @relation("BatchRequestedBy", fields: [requestedByStaffId], references: [id], onDelete: Restrict)
+  reviewedByStaffId  String?
+  reviewedByStaff    Staff?          @relation("BatchReviewedBy", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reason             String
+  recoveryStart      DateTime
+  recoveryEnd        DateTime
+  status             CandidateStatus @default(PENDING)
+
+  mealCandidates RestoredMealCandidate[]
+  marCandidates  RestoredMARCandidate[]
+  mealLogs       MealLog[]
+  marLogs        MARLog[]
+
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+  updatedAt  DateTime  @updatedAt
+
+  @@index([participantId, recoveryStart, recoveryEnd])
+  @@index([status, createdAt])
+}
+
+model RestoredMealCandidate {
+  id                     String               @id @default(uuid())
+  restorationBatchId     String
+  restorationBatch       RestorationBatch     @relation(fields: [restorationBatchId], references: [id], onDelete: Cascade)
+  participantId          String
+  participant            Participant          @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  generatedByStaffId     String
+  generatedByStaff       Staff                @relation("MealCandidateGeneratedBy", fields: [generatedByStaffId], references: [id], onDelete: Restrict)
+  timestamp              DateTime
+  mealType               MealType
+  foodTexture            Int
+  fluidThickness         Int
   volumeMl               Int
   amountEaten            AmountEaten
   swallowingObservations SwallowObservation[]
+  deviationReason        String?
+  incidentReference      String?
+  status                 CandidateStatus      @default(PENDING)
+  reviewedByStaffId      String?
+  reviewedByStaff        Staff?               @relation("MealCandidateReviewedBy", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reviewComment          String?
+  reviewedAt             DateTime?
+  provenanceHash         String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([participantId, timestamp])
+  @@index([status, createdAt])
+}
+
+model RestoredMARCandidate {
+  id                 String           @id @default(uuid())
+  restorationBatchId String
+  restorationBatch   RestorationBatch @relation(fields: [restorationBatchId], references: [id], onDelete: Cascade)
+  participantId      String
+  participant        Participant      @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  generatedByStaffId String
+  generatedByStaff   Staff            @relation("MARCandidateGeneratedBy", fields: [generatedByStaffId], references: [id], onDelete: Restrict)
+  scheduledAdminTime DateTime
+  actualAdminTime    DateTime
+  medicationName     String
+  dosage             String
+  route              String
+  status             MARStatus
+  omissionReason     String?
+  statusComment      String?
+  statusReview       CandidateStatus  @default(PENDING)
+  reviewedByStaffId  String?
+  reviewedByStaff    Staff?           @relation("MARCandidateReviewedBy", fields: [reviewedByStaffId], references: [id], onDelete: SetNull)
+  reviewComment      String?
+  reviewedAt         DateTime?
+  provenanceHash     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([participantId, scheduledAdminTime])
+  @@index([statusReview, createdAt])
+}
+
+model MealLog {
+  id                     String               @id @default(uuid())
+  participantId          String
+  participant            Participant          @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  createdByStaffId       String
+  createdByStaff         Staff                @relation("MealCreatedBy", fields: [createdByStaffId], references: [id], onDelete: Restrict)
+  approvedByStaffId      String?
+  approvedByStaff        Staff?               @relation("MealApprovedBy", fields: [approvedByStaffId], references: [id], onDelete: SetNull)
+  restorationBatchId     String?
+  restorationBatch       RestorationBatch?    @relation(fields: [restorationBatchId], references: [id], onDelete: SetNull)
+  source                 EntrySource          @default(LIVE)
+  timestamp              DateTime
+  mealType               MealType
+  foodTexture            Int
+  fluidThickness         Int
+  volumeMl               Int
+  amountEaten            AmountEaten
+  swallowingObservations SwallowObservation[]
+  deviationReason        String?
+  incidentReference      String?
+  provenanceHash         String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([participantId, timestamp])
+  @@index([source, timestamp])
 }
 
 model MARLog {
-  id            String      @id @default(uuid())
-  participant   Participant @relation(fields: [participantId], references: [id])
-  participantId String
-
+  id                 String            @id @default(uuid())
+  participantId      String
+  participant        Participant       @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  createdByStaffId   String
+  createdByStaff     Staff             @relation("MARCreatedBy", fields: [createdByStaffId], references: [id], onDelete: Restrict)
+  approvedByStaffId  String?
+  approvedByStaff    Staff?            @relation("MARApprovedBy", fields: [approvedByStaffId], references: [id], onDelete: SetNull)
+  restorationBatchId String?
+  restorationBatch   RestorationBatch? @relation(fields: [restorationBatchId], references: [id], onDelete: SetNull)
+  source             EntrySource       @default(LIVE)
   scheduledAdminTime DateTime
   actualAdminTime    DateTime
-
-  medicationName String
-  dosage         String
-  route          String
-
-  status            MARStatus
-  omissionReason    String?
-  workerSignatureId String
+  medicationName     String
+  dosage             String
+  route              String
+  status             MARStatus
+  omissionReason     String?
+  provenanceHash     String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([participantId, scheduledAdminTime])
+  @@index([source, status, scheduledAdminTime])
+}
+
+model AuditEvent {
+  id            String       @id @default(uuid())
+  actorStaffId  String
+  actorStaff    Staff        @relation(fields: [actorStaffId], references: [id], onDelete: Restrict)
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  action        AuditAction
+  entityType    String
+  entityId      String
+  payloadHash   String
+  previousHash  String?
+  createdAt     DateTime     @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([participantId, createdAt])
 }
