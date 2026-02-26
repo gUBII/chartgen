@@ -3,6 +3,7 @@ import { MARStatus, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { RestorationEngine } from "../../../../services/restoration/restorationEngine";
+import { deriveParticipantBaselines } from "../../../../services/restoration/personalizationEngine";
 
 export const runtime = "nodejs";
 
@@ -257,6 +258,9 @@ export async function POST(request: NextRequest) {
       const engine = new RestorationEngine();
       const generatedRows: any[] = [];
 
+      // Derive personalization baselines from participant's historical logs
+      const baselines = await deriveParticipantBaselines(participant.id);
+
       for (const day of dayIterator(recoveryStart, recoveryEnd)) {
         for (const template of medicationTemplates) {
           const generatedAt = new Date();
@@ -265,6 +269,7 @@ export async function POST(request: NextRequest) {
               participantId: participant.id,
               defaultFoodTexture: participant.defaultFoodTexture,
               defaultFluidThickness: participant.defaultFluidThickness,
+              personalizationBaselines: baselines,
             },
             {
               scheduledAdminTime: makeScheduledAdminTime(day, template.hour, template.minute),

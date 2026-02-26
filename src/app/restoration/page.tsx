@@ -233,9 +233,9 @@ export default function RestorationPage() {
 
   return (
     <main className="mx-auto max-w-7xl p-6">
-      <h1 className="text-3xl font-semibold">Restoration Control Center</h1>
-      <p className="mt-2 text-sm text-gray-600">
-        Generate preview candidates, review deviations, edit fields, then commit to the ledger.
+      <h1 className="text-3xl font-semibold">Mealtime Chartgen</h1>
+      <p className="mt-2 text-sm text-slate-300">
+        Generate mealtime preview candidates, review deviations, edit fields, then commit to the ledger.
       </p>
 
       <section className="mt-6 grid grid-cols-1 gap-4 rounded-lg border border-gray-200 p-4 md:grid-cols-5">
@@ -291,7 +291,7 @@ export default function RestorationPage() {
         </div>
       </section>
 
-      <section className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+      <section className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900">
         <div>
           <span className="font-medium">Batch:</span> {batchId || "none"}
         </div>
@@ -302,7 +302,7 @@ export default function RestorationPage() {
       </section>
 
       <section className="mt-6 overflow-x-auto rounded-lg border border-gray-200">
-        <table className="min-w-full border-collapse text-sm">
+        <table className="min-w-full border-collapse text-sm text-gray-900">
           <thead className="bg-gray-100">
             <tr>
               <th className="border-b px-3 py-2 text-left">Date/Time</th>

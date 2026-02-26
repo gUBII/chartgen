@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div aria-hidden className="orb orb-a" />
           <div aria-hidden className="orb orb-b" />
           <div aria-hidden className="orb orb-c" />
-          </div>
+        </div>
       </body>
     </html>
   );

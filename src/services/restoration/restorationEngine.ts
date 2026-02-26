@@ -14,10 +14,19 @@ type WeightedOption<T> = {
   weight: number;
 };
 
+export interface ParticipantBaselines {
+  mealAdherence?: { [key in MealType]?: number };
+  overallMealAdherence?: number;
+  medicationAdherence?: number;
+  medicationRefusalRate?: number;
+  medicationHeldRate?: number;
+}
+
 export interface ParticipantPlanSnapshot {
   participantId: string;
   defaultFoodTexture: number;
   defaultFluidThickness: number;
+  personalizationBaselines?: ParticipantBaselines;
 }
 
 export interface RestorationContext {
@@ -288,14 +297,25 @@ export class RestorationEngine {
     context: RestorationContext
   ): RestoredMealCandidate {
     const dayProfile = deriveDayProfile(plan.participantId, context.restorationBatchId, input.scheduledTime);
+
+    // Base success rates by meal type
+    const baseRates: { [key in MealType]: number } = {
+      [MealType.BREAKFAST]: 0.92,
+      [MealType.LUNCH]: 0.89,
+      [MealType.SNACK]: 0.91,
+      [MealType.DINNER]: 0.88,
+    };
+
+    // Apply personalization if available
+    let baseRate = baseRates[input.mealType];
+    if (plan.personalizationBaselines?.mealAdherence?.[input.mealType] !== undefined) {
+      const historicalRate = plan.personalizationBaselines.mealAdherence[input.mealType];
+      baseRate = 0.7 * baseRate + 0.3 * historicalRate; // 70% base, 30% historical blend
+    }
+
     const mealSuccessRate = clamp(
-      ({
-        [MealType.BREAKFAST]: 0.92,
-        [MealType.LUNCH]: 0.89,
-        [MealType.SNACK]: 0.91,
-        [MealType.DINNER]: 0.88,
-      }[input.mealType] +
-        (dayProfile.dayClass === "CHALLENGING" ? -0.13 : dayProfile.dayClass === "STRONG" ? 0.04 : 0)),
+      baseRate +
+        (dayProfile.dayClass === "CHALLENGING" ? -0.13 : dayProfile.dayClass === "STRONG" ? 0.04 : 0),
       0.66,
       0.97
     );
@@ -459,9 +479,17 @@ export class RestorationEngine {
     context: RestorationContext
   ): RestoredMARCandidate {
     const dayProfile = deriveDayProfile(_plan.participantId, context.restorationBatchId, input.scheduledAdminTime);
+
+    // Apply personalization if available
+    let baseSuccessRate = BASE_SUCCESS_RATE;
+    if (_plan.personalizationBaselines?.medicationAdherence !== undefined) {
+      const historicalRate = _plan.personalizationBaselines.medicationAdherence;
+      baseSuccessRate = 0.7 * BASE_SUCCESS_RATE + 0.3 * historicalRate; // 70% base, 30% historical blend
+    }
+
     const outcome = pickOutcomeBand(
       clamp(
-        BASE_SUCCESS_RATE + (dayProfile.dayClass === "CHALLENGING" ? -0.14 : dayProfile.dayClass === "STRONG" ? 0.03 : 0),
+        baseSuccessRate + (dayProfile.dayClass === "CHALLENGING" ? -0.14 : dayProfile.dayClass === "STRONG" ? 0.03 : 0),
         0.68,
         0.97
       )
