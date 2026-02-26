@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type MARStatus = "ADMINISTERED" | "REFUSED" | "HELD";
 
@@ -79,6 +79,31 @@ const emptyMedication = (): MedicationInput => ({
   minute: 0,
 });
 
+const getDatePreset = (days: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return toDateInput(d);
+};
+
+const getDirtyCount = (rows: CandidateRow[]): number => {
+  return rows.filter((r) => r.dirty).length;
+};
+
+const getStatusCounts = (rows: CandidateRow[]): { approved: number; pending: number; refused: number; held: number } => {
+  return {
+    approved: rows.filter((r) => r.statusReview === "APPROVED").length,
+    pending: rows.filter((r) => r.statusReview === "PENDING").length,
+    refused: rows.filter((r) => r.status === "REFUSED").length,
+    held: rows.filter((r) => r.status === "HELD").length,
+  };
+};
+
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text).catch(() => {
+    alert("Failed to copy");
+  });
+};
+
 export default function MARPage() {
   const today = useMemo(() => new Date(), []);
   const nextWeek = useMemo(() => {
@@ -99,6 +124,21 @@ export default function MARPage() {
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
+
+  // Keyboard shortcut: Ctrl+S to save first dirty row
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        const dirtyRow = rows.find((r) => r.dirty);
+        if (dirtyRow && !savingRowId) {
+          onSaveRow(dirtyRow);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [rows, savingRowId]);
 
   const onGenerateMAR = async () => {
     setErrorText("");
@@ -314,12 +354,47 @@ export default function MARPage() {
             <button
               type="button"
               onClick={onGenerateMAR}
-              disabled={loadingGenerate}
+              disabled={loadingGenerate || !participantId.trim()}
               className="w-full rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
             >
               {loadingGenerate ? "Generating..." : "Generate"}
             </button>
           </div>
+        </div>
+
+        {/* Quick date presets */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="text-xs font-medium text-gray-600">Quick presets:</span>
+          <button
+            type="button"
+            onClick={() => {
+              setStartDate(toDateInput(today));
+              setEndDate(toDateInput(today));
+            }}
+            className="rounded-sm border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStartDate(toDateInput(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)));
+              setEndDate(toDateInput(today));
+            }}
+            className="rounded-sm border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+          >
+            Last 7 days
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStartDate(toDateInput(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)));
+              setEndDate(toDateInput(today));
+            }}
+            className="rounded-sm border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+          >
+            Last 30 days
+          </button>
         </div>
       </section>
 
@@ -397,12 +472,55 @@ export default function MARPage() {
         </button>
       </section>
 
-      <section className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900">
-        <div>
-          <span className="font-medium">Batch:</span> {batchId || "none"}
-        </div>
-        <div>
-          <span className="font-medium">Status:</span> {statusText}
+      <section className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-900">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Batch:</span>
+              <code className="rounded bg-gray-200 px-2 py-1 font-mono text-xs">{batchId || "—"}</code>
+              {batchId && (
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(batchId)}
+                  className="text-xs text-blue-600 hover:underline"
+                  title="Copy batch ID"
+                >
+                  📋
+                </button>
+              )}
+            </div>
+            <div className="mt-1">
+              <span className="font-medium">Status:</span> {statusText}
+            </div>
+          </div>
+
+          {/* Summary stats */}
+          {rows.length > 0 && (
+            <div className="flex gap-4 text-xs">
+              <div className="text-center">
+                <div className="font-semibold text-green-600">{getStatusCounts(rows).approved}</div>
+                <div className="text-gray-600">Approved</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-yellow-600">{getStatusCounts(rows).pending}</div>
+                <div className="text-gray-600">Pending</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-orange-600">{getStatusCounts(rows).refused}</div>
+                <div className="text-gray-600">Refused</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-purple-600">{getStatusCounts(rows).held}</div>
+                <div className="text-gray-600">Held</div>
+              </div>
+              {getDirtyCount(rows) > 0 && (
+                <div className="text-center">
+                  <div className="font-semibold text-blue-600">{getDirtyCount(rows)}</div>
+                  <div className="text-gray-600">Unsaved</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {errorText ? <div className="mt-2 text-red-700">{errorText}</div> : null}
       </section>
@@ -430,12 +548,15 @@ export default function MARPage() {
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className={["REFUSED", "HELD"].includes(row.status) ? "bg-yellow-100" : "bg-white"}>
+                <tr key={row.id} className={["REFUSED", "HELD"].includes(row.status) ? "bg-yellow-100" : row.dirty ? "bg-blue-50" : "bg-white"}>
                   <td className="border-b px-3 py-2 text-xs">
                     {toLocalDateTimeInput(row.scheduledAdminTime).split("T")[0]}{" "}
                     {toLocalDateTimeInput(row.scheduledAdminTime).split("T")[1]}
                   </td>
-                  <td className="border-b px-3 py-2">{row.medicationName}</td>
+                  <td className="border-b px-3 py-2">
+                    {row.medicationName}
+                    {row.dirty && <span className="ml-1 inline-block h-2 w-2 rounded-full bg-blue-600" title="Unsaved changes" />}
+                  </td>
                   <td className="border-b px-3 py-2">{row.dosage}</td>
                   <td className="border-b px-3 py-2">{row.route}</td>
                   <td className="border-b px-3 py-2">
