@@ -39,7 +39,7 @@ const getHistoricalMealLogs = async (participantId: string): Promise<any[]> => {
   return prisma.mealLog.findMany({
     where: {
       participantId,
-      createdAt: { gte: since },
+      timestamp: { gte: since }, // Use event time, not creation time
       source: { in: ["LIVE"] }, // Only real logs, not restored
     },
     orderBy: { timestamp: "asc" },
@@ -58,7 +58,7 @@ const getHistoricalMARLogs = async (participantId: string): Promise<any[]> => {
   return prisma.mARLog.findMany({
     where: {
       participantId,
-      createdAt: { gte: since },
+      scheduledAdminTime: { gte: since }, // Use event time, not creation time
       source: { in: ["LIVE"] },
     },
     orderBy: { scheduledAdminTime: "asc" },

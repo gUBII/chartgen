@@ -20,6 +20,8 @@ export interface ParticipantBaselines {
   medicationAdherence?: number;
   medicationRefusalRate?: number;
   medicationHeldRate?: number;
+  medianMealAdminOffsetMinutes?: number;
+  medianMedicationAdminOffsetMinutes?: number;
 }
 
 export interface ParticipantPlanSnapshot {
@@ -196,20 +198,26 @@ const MEAL_TIMING_PROFILE: Record<MealType, { maxEarly: number; maxLate: number;
 
 const buildMealTimingOptions = (
   mealType: MealType,
-  dayProfile: { daySeed: number; dayClass: DayClass }
+  dayProfile: { daySeed: number; dayClass: DayClass },
+  historicalOffsetMinutes?: number
 ): TemporalRealismOptions => {
   const base = MEAL_TIMING_PROFILE[mealType];
   const operationalDrag = dayProfile.dayClass === "CHALLENGING" ? 1.28 : dayProfile.dayClass === "STRONG" ? 0.86 : 1;
   const seedLateNudge = (dayProfile.daySeed - 0.5) * 0.16;
 
+  // Adjust lateBias toward historical pattern if available
+  let lateBias = base.lateBias + seedLateNudge + (dayProfile.dayClass === "CHALLENGING" ? 0.08 : 0);
+  if (historicalOffsetMinutes !== undefined && historicalOffsetMinutes > 2) {
+    // Positive offset (late) → increase lateBias
+    // Map: offset 0 → 0.5, offset 30 → 0.85
+    const offsetBias = 0.5 + (Math.min(historicalOffsetMinutes, 30) / 60) * 0.35;
+    lateBias = 0.7 * lateBias + 0.3 * offsetBias;
+  }
+
   return {
     maxEarlyMinutes: Math.max(3, Math.round(base.maxEarly * (operationalDrag > 1 ? 0.88 : 1))),
     maxLateMinutes: Math.max(8, Math.round(base.maxLate * operationalDrag)),
-    lateBias: clamp(
-      base.lateBias + seedLateNudge + (dayProfile.dayClass === "CHALLENGING" ? 0.08 : 0),
-      0.2,
-      0.94
-    ),
+    lateBias: clamp(lateBias, 0.2, 0.94),
     roundToMinutes: pickRoundToMinutes(),
   };
 };
@@ -218,7 +226,8 @@ type MarTimingMode = "ROUTINE" | "LATE" | "OMISSION";
 
 const buildMarTimingOptions = (
   dayProfile: { daySeed: number; dayClass: DayClass },
-  mode: MarTimingMode
+  mode: MarTimingMode,
+  historicalOffsetMinutes?: number
 ): TemporalRealismOptions => {
   const byMode: Record<MarTimingMode, { maxEarly: number; maxLate: number; lateBias: number }> = {
     ROUTINE: { maxEarly: 8, maxLate: 14, lateBias: 0.6 },
@@ -229,10 +238,19 @@ const buildMarTimingOptions = (
   const operationalDrag = dayProfile.dayClass === "CHALLENGING" ? 1.32 : dayProfile.dayClass === "STRONG" ? 0.9 : 1;
   const seedLateNudge = (dayProfile.daySeed - 0.5) * 0.14;
 
+  // Adjust lateBias toward historical pattern if available
+  let lateBias = base.lateBias + seedLateNudge + (dayProfile.dayClass === "CHALLENGING" ? 0.07 : 0);
+  if (historicalOffsetMinutes !== undefined && historicalOffsetMinutes > 1) {
+    // Positive offset (late) → increase lateBias
+    // Map: offset 0 → 0.5, offset 45 → 0.85
+    const offsetBias = 0.5 + (Math.min(historicalOffsetMinutes, 45) / 90) * 0.35;
+    lateBias = 0.7 * lateBias + 0.3 * offsetBias;
+  }
+
   return {
     maxEarlyMinutes: Math.max(1, Math.round(base.maxEarly * (mode === "LATE" ? 1 : 0.95))),
     maxLateMinutes: Math.max(6, Math.round(base.maxLate * operationalDrag)),
-    lateBias: clamp(base.lateBias + seedLateNudge + (dayProfile.dayClass === "CHALLENGING" ? 0.07 : 0), 0.2, 0.97),
+    lateBias: clamp(lateBias, 0.2, 0.97),
     roundToMinutes: pickRoundToMinutes(),
   };
 };
@@ -434,7 +452,7 @@ export class RestorationEngine {
 
     const timestamp = generateTemporalRealism(
       input.scheduledTime,
-      buildMealTimingOptions(input.mealType, dayProfile)
+      buildMealTimingOptions(input.mealType, dayProfile, plan.personalizationBaselines?.medianMealAdminOffsetMinutes)
     );
 
     const candidate: RestoredMealCandidate = {
@@ -503,39 +521,70 @@ export class RestorationEngine {
 
     if (outcome === "SUCCESS") {
       status = MARStatus.ADMINISTERED;
-      actualAdminTime = generateTemporalRealism(input.scheduledAdminTime, buildMarTimingOptions(dayProfile, "ROUTINE"));
+      actualAdminTime = generateTemporalRealism(
+        input.scheduledAdminTime,
+        buildMarTimingOptions(dayProfile, "ROUTINE", _plan.personalizationBaselines?.medianMedicationAdminOffsetMinutes)
+      );
     } else {
-      const scenario = pickWeighted<"REFUSED" | "HELD_CLINICAL" | "LATE_ADMIN">([
-        ...(dayProfile.dayClass === "CHALLENGING"
-          ? [
-              { value: "REFUSED" as const, weight: 49 },
-              { value: "HELD_CLINICAL" as const, weight: 32 },
-              { value: "LATE_ADMIN" as const, weight: 19 },
-            ]
+      // Compute scenario weights, optionally personalized by historical refusal/held rates
+      let refusalWeight = 45;
+      let heldWeight = 25;
+      let lateWeight = 30;
+
+      // If participant has historical refusal/held data, adjust weights toward their pattern
+      if (
+        _plan.personalizationBaselines?.medicationRefusalRate !== undefined &&
+        _plan.personalizationBaselines?.medicationHeldRate !== undefined
+      ) {
+        const historicalRefusal = _plan.personalizationBaselines.medicationRefusalRate;
+        const historicalHeld = _plan.personalizationBaselines.medicationHeldRate;
+        const totalOmission = historicalRefusal + historicalHeld;
+
+        if (totalOmission > 0) {
+          // Scale base weights proportionally to historical omission pattern
+          const refusalRatio = historicalRefusal / totalOmission;
+          const heldRatio = historicalHeld / totalOmission;
+          const omissionBudget = refusalWeight + heldWeight; // Total omission weight
+
+          refusalWeight = omissionBudget * refusalRatio;
+          heldWeight = omissionBudget * heldRatio;
+        }
+      }
+
+      // Apply day-profile multipliers
+      const dayMultiplier =
+        dayProfile.dayClass === "CHALLENGING"
+          ? { refusal: 1.09, held: 1.28, late: 0.63 }
           : dayProfile.dayClass === "STRONG"
-            ? [
-                { value: "REFUSED" as const, weight: 37 },
-                { value: "HELD_CLINICAL" as const, weight: 20 },
-                { value: "LATE_ADMIN" as const, weight: 43 },
-              ]
-            : [
-                { value: "REFUSED" as const, weight: 45 },
-                { value: "HELD_CLINICAL" as const, weight: 25 },
-                { value: "LATE_ADMIN" as const, weight: 30 },
-              ]),
+            ? { refusal: 0.82, held: 0.8, late: 1.43 }
+            : { refusal: 1.0, held: 1.0, late: 1.0 };
+
+      const scenario = pickWeighted<"REFUSED" | "HELD_CLINICAL" | "LATE_ADMIN">([
+        { value: "REFUSED" as const, weight: refusalWeight * dayMultiplier.refusal },
+        { value: "HELD_CLINICAL" as const, weight: heldWeight * dayMultiplier.held },
+        { value: "LATE_ADMIN" as const, weight: lateWeight * dayMultiplier.late },
       ]);
 
       if (scenario === "LATE_ADMIN") {
         status = MARStatus.ADMINISTERED;
-        actualAdminTime = generateTemporalRealism(input.scheduledAdminTime, buildMarTimingOptions(dayProfile, "LATE"));
+        actualAdminTime = generateTemporalRealism(
+          input.scheduledAdminTime,
+          buildMarTimingOptions(dayProfile, "LATE", _plan.personalizationBaselines?.medianMedicationAdminOffsetMinutes)
+        );
         statusComment = pickArrayOption(MAR_LATE_COMMENTS);
       } else if (scenario === "REFUSED") {
         status = MARStatus.REFUSED;
-        actualAdminTime = generateTemporalRealism(input.scheduledAdminTime, buildMarTimingOptions(dayProfile, "OMISSION"));
+        actualAdminTime = generateTemporalRealism(
+          input.scheduledAdminTime,
+          buildMarTimingOptions(dayProfile, "OMISSION", _plan.personalizationBaselines?.medianMedicationAdminOffsetMinutes)
+        );
         omissionReason = pickArrayOption(MAR_REFUSAL_REASONS);
       } else {
         status = MARStatus.HELD;
-        actualAdminTime = generateTemporalRealism(input.scheduledAdminTime, buildMarTimingOptions(dayProfile, "OMISSION"));
+        actualAdminTime = generateTemporalRealism(
+          input.scheduledAdminTime,
+          buildMarTimingOptions(dayProfile, "OMISSION", _plan.personalizationBaselines?.medianMedicationAdminOffsetMinutes)
+        );
         omissionReason = pickArrayOption(MAR_HELD_REASONS);
         statusComment = pickArrayOption(MAR_HELD_COMMENTS);
       }
