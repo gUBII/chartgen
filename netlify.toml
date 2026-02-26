@@ -6,4 +6,4 @@ publish = ".next"
 NODE_VERSION = "20"
 
 [context.production]
-command = "npm run build && npm run db:migrate:deploy"
+command = "npm run build"
