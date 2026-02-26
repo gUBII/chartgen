@@ -6,32 +6,35 @@ import { usePathname } from "next/navigation";
 export function TabNav() {
   const pathname = usePathname();
 
-  const isRestorationActive = pathname.startsWith("/restoration");
   const isMarActive = pathname.startsWith("/mar");
+  const isMealtimeActive =
+    pathname.startsWith("/mealtime-chartgen") || pathname.startsWith("/restoration");
+  const isKpiActive = pathname.startsWith("/kpigen");
 
   return (
-    <nav className="border-b border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-6 py-4">
-        <div className="flex gap-8">
-          <Link
-            href="/restoration"
-            className={`text-sm font-medium pb-2 border-b-2 ${
-              isRestorationActive
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Meal Chart
-          </Link>
+    <nav className="tab-nav">
+      <div className="mx-auto max-w-7xl px-6 pb-5">
+        <div className="tab-list">
           <Link
             href="/mar"
-            className={`text-sm font-medium pb-2 border-b-2 ${
-              isMarActive
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`tab-link ${isMarActive ? "tab-link-active" : ""}`}
           >
-            Medical Chart
+            <span className="tab-dot" aria-hidden />
+            MAR
+          </Link>
+          <Link
+            href="/mealtime-chartgen"
+            className={`tab-link ${isMealtimeActive ? "tab-link-active" : ""}`}
+          >
+            <span className="tab-dot" aria-hidden />
+            Mealtime Chartgen
+          </Link>
+          <Link
+            href="/kpigen"
+            className={`tab-link ${isKpiActive ? "tab-link-active" : ""}`}
+          >
+            <span className="tab-dot" aria-hidden />
+            KPIgen
           </Link>
         </div>
       </div>

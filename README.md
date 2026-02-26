@@ -162,9 +162,10 @@ curl -X POST http://localhost:3000/api/engine/commit \
 
 ## Quality and Testing Truth
 
-- `npm test` is **not configured** yet in `package.json` (currently exits with error).
+- `npm run test:governance` runs executable governance integration checks against a running API server.
+- `npm test` remains a placeholder and is not wired to a framework suite yet.
 - `src/app/api/engine/__tests__/approveAll.test.ts` exists as a draft but is not runnable in current tooling.
-- Current verification is build + Prisma validation + runtime API smoke testing.
+- Current verification is build + Prisma validation + `npm run test:governance` + runtime API smoke testing.
 
 See: `src/docs/QUALITY_AND_TESTING.md`.
 

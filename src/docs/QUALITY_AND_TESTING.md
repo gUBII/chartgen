@@ -6,9 +6,15 @@ Last updated: 2026-02-26
 
 ### Automated tests
 
-- `npm test` is currently a placeholder script in `package.json`.
-- There is no active test runner configuration (no Jest/Vitest setup in dependencies/scripts).
-- `src/app/api/engine/__tests__/approveAll.test.ts` exists as a draft and is not runnable in current project tooling.
+- `npm run test:governance` is available and executable.
+- It runs end-to-end governance checks against a running API server:
+  - `FORBIDDEN_ROLE` enforcement
+  - `SELF_APPROVAL_FORBIDDEN` enforcement
+  - elevated reviewer success path
+  - coverage for both meal and MAR `approveAll`
+- `npm test` is still a placeholder script in `package.json`.
+- There is still no active Jest/Vitest suite in the project.
+- `src/app/api/engine/__tests__/approveAll.test.ts` remains a draft and is not part of active quality gates.
 
 ### Practical quality gate in use
 
@@ -17,7 +23,8 @@ Current verification relies on:
 1. `npm run build`
 2. `npx prisma validate`
 3. `npx prisma migrate status`
-4. runtime API smoke tests against a running server
+4. `npm run test:governance` against a running server
+5. runtime API smoke tests for broader flow validation
 
 ## 2) Minimum Smoke Matrix
 
@@ -39,15 +46,34 @@ Current verification relies on:
 - `approveAll` with `SUPPORT_WORKER` returns `FORBIDDEN_ROLE`
 - `approveAll` with generator identity returns `SELF_APPROVAL_FORBIDDEN`
 
-## 3) Recommended Next Step (to make tests real)
+## 3) How to Run Governance Checks
 
-1. Choose a runner: Vitest (recommended) or Jest.
-2. Add `test` and `test:integration` scripts in `package.json`.
-3. Replace draft test placeholders with seeded fixture setup/teardown using Prisma.
-4. Avoid dependence on external localhost servers in tests; instantiate route handlers directly or boot isolated test server.
-5. Run tests in CI for PR gating.
+```bash
+# terminal 1
+npm run dev
 
-## 4) Success Criteria for Test Maturity
+# terminal 2
+npm run test:governance
+```
+
+Environment overrides:
+
+- `API_BASE_URL` (default: `http://localhost:3000`)
+- `GOVERNANCE_PARTICIPANT_ID` (default: `112334`)
+- `GOVERNANCE_GENERATOR_STAFF_ID` (default: `32213`)
+
+Script path:
+
+- `scripts/test-approval-governance.mjs`
+
+## 4) Recommended Next Step (full test maturity)
+
+1. Adopt Vitest or Jest for isolated route/service tests.
+2. Replace draft placeholders with deterministic fixture-based integration tests.
+3. Remove external localhost dependency by invoking route handlers in-process.
+4. Run tests in CI as required PR gates.
+
+## 5) Success Criteria for Test Maturity
 
 - `npm test` executes a real suite and exits 0/1 based on assertions.
 - Approval governance has deterministic integration tests.

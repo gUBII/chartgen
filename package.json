@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:governance": "node scripts/test-approval-governance.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

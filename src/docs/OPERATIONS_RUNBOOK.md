@@ -162,6 +162,7 @@ From `prisma/seed.cjs`:
 
 ## 8) Testing Reality
 
-- `npm test` is currently a placeholder script and exits with failure by design.
-- Use build + Prisma checks + API smoke tests as current quality gate.
-- See `src/docs/QUALITY_AND_TESTING.md` for next steps to wire automated tests.
+- `npm run test:governance` is available for executable approval-governance integration checks.
+- `npm test` is still a placeholder script and is not a reliable gate.
+- Recommended current gate: build + Prisma checks + `npm run test:governance` + API smoke tests.
+- See `src/docs/QUALITY_AND_TESTING.md` for details and next maturity steps.
