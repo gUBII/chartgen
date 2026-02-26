@@ -36,6 +36,7 @@ enum SwallowObservation {
 enum MARStatus {
   ADMINISTERED
   REFUSED
+  HELD
 }
 
 enum StaffRole {

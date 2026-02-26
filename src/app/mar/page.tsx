@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type MARStatus = "ADMINISTERED" | "REFUSED";
+type MARStatus = "ADMINISTERED" | "REFUSED" | "HELD";
 
 type CandidateRow = {
   id: string;
@@ -33,7 +33,7 @@ type ApiError = {
   details?: unknown;
 };
 
-const MAR_STATUS_OPTIONS: MARStatus[] = ["ADMINISTERED", "REFUSED"];
+const MAR_STATUS_OPTIONS: MARStatus[] = ["ADMINISTERED", "REFUSED", "HELD"];
 
 const toDateInput = (date: Date): string => {
   const yyyy = date.getFullYear();
@@ -430,7 +430,7 @@ export default function MARPage() {
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className={row.status === "REFUSED" ? "bg-yellow-100" : "bg-white"}>
+                <tr key={row.id} className={["REFUSED", "HELD"].includes(row.status) ? "bg-yellow-100" : "bg-white"}>
                   <td className="border-b px-3 py-2 text-xs">
                     {toLocalDateTimeInput(row.scheduledAdminTime).split("T")[0]}{" "}
                     {toLocalDateTimeInput(row.scheduledAdminTime).split("T")[1]}

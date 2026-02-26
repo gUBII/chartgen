@@ -363,17 +363,42 @@ export async function PATCH(request: NextRequest) {
         throw new PreviewApiError(400, "MISSING_FIELD", "batchId is required when approveAll is true.");
       }
 
-      let reviewedByStaffId: string | undefined;
       const actorStaffId = body.actorStaffId?.trim();
-      if (actorStaffId) {
-        const actor = await prisma.staff.findUnique({
-          where: { id: actorStaffId },
-          select: { id: true, role: true },
-        });
-        if (!actor) {
-          throw new PreviewApiError(404, "ACTOR_NOT_FOUND", "actorStaffId does not match a Staff record.");
-        }
-        reviewedByStaffId = actor.id;
+      if (!actorStaffId) {
+        throw new PreviewApiError(400, "MISSING_FIELD", "actorStaffId is required when approveAll is true.");
+      }
+
+      const actor = await prisma.staff.findUnique({
+        where: { id: actorStaffId },
+        select: { id: true, role: true },
+      });
+      if (!actor) {
+        throw new PreviewApiError(404, "ACTOR_NOT_FOUND", "actorStaffId does not match a Staff record.");
+      }
+
+      const ALLOWED_REVIEWER_ROLES = new Set(["SUPERVISOR", "CLINICAL_LEAD"]);
+      if (!ALLOWED_REVIEWER_ROLES.has(String(actor.role))) {
+        throw new PreviewApiError(
+          403,
+          "FORBIDDEN_ROLE",
+          `Only SUPERVISOR or CLINICAL_LEAD can approve batches. Actor has role: ${actor.role}`
+        );
+      }
+
+      const batch = await prisma.restorationBatch.findUnique({
+        where: { id: batchId },
+        select: { id: true, requestedByStaffId: true },
+      });
+      if (!batch) {
+        throw new PreviewApiError(404, "BATCH_NOT_FOUND", "Restoration batch not found.");
+      }
+
+      if (actor.id === batch.requestedByStaffId) {
+        throw new PreviewApiError(
+          403,
+          "SELF_APPROVAL_FORBIDDEN",
+          "A reviewer cannot approve a batch they generated. Segregation of duties required."
+        );
       }
 
       const now = new Date();
@@ -384,7 +409,7 @@ export async function PATCH(request: NextRequest) {
         },
         data: {
           status: "APPROVED",
-          reviewedByStaffId,
+          reviewedByStaffId: actor.id,
           reviewedAt: now,
         },
       });

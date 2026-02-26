@@ -167,13 +167,23 @@ export async function POST(request: NextRequest) {
         throw new CommitApiError(404, "BATCH_NOT_FOUND", "Restoration batch not found.");
       }
 
-      const existingCommittedCount = await txAny.mealLog.count({
+      const existingMealCommittedCount = await txAny.mealLog.count({
         where: {
           restorationBatchId: batchId,
           source: "RESTORED_APPROVED",
         },
       });
-      if (existingCommittedCount > 0) {
+      const existingMarCommittedCount =
+        typeof txAny.marLog?.count === "function"
+          ? await txAny.marLog.count({
+              where: {
+                restorationBatchId: batchId,
+                source: "RESTORED_APPROVED",
+              },
+            })
+          : 0;
+
+      if (existingMealCommittedCount > 0 || existingMarCommittedCount > 0) {
         throw new CommitApiError(409, "BATCH_ALREADY_COMMITTED", "This batch has already been committed.");
       }
 
@@ -184,14 +194,6 @@ export async function POST(request: NextRequest) {
         },
         orderBy: { timestamp: "asc" },
       });
-      if (approvedMealCandidates.length === 0) {
-        throw new CommitApiError(
-          409,
-          "NO_APPROVED_CANDIDATES",
-          "No approved meal candidates found for this batch."
-        );
-      }
-
       const invalidMealCandidateIds: string[] = [];
       for (const candidate of approvedMealCandidates) {
         const expectedHash = recomputeMealCandidateHash(candidate);
@@ -218,6 +220,13 @@ export async function POST(request: NextRequest) {
               orderBy: { scheduledAdminTime: "asc" },
             })
           : [];
+      if (approvedMealCandidates.length === 0 && approvedMarCandidates.length === 0) {
+        throw new CommitApiError(
+          409,
+          "NO_APPROVED_CANDIDATES",
+          "No approved meal or MAR candidates found for this batch."
+        );
+      }
 
       const invalidMarCandidateIds: string[] = [];
       for (const candidate of approvedMarCandidates) {
