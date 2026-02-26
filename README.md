@@ -120,6 +120,70 @@ npx prisma validate
 npx prisma migrate status
 ```
 
+## Netlify Deployment
+
+### Prerequisites
+
+1. PostgreSQL database instance (Supabase, AWS RDS, Railway, Neon, etc.)
+2. GitHub repository pushed to main branch
+3. Netlify account connected to GitHub
+
+### Environment Variables
+
+Set these in Netlify Dashboard (Settings > Build & Deploy > Environment):
+
+```
+DATABASE_URL=postgresql://user:password@host:port/dbname?schema=public
+```
+
+### Build Context
+
+**Preview/branch deploys:** Run `npm run build` only (no database migrations)
+
+**Production deploy:** Run `npm run build && npm run db:migrate:deploy` (build + migrate)
+
+Migrations run only on production deploys to avoid breaking preview environments. See `netlify.toml` for context config.
+
+### Deployment Steps
+
+**Via Netlify UI:**
+
+1. Go to [netlify.com](https://netlify.com)
+2. Click "New site from Git" > Connect GitHub > Select `gUBII/chartgen`
+3. Build command auto-fills to `npm run build`
+4. Publish directory: `.next`
+5. Click Deploy
+6. After deploy, go Settings > Build & Deploy > Environment
+7. Add `DATABASE_URL` environment variable
+8. Trigger production redeploy via Deploys tab
+9. Check logs for "prisma migrate deploy" in production build
+
+**Via Netlify CLI:**
+
+```bash
+npm install -g netlify-cli
+netlify login
+netlify env:set DATABASE_URL "postgresql://user:password@host:port/dbname?schema=public"
+netlify deploy --prod
+```
+
+### Verification
+
+After successful production deploy:
+
+1. Check Netlify deploy logs for "prisma migrate deploy" completion in production context
+2. Visit deployed site (e.g., `https://chartgen.netlify.app`)
+3. Test `/mar` endpoint: Generate and download PDF
+4. Test `/restoration` endpoint: Verify database writes
+5. Monitor Netlify function logs for errors
+
+### Rollback
+
+If deployment fails:
+- Re-run `netlify deploy --prod` with corrected DATABASE_URL
+- Check PostgreSQL connectivity and permissions
+- Verify migrations ran successfully via `npx prisma migrate status`
+
 ## API Smoke Examples
 
 ### Meal preview -> approve -> commit

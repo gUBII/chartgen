@@ -8,6 +8,7 @@
     "test:governance": "node scripts/test-approval-governance.mjs",
     "dev": "next dev",
     "build": "next build",
+    "db:migrate:deploy": "prisma migrate deploy",
     "start": "next start",
     "lint": "next lint"
   },
