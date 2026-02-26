@@ -1,64 +1,167 @@
 # Operations Runbook
 
-## 1) Relevant Processes and Ports
+Last updated: 2026-02-26
 
-### Check active app/database processes
+## 1) Process and Port Checks
+
 ```bash
 ps aux | rg -i "next dev|next start|node .*next|turbopack" | rg -v rg
-lsof -nP -iTCP -sTCP:LISTEN | rg "3000|3001|4000|5432"
-brew services list | rg -i "postgres|mysql"
+lsof -nP -iTCP -sTCP:LISTEN | rg "3000|4000|5432"
+brew services list | rg -i "postgres"
 ```
 
-### Close all app server processes (fresh start)
-```bash
-pkill -f "/Users/moofasa/chartgen/node_modules/.bin/next dev" || true
-pkill -f "next start -p 4000" || true
-```
+## 2) Start/Stop App
 
-## 2) Fresh Build Procedure
-
-```bash
-cd /Users/moofasa/chartgen
-npm run build
-```
-
-## 3) Fresh Runtime Procedure
+### Dev mode
 
 ```bash
 cd /Users/moofasa/chartgen
 npm run dev
 ```
 
-## 4) Database Health Checks
+### Production start mode (after build)
 
 ```bash
-brew services list | rg postgresql@16
-cd /Users/moofasa/chartgen && npx prisma migrate status
-cd /Users/moofasa/chartgen && npx prisma db seed
+cd /Users/moofasa/chartgen
+npm run build
+npm run start -- -p 4000
 ```
 
-## 5) Common Errors and Fixes
+### Stop app servers
 
-### Error: `Can't reach database server at localhost:5432`
-- Cause: PostgreSQL service is down or `.env` is wrong.
-- Fix:
-  1. `brew services start postgresql@16`
-  2. Verify `.env` `DATABASE_URL`
-  3. Re-run `npx prisma migrate status`
+```bash
+pkill -f "/Users/moofasa/chartgen/node_modules/.bin/next dev" || true
+pkill -f "next start -p 4000" || true
+```
 
-### Error: `DATABASE_UNAVAILABLE` from preview/commit
-- Cause: Prisma client cannot connect to DB.
-- Fix:
-  1. Confirm DB port listening on `5432`
-  2. Restart dev server after `.env` changes
+## 3) Database Health
 
-### Error: no preview data after generate
-- Cause: missing seed records.
-- Fix:
-  1. `npx prisma db seed`
-  2. Use seeded IDs in UI.
+```bash
+cd /Users/moofasa/chartgen
+npx prisma validate
+npx prisma migrate status
+```
 
-## 6) Test IDs (Current Local)
+If local DB was reset:
 
-- Participant ID: `112334`
-- Supervisor Staff ID: `32213`
+```bash
+cd /Users/moofasa/chartgen
+npx prisma migrate dev
+npx prisma generate
+npx prisma db seed
+```
+
+## 4) Smoke Test Checklist
+
+### Meal workflow
+
+1. `POST /api/engine/preview`
+2. `PATCH /api/engine/preview` with `approveAll=true`
+3. `POST /api/engine/commit`
+
+Expected:
+
+- preview returns `ok: true` + `batchId`
+- approve returns `approvedCount > 0`
+- commit returns `mealCommitted >= 0`
+
+### MAR workflow
+
+1. `POST /api/engine/mar-preview`
+2. `PATCH /api/engine/mar-preview` with `approveAll=true`
+3. `POST /api/engine/commit`
+
+Expected:
+
+- preview returns `ok: true` + `batchId`
+- approve returns `approvedCount > 0`
+- commit returns `marCommitted >= 0` (MAR-only batch is valid)
+
+## 5) Governance Error Handling
+
+### `FORBIDDEN_ROLE` during `approveAll`
+
+Cause:
+
+- `actorStaffId` exists but role is not `SUPERVISOR` or `CLINICAL_LEAD`
+
+Fix:
+
+- use supervisor/clinical lead staff ID
+
+### `SELF_APPROVAL_FORBIDDEN` during `approveAll`
+
+Cause:
+
+- actor is same staff member as batch generator (`requestedByStaffId`)
+
+Fix:
+
+- use a different elevated reviewer
+
+### `ACTOR_NOT_FOUND`
+
+Cause:
+
+- `actorStaffId` has no matching `Staff` row
+
+Fix:
+
+- create or use a valid staff record
+
+## 6) Commit Error Handling
+
+### `NO_APPROVED_CANDIDATES`
+
+Cause:
+
+- batch has no approved meal or MAR candidates
+
+Fix:
+
+- run `approveAll` first for that batch
+
+### `BATCH_ALREADY_COMMITTED`
+
+Cause:
+
+- ledger rows already written for that batch (`source = RESTORED_APPROVED`)
+
+Fix:
+
+- do not re-commit the same batch; generate a new batch
+
+### `PROVENANCE_HASH_MISMATCH`
+
+Cause:
+
+- candidate data changed without matching hash recomputation
+
+Fix:
+
+- re-save candidate through supported PATCH route before commit
+
+### `DATABASE_UNAVAILABLE`
+
+Cause:
+
+- database unreachable from Prisma client
+
+Fix:
+
+1. confirm PostgreSQL service is running
+2. verify `DATABASE_URL` in `.env`
+3. restart app after env changes
+
+## 7) Seed Baseline IDs
+
+From `prisma/seed.cjs`:
+
+- Supervisor: `32213`
+- Participant: `112334`
+
+## 8) Testing Reality
+
+- `npm test` is currently a placeholder script and exits with failure by design.
+- Use build + Prisma checks + API smoke tests as current quality gate.
+- See `src/docs/QUALITY_AND_TESTING.md` for next steps to wire automated tests.

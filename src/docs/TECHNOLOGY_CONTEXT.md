@@ -1,38 +1,65 @@
-# Technology Context (Phase 1)
+# Technology Context
 
-## Core Stack
+Last updated: 2026-02-26
 
-1. Next.js (App Router) with TypeScript
-Purpose: fast UI development for support-worker workflows, typed server/client boundaries, and API route support.
+## 1) Core Stack
 
-2. Prisma ORM with PostgreSQL
-Purpose: strongly typed database access, migration discipline, and relational modeling for participants, staff, meals, and MAR logs.
+### Runtime and framework
 
-3. Validation Layer (`src/lib/validation`)
-Purpose: enforce IDDSI ranges and clinical safety rules in code before persistence.
+- Next.js 16 (App Router)
+- React 19
+- TypeScript 5.9
 
-4. Restoration Services (`src/services/restoration`)
-Purpose: generate provisional reconstruction candidates for disaster recovery only, with supervisor-gated promotion.
+### Data layer
 
-## Compliance-Driven Design Principles
+- PostgreSQL 16
+- Prisma 6.17.1
 
-1. Explicit provenance
-Every reconstructed candidate must carry a source marker, batch id, generator identity, and hash.
+### Styling
 
-2. Separation of duties
-The person generating restored candidates should not be the final approver by default.
+- Tailwind CSS v4 + PostCSS
 
-3. Immutable traceability
-Promotions from candidate to production should emit append-only audit events.
+## 2) Why This Stack Fits This Problem
 
-4. Safety-first validation
-Clinical edge cases (swallowing risk, refusals, omissions, deviations) should force structured reasons.
+### Strongly typed workflow boundaries
 
-5. Data minimization and access control
-Only authorized users should see participant data, and sensitive fields should be masked in non-clinical views/logs.
+TypeScript + Prisma reduce schema/route drift in an audit-sensitive domain where status fields and hash inputs must remain consistent.
 
-## Why This Matters for NDIS Audits
+### Transactional integrity
 
-- Supports quality and safety expectations in provider obligations.
-- Improves evidence quality during incident reviews and external audits.
-- Reduces risk of undocumented deviations, unverified signatures, and unexplained restoration artifacts.
+Prisma transactions are used for commit paths to avoid partial writes between candidate rows, ledger rows, and audit events.
+
+### Operational simplicity
+
+Next.js App Router keeps UI and API routes in one codebase, reducing integration complexity for small teams.
+
+## 3) Compliance-Oriented Design Choices in Current Code
+
+- candidate staging tables separate restoration data from production logs
+- explicit provenance hash generation and commit-time verification
+- role-gated commit path (`SUPERVISOR`/`CLINICAL_LEAD`)
+- approval governance in `approveAll` including segregation of duties
+- append-only style audit events with previous-hash linkage
+
+## 4) Current Constraints and Tradeoffs
+
+### Testing
+
+- automated tests are not yet wired into `npm test`
+- quality gate is currently build + Prisma checks + runtime smoke tests
+
+### Auth architecture
+
+- endpoint authorization is implemented via DB role checks on provided staff IDs
+- centralized auth middleware is not yet in place
+
+### Generation model maturity
+
+- realism model includes day-level coherence and phrase variation
+- participant-specific personalization from historical data is still pending
+
+## 5) Near-Term Technical Priorities
+
+1. Wire a real API test harness (Vitest or Jest) with DB fixtures.
+2. Add centralized auth and request identity propagation.
+3. Introduce personalization loop for participant baseline behavior.

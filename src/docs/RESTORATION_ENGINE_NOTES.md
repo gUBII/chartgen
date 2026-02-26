@@ -1,32 +1,103 @@
-# Restoration Engine Notes (Phase 1)
+# Restoration Engine Notes
+
+Last updated: 2026-02-26
 
 ## Objective
 
-Generate clinically plausible restoration candidates for disaster recovery workflows while enforcing strict audit controls.
+Generate clinically plausible reconstruction candidates for meal and medication charts while preserving strong provenance and review controls.
 
-## Distribution Model
+Primary implementation:
 
-1. Outcome band
-- 90% `SUCCESS`
-- 10% `VARIANCE`
+- `src/services/restoration/restorationEngine.ts`
+- `src/services/restoration/temporalRealism.ts`
 
-2. Meal outcomes
-- Success band is weighted toward `ONE_HUNDRED` and `SEVENTY_FIVE`.
-- Variance band introduces controlled cases such as refusal, low appetite, or swallowing concern.
+## 1) Realism Model (Current)
 
-3. Medication outcomes
-- Success band defaults to `ADMINISTERED`.
-- Variance band includes refusal/clinical hold and occasional delayed administration notes.
+### Day-level coherence
 
-## Safety Controls
+The engine derives a day profile from:
 
-1. Every record from the engine is labeled `RESTORED_CANDIDATE`.
-2. Every record is created with `PENDING_SUPERVISOR_REVIEW`.
-3. Every record includes `restorationBatchId`, generator staff id, timestamp, and `provenanceHash`.
-4. Promotion to production ledger should be blocked unless review status is `APPROVED`.
+- participant ID
+- restoration batch ID
+- local date key
 
-## Implementation
+Day classes:
 
-- `/Users/moofasa/chartgen/src/services/restoration/temporalRealism.ts`
-- `/Users/moofasa/chartgen/src/services/restoration/restorationEngine.ts`
-- `/Users/moofasa/chartgen/src/services/restoration/reviewWorkflow.ts`
+- `CHALLENGING`
+- `STABLE`
+- `STRONG`
+
+This drives per-day behavior so rows from the same day are correlated instead of fully independent random draws.
+
+### Meal outcomes
+
+Meal outcomes are generated with:
+
+- meal-type specific success rates (breakfast/lunch/snack/dinner)
+- day-class modifiers
+- weighted variance scenarios (`LOW_APPETITE`, `PARTICIPANT_REFUSAL`, `SWALLOW_CONCERN`, `TEXTURE_SUBSTITUTION`)
+
+### Amount-to-volume consistency
+
+Volume is derived from `amountEaten` bands so records do not show contradictory combinations.
+
+Examples:
+
+- `REFUSED` -> `volumeMl = 0`
+- `ZERO` -> `volumeMl = 0`
+- higher intake bands map to higher volume multiplier ranges
+
+### MAR outcomes
+
+MAR generation supports three statuses:
+
+- `ADMINISTERED`
+- `REFUSED`
+- `HELD`
+
+Variance scenarios include:
+
+- refusal
+- clinical hold
+- late administration
+
+### Text variation
+
+Deviation/omission/comment text uses phrase pools to reduce repetitive synthetic wording.
+
+## 2) Temporal Realism
+
+`generateTemporalRealism` uses triangular sampling with configurable:
+
+- max early/late windows
+- late bias
+- rounding granularity
+
+Engine behavior now mixes rounding to 1-minute and 5-minute buckets to avoid over-regular patterns.
+
+## 3) Provenance Fields on Generated Candidates
+
+Each generated candidate includes:
+
+- `restorationBatchId`
+- `generatedByStaffId`
+- `generatedAt`
+- `provenanceHash`
+- source marker (`RESTORED_CANDIDATE` in service-layer model)
+
+## 4) Review and Promotion Constraints
+
+Engine output is staging data only.
+
+Promotion to production ledger requires:
+
+1. candidate approval (`approveAll`)
+2. commit role validation
+3. commit-time provenance hash verification
+4. transactional write of logs + audit event
+
+## 5) Current Limitations
+
+- Personalization loop from participant historical baselines is not implemented yet.
+- `reviewWorkflow.ts` exists but API routes currently enforce governance inline.
+- No deterministic seed mode exists for reproducible automated test snapshots.

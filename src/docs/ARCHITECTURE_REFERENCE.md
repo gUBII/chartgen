@@ -1,141 +1,145 @@
 # ChartGen Architecture Reference
 
-## 1) Technology Stack
+Last updated: 2026-02-26
 
-### Runtime and Framework
-- **Next.js 16 (App Router)** for server routes and UI pages.
-- **React 19** for component-driven UI.
-- **TypeScript** for typed API/UI/service logic.
+## 1) System Purpose
 
-### Data Layer
-- **PostgreSQL 16** as the relational data store.
-- **Prisma 6.17.1** as ORM + migration system.
-- **Audit-first schema** (`prisma/schema.prisma`) with candidate staging, ledger logs, and audit events.
+ChartGen reconstructs historical meal and medication charts as reviewed candidates before promotion into production ledger tables.
 
-### Styling and Frontend Build
-- **Tailwind CSS v4** (via `@tailwindcss/postcss`).
-- **PostCSS** integration through `postcss.config.mjs`.
+Design goals:
 
-### Operational Tooling
-- **Homebrew PostgreSQL service** for local DB runtime.
-- Optional **Docker Compose** file (`docker-compose.yml`) included for containerized DB setup.
+- preserve provenance for every reconstructed row
+- enforce human review before ledger promotion
+- support audit traceability through hash verification and audit-event chaining
 
-## 2) Core Functionalities
+## 2) Core Components
 
-### A) Restoration Preview Generation
-- Endpoint: `POST /api/engine/preview`
-- Inputs: `participantId`, `startDate`, `endDate`, optional `generatedByStaffId`
-- Behavior:
-  1. Validates date range and participant.
-  2. Creates `RestorationBatch` in `PENDING`.
-  3. Generates clinically plausible mealtime candidates via `RestorationEngine`.
-  4. Persists `RestoredMealCandidate` rows in `PENDING`.
-  5. Returns `batchId` + candidate rows.
+### UI
 
-### B) Candidate Editing and Approval
-- Endpoint: `PATCH /api/engine/preview`
-- Supports:
-  - Single-row updates (`amountEaten`, `timestamp`) with provenance hash recalculation.
-  - Batch approval (`approveAll`) to mark candidates as `APPROVED`.
-
-### C) Commit to Official Ledger
-- Endpoint: `POST /api/engine/commit`
-- Behavior:
-  1. Enforces reviewer role (`SUPERVISOR` / `CLINICAL_LEAD`).
-  2. Reads approved candidates for a batch.
-  3. Verifies `provenanceHash` integrity before write.
-  4. Writes immutable ledger rows into `MealLog` (`source = RESTORED_APPROVED`).
-  5. Updates batch review state and writes `AuditEvent`.
-  6. Uses Prisma transaction to avoid partial commits.
-
-### D) Supervisor UI
-- Page: `/restoration`
-- Capabilities:
-  - Generate preview by participant/date range.
-  - Inline edit candidate fields.
-  - Save row-level edits.
-  - Commit approved batch to ledger.
-  - Visual yellow highlight for rows with `deviationReason`.
-
-## 3) Data Model (Visual)
-
-```mermaid
-erDiagram
-    PARTICIPANT ||--o{ RESTORATION_BATCH : has
-    STAFF ||--o{ RESTORATION_BATCH : requested_by
-    STAFF ||--o{ RESTORATION_BATCH : reviewed_by
-
-    PARTICIPANT ||--o{ RESTORED_MEAL_CANDIDATE : has
-    STAFF ||--o{ RESTORED_MEAL_CANDIDATE : generated_by
-    STAFF ||--o{ RESTORED_MEAL_CANDIDATE : reviewed_by
-    RESTORATION_BATCH ||--o{ RESTORED_MEAL_CANDIDATE : contains
-
-    PARTICIPANT ||--o{ RESTORED_MAR_CANDIDATE : has
-    STAFF ||--o{ RESTORED_MAR_CANDIDATE : generated_by
-    STAFF ||--o{ RESTORED_MAR_CANDIDATE : reviewed_by
-    RESTORATION_BATCH ||--o{ RESTORED_MAR_CANDIDATE : contains
-
-    PARTICIPANT ||--o{ MEAL_LOG : has
-    STAFF ||--o{ MEAL_LOG : created_by
-    STAFF ||--o{ MEAL_LOG : approved_by
-    RESTORATION_BATCH ||--o{ MEAL_LOG : committed_from
-
-    PARTICIPANT ||--o{ MAR_LOG : has
-    STAFF ||--o{ MAR_LOG : created_by
-    STAFF ||--o{ MAR_LOG : approved_by
-    RESTORATION_BATCH ||--o{ MAR_LOG : committed_from
-
-    STAFF ||--o{ AUDIT_EVENT : actor
-    PARTICIPANT ||--o{ AUDIT_EVENT : scoped_to
-```
-
-## 4) Route Inventory
-
-### Pages
-- `GET /` - home entry page
-- `GET /restoration` - supervisor control center UI
+- `/restoration` - meal preview, editing, approval, commit
+- `/mar` - medication preview, editing, approval, commit
+- shared tab navigation in `src/components/TabNav.tsx`
 
 ### API
-- `POST /api/engine/preview` - generate and persist preview candidates
-- `PATCH /api/engine/preview` - update one candidate OR approve all candidates in batch
-- `POST /api/engine/commit` - commit approved candidates to official ledger
 
-## 5) Route Flow (Visual)
+- `POST /api/engine/preview` - generate meal candidates
+- `PATCH /api/engine/preview` - edit meal candidate or `approveAll`
+- `POST /api/engine/mar-preview` - generate MAR candidates
+- `PATCH /api/engine/mar-preview` - edit MAR candidate or `approveAll`
+- `POST /api/engine/commit` - commit approved candidates into ledger
+
+### Domain Services
+
+- `src/services/restoration/restorationEngine.ts` - generation logic for meal and MAR candidates
+- `src/services/restoration/temporalRealism.ts` - timing variance generation
+- `src/services/restoration/reviewWorkflow.ts` - review policy helpers (not currently wired into API routes)
+
+### Data Layer
+
+- PostgreSQL + Prisma with audit-aware schema in `prisma/schema.prisma`
+- staged candidates: `RestoredMealCandidate`, `RestoredMARCandidate`
+- production ledger: `MealLog`, `MARLog`
+- audit ledger: `AuditEvent`
+
+## 3) End-to-End Flow
 
 ```mermaid
-flowchart TD
-    UI["/restoration UI"] --> GEN["POST /api/engine/preview"]
-    GEN --> CAND["RestoredMealCandidate (PENDING)"]
-    UI --> EDIT["PATCH /api/engine/preview (row edit)"]
-    EDIT --> CAND
-    UI --> APPROVE["PATCH /api/engine/preview (approveAll)"]
-    APPROVE --> CANDAPP["RestoredMealCandidate (APPROVED)"]
-    UI --> COMMIT["POST /api/engine/commit"]
-    COMMIT --> VERIFY["Provenance hash verification"]
-    VERIFY --> LEDGER["MealLog (RESTORED_APPROVED)"]
-    COMMIT --> BATCH["RestorationBatch status update"]
-    COMMIT --> AUDIT["AuditEvent LEDGER_WRITTEN"]
+flowchart LR
+    UI_MEAL["/restoration"] --> PREVIEW_MEAL["POST /api/engine/preview"]
+    UI_MAR["/mar"] --> PREVIEW_MAR["POST /api/engine/mar-preview"]
+
+    PREVIEW_MEAL --> BATCH["RestorationBatch (PENDING)"]
+    PREVIEW_MEAL --> CAND_MEAL["RestoredMealCandidate (PENDING)"]
+    PREVIEW_MAR --> CAND_MAR["RestoredMARCandidate (PENDING)"]
+
+    UI_MEAL --> PATCH_MEAL["PATCH /api/engine/preview"]
+    UI_MAR --> PATCH_MAR["PATCH /api/engine/mar-preview"]
+
+    PATCH_MEAL --> CAND_MEAL
+    PATCH_MAR --> CAND_MAR
+
+    UI_MEAL --> APPROVE_MEAL["PATCH preview (approveAll)"]
+    UI_MAR --> APPROVE_MAR["PATCH mar-preview (approveAll)"]
+
+    APPROVE_MEAL --> CAND_MEAL_APPROVED["Meal candidates APPROVED"]
+    APPROVE_MAR --> CAND_MAR_APPROVED["MAR candidates APPROVED"]
+
+    UI_MEAL --> COMMIT["POST /api/engine/commit"]
+    UI_MAR --> COMMIT
+
+    COMMIT --> VERIFY["Recompute + verify provenance hashes"]
+    VERIFY --> MEAL_LOG["MealLog (RESTORED_APPROVED)"]
+    VERIFY --> MAR_LOG["MARLog (RESTORED_APPROVED)"]
+    COMMIT --> AUDIT["AuditEvent: LEDGER_WRITTEN"]
 ```
 
-## 6) Security and Integrity Controls
+## 4) Governance Rules (Current Implementation)
 
-- Role-gated commit path for elevated staff only.
-- Candidate-to-ledger write guarded by hash verification.
-- Transactional commit to maintain consistency.
-- Batch-level anti-duplication guard for committed rows.
-- Error handling distinguishes validation errors vs DB availability issues.
+### `approveAll` rules in both preview routes
 
-## 7) Local Environment Requirements
+- `actorStaffId` is required
+- actor must exist in `Staff`
+- actor role must be `SUPERVISOR` or `CLINICAL_LEAD`
+- actor cannot approve a batch they generated (`requestedByStaffId`)
 
-- Running PostgreSQL service on `localhost:5432`.
-- `DATABASE_URL` set in `.env`.
-- Prisma migrated and seeded:
-  1. `npx prisma migrate dev`
-  2. `npx prisma db seed`
+Error codes used:
 
-## 8) Seeded IDs for Current Local Setup
+- `MISSING_FIELD`
+- `ACTOR_NOT_FOUND`
+- `FORBIDDEN_ROLE`
+- `BATCH_NOT_FOUND`
+- `SELF_APPROVAL_FORBIDDEN`
 
-- Staff (Supervisor): `32213`
-- Participant: `112334`
+### Commit rules
 
-These IDs are used for immediate testing from `/restoration`.
+- `actorStaffId` required and role-gated (`SUPERVISOR`/`CLINICAL_LEAD`)
+- batch must exist
+- duplicate commit blocked if batch already has `RESTORED_APPROVED` ledger rows
+- at least one approved candidate required (meal and/or MAR)
+- all candidate hashes must match recomputed values
+- transaction wraps all writes
+
+## 5) Data Model Notes
+
+### Candidate status model
+
+- Candidate rows start as `PENDING`
+- `approveAll` marks candidates `APPROVED`
+- batch status is also `CandidateStatus`; commit sets batch status to `APPROVED`
+
+### MAR status model
+
+`MARStatus` enum currently includes:
+
+- `ADMINISTERED`
+- `REFUSED`
+- `HELD`
+
+## 6) Commit Transaction Sequence
+
+```mermaid
+sequenceDiagram
+    participant UI as UI
+    participant API as /api/engine/commit
+    participant DB as PostgreSQL (Prisma TX)
+
+    UI->>API: POST {batchId, actorStaffId}
+    API->>DB: Validate actor + elevated role
+    API->>DB: Read batch
+    API->>DB: Check duplicate commit guard
+    API->>DB: Read approved meal candidates
+    API->>DB: Read approved MAR candidates
+    API->>API: Recompute/verify candidate hashes
+    API->>DB: Insert MealLog rows (if any)
+    API->>DB: Insert MARLog rows (if any)
+    API->>DB: Update RestorationBatch reviewer/status
+    API->>DB: Insert AuditEvent(previousHash linked)
+    DB-->>API: Commit transaction
+    API-->>UI: {mealCommitted, marCommitted, auditEventId}
+```
+
+## 7) Known Architectural Gaps
+
+- API testing is not yet wired to a runnable test framework.
+- Authentication middleware is not centralized; endpoints rely on request-provided staff IDs plus DB role checks.
+- Personalization of generation priors from historical participant data is not implemented yet.
