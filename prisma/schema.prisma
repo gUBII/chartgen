@@ -37,6 +37,8 @@ enum MARStatus {
   ADMINISTERED
   REFUSED
   HELD
+  LATE
+  NOT_ADMINISTERED
 }
 
 enum StaffRole {
@@ -48,6 +50,7 @@ enum StaffRole {
 enum EntrySource {
   LIVE
   RESTORED_APPROVED
+  AUDIT_RECOVERY
 }
 
 enum CandidateStatus {
