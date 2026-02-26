@@ -71,6 +71,22 @@ const getErrorMessage = (error?: ApiError): string => {
   return `${error.code}: ${error.message}`;
 };
 
+const getFilenameFromDisposition = (disposition: string | null, fallback: string): string => {
+  if (!disposition) {
+    return fallback;
+  }
+  const filenameStarMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (filenameStarMatch?.[1]) {
+    try {
+      return decodeURIComponent(filenameStarMatch[1]);
+    } catch {
+      return fallback;
+    }
+  }
+  const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return filenameMatch?.[1] ?? fallback;
+};
+
 const emptyMedication = (): MedicationInput => ({
   name: "",
   dosage: "",
@@ -123,6 +139,7 @@ export default function MARPage() {
   const [errorText, setErrorText] = useState("");
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingCommit, setLoadingCommit] = useState(false);
+  const [loadingPdf, setLoadingPdf] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
 
   // Keyboard shortcut: Ctrl+S to save first dirty row
@@ -283,6 +300,55 @@ export default function MARPage() {
       setStatusText("Commit failed.");
     } finally {
       setLoadingCommit(false);
+    }
+  };
+
+  const onDownloadPDF = async () => {
+    if (!batchId) {
+      setErrorText("No batch to download. Generate MAR preview first.");
+      return;
+    }
+
+    setErrorText("");
+    setStatusText("Downloading PDF...");
+    setLoadingPdf(true);
+
+    try {
+      const response = await fetch("/api/engine/export-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batchId,
+          chartType: "MAR",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(getErrorMessage(errorPayload?.error));
+      }
+
+      const blob = await response.blob();
+      const filename = getFilenameFromDisposition(
+        response.headers.get("content-disposition"),
+        `mar-batch-${batchId}.pdf`
+      );
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setStatusText(`PDF downloaded: ${filename}`);
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : "Failed to download PDF.");
+      setStatusText("PDF download failed.");
+    } finally {
+      setLoadingPdf(false);
     }
   };
 
@@ -598,7 +664,15 @@ export default function MARPage() {
         </table>
       </section>
 
-      <section className="mt-6 flex justify-end">
+      <section className="mt-6 flex justify-end gap-2">
+        <button
+          type="button"
+          className="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          onClick={onDownloadPDF}
+          disabled={loadingPdf || !batchId || rows.length === 0}
+        >
+          {loadingPdf ? "Downloading..." : "Download PDF"}
+        </button>
         <button
           type="button"
           className="rounded-md bg-green-700 px-4 py-2 text-white disabled:opacity-50"

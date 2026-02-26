@@ -68,6 +68,22 @@ const getErrorMessage = (error?: ApiError): string => {
   return `${error.code}: ${error.message}`;
 };
 
+const getFilenameFromDisposition = (disposition: string | null, fallback: string): string => {
+  if (!disposition) {
+    return fallback;
+  }
+  const filenameStarMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (filenameStarMatch?.[1]) {
+    try {
+      return decodeURIComponent(filenameStarMatch[1]);
+    } catch {
+      return fallback;
+    }
+  }
+  const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+  return filenameMatch?.[1] ?? fallback;
+};
+
 export default function RestorationPage() {
   const today = useMemo(() => new Date(), []);
   const nextWeek = useMemo(() => {
@@ -85,6 +101,7 @@ export default function RestorationPage() {
   const [statusText, setStatusText] = useState("Ready.");
   const [errorText, setErrorText] = useState("");
   const [loadingGenerate, setLoadingGenerate] = useState(false);
+  const [loadingPdf, setLoadingPdf] = useState(false);
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
 
@@ -231,6 +248,54 @@ export default function RestorationPage() {
     }
   };
 
+  const onDownloadPdf = async () => {
+    if (!batchId) {
+      setErrorText("No batch to export. Generate preview first.");
+      return;
+    }
+
+    setErrorText("");
+    setStatusText("Generating PDF...");
+    setLoadingPdf(true);
+
+    try {
+      const response = await fetch("/api/engine/export-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batchId,
+          chartType: "MEAL",
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: ApiError };
+        throw new Error(getErrorMessage(payload.error));
+      }
+
+      const blob = await response.blob();
+      const fallbackName = `meal-batch-${batchId}.pdf`;
+      const filename = getFilenameFromDisposition(response.headers.get("content-disposition"), fallbackName);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+
+      setStatusText(`PDF downloaded: ${filename}`);
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : "Failed to download PDF.");
+      setStatusText("PDF export failed.");
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
+  const hasDirtyRows = rows.some((row) => row.dirty);
+
   return (
     <main className="mx-auto max-w-7xl p-6">
       <h1 className="text-3xl font-semibold">Mealtime Chartgen</h1>
@@ -366,7 +431,16 @@ export default function RestorationPage() {
         </table>
       </section>
 
-      <section className="mt-6 flex justify-end">
+      <section className="mt-6 flex items-center justify-between">
+        <button
+          type="button"
+          className="rounded-md border border-slate-300 px-4 py-2 text-slate-100 disabled:opacity-50"
+          onClick={onDownloadPdf}
+          disabled={loadingPdf || rows.length === 0 || !batchId || hasDirtyRows}
+          title={hasDirtyRows ? "Save edited rows before exporting PDF." : undefined}
+        >
+          {loadingPdf ? "Preparing PDF..." : "Download PDF"}
+        </button>
         <button
           type="button"
           className="rounded-md bg-green-700 px-4 py-2 text-white disabled:opacity-50"
