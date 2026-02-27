@@ -30,13 +30,13 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="futuristic-panel futuristic-grid relative p-8 sm:p-12 mb-8">
         <p className="landing-mono text-xs text-cyan-100/80">
-          Clinical Workflow Command Deck
+          GoodwillCare Database
         </p>
         <h2 className="landing-mono mt-3 max-w-4xl text-4xl leading-[1.05] text-cyan-50 sm:text-6xl">
-          Chartgen
+          GoodwillCare
         </h2>
         <p className="text-muted mt-4 max-w-2xl text-sm sm:text-base">
-          Future-forward chart generation for meal intelligence, medication
+          Healthcare data intelligence platform for meal intelligence, medication
           administration, and KPI observability. Built by{" "}
           <a
             href="https://github.com/gUBII"
@@ -148,7 +148,7 @@ export default function HomePage() {
           <h3 className="landing-mono mt-2 text-3xl text-cyan-50">Who is gUBII?</h3>
           <p className="text-muted mt-4 text-sm leading-relaxed">
             gUBII is a clinical data engineer passionate about building tools that transform
-            healthcare workflows. Chartgen represents years of research into patient safety,
+            healthcare workflows. GoodwillCare represents years of research into patient safety,
             audit integrity, and operational excellence in clinical settings.
           </p>
           <p className="text-muted mt-4 text-sm leading-relaxed">
@@ -184,12 +184,12 @@ export default function HomePage() {
             <p className="landing-mono text-xs text-emerald-300">Support the Project</p>
             <h3 className="landing-mono mt-2 text-2xl text-emerald-50">Help gUBII Continue Building</h3>
             <p className="text-muted mt-3 text-sm max-w-md">
-              Like Chartgen? Your support helps fund future development, maintenance,
+              Like GoodwillCare? Your support helps fund future development, maintenance,
               and clinical integration improvements.
             </p>
           </div>
           <a
-            href="https://wa.me/61423016859?text=I%27d%20like%20to%20donate%20to%20support%20Chartgen%20development"
+            href="https://wa.me/61423016859?text=I%27d%20like%20to%20donate%20to%20support%20GoodwillCare%20development"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-full border border-emerald-200/50 bg-emerald-400/20 px-6 py-3 text-sm font-semibold text-emerald-50 hover:bg-emerald-400/35 transition whitespace-nowrap"

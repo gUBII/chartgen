@@ -16,6 +16,10 @@ const bodyFont = Space_Grotesk({
   variable: "--font-body",
 });
 
+export const metadata = {
+  title: "GoodwillCare",
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
@@ -25,10 +29,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="mx-auto max-w-7xl px-6 pt-6 pb-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="brand-kicker">Adaptive Clinical Intelligence</p>
+                  <p className="brand-kicker">GoodwillCare Database</p>
                   <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">
                     <Link href="/" className="brand-link">
-                      Chartgen
+                      GoodwillCare
                     </Link>
                   </h1>
                 </div>
