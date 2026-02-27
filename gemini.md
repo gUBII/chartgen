@@ -91,3 +91,21 @@ Risks:
 - High latency on direct database connections (691ms) exceeds the 600ms threshold.
 Next:
 - Monitor production database latency and consider adjusting threshold or checking Neon region proximity.
+
+---
+
+RESULT [E1F5B7F0-9705-490F-B80B-7583B917983E]
+Status: PASS
+Observations:
+- Netlify production DATABASE_URL correctly targets the `ep-rough-recipe-ai1bst00-pooler` endpoint.
+- Netlify production DIRECT_URL correctly targets the `ep-rough-recipe-ai1bst00` direct endpoint.
+- Login to production with role `full` and password `free` returns HTTP 200 and issues a `gwc_session` cookie.
+- Production `db-health` endpoint returns a `healthy` status with successful connections to both pooled and direct targets. Both latencies are very fast (11ms and 63ms).
+Evidence:
+- `netlify env:get DATABASE_URL`: `postgresql://neondb_owner:npg_mAgpq3ic5Bbr@ep-rough-recipe-ai1bst00-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+- `curl /api/auth/login`: `HTTP/2 200`, `set-cookie: gwc_session=...`
+- `curl /api/ops/db-health`: `{"status":"healthy","checks":{"pooled":{"ok":true,"latencyMs":11},"direct":{"ok":true,"latencyMs":63}}}`
+Risks:
+- None identified. Database latency is currently very low and well within the healthy threshold.
+Next:
+- Stand by for further instructions in gemini.md.
