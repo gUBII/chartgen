@@ -4,6 +4,7 @@ interface SessionPayload {
   role: SessionRole;
   iat: number;
   exp: number;
+  identity?: string;
 }
 
 const SECRET = process.env.SESSION_SECRET || "dev-secret-key-change-in-production";
@@ -68,12 +69,13 @@ async function importSigningKey() {
 /**
  * Sign a session token using HMAC
  */
-export async function signSession(role: SessionRole): Promise<string> {
+export async function signSession(role: SessionRole, identity?: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     role,
     iat: now,
     exp: now + SESSION_TTL_SEC,
+    ...(identity && { identity }),
   };
 
   const payloadBytes = encoder.encode(JSON.stringify(payload));

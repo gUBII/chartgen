@@ -7,7 +7,8 @@ import { useAuth } from "../../components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { refreshRole, applyRole } = useAuth();
+  const { refreshRole } = useAuth();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,12 +22,15 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, role: "full" }),
+        body: JSON.stringify({
+          ...(username && { username }),
+          password,
+          role: "full",
+        }),
       });
 
       if (response.ok) {
-        applyRole("full");
-        void refreshRole();
+        await refreshRole();
         router.push("/");
         return;
       }
@@ -52,8 +56,7 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        applyRole("guest");
-        void refreshRole();
+        await refreshRole();
         router.push("/");
         return;
       }
@@ -85,18 +88,34 @@ export default function LoginPage() {
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block text-xs font-semibold uppercase tracking-widest text-cyan-200" htmlFor="password">
-            Access Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter access password"
-            className="w-full rounded-lg border border-cyan-500/35 bg-slate-900/70 px-4 py-3 text-cyan-50 placeholder-slate-500 focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/30"
-            disabled={isLoading}
-          />
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest text-cyan-200" htmlFor="username">
+              Username (Optional)
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username for identity-based login"
+              className="w-full rounded-lg border border-cyan-500/35 bg-slate-900/70 px-4 py-3 text-cyan-50 placeholder-slate-500 focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/30"
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest text-cyan-200" htmlFor="password">
+              Access Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter access password"
+              className="w-full rounded-lg border border-cyan-500/35 bg-slate-900/70 px-4 py-3 text-cyan-50 placeholder-slate-500 focus:outline-none focus:border-cyan-400/60 focus:ring-1 focus:ring-cyan-400/30"
+              disabled={isLoading}
+            />
+          </div>
           <button
             type="submit"
             disabled={isLoading}

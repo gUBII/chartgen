@@ -1,53 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signSession } from "../../../../lib/session";
+import {
+  validateFullUserCredentials,
+  validateGuestAccess,
+} from "../../../../lib/auth-credentials";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { password, role } = body;
+    const { username, password, role } = body;
 
     // Validate role is either "full" or "guest"
     if (role !== "full" && role !== "guest") {
-      return NextResponse.json(
-        { error: "Invalid role" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    // For "full" role, verify password
+    // For "full" role, verify credentials
     if (role === "full") {
-      const sitePassword = process.env.SITE_PASSWORD;
-      if (!sitePassword) {
+      const authResult = validateFullUserCredentials(
+        username || null,
+        password || null
+      );
+      if (!authResult.valid) {
         return NextResponse.json(
-          { error: "SITE_PASSWORD is not configured" },
+          { error: authResult.error || "Invalid credentials" },
+          { status: 401 }
+        );
+      }
+
+      // Sign session with optional identity
+      const token = await signSession("full", authResult.identity);
+
+      const response = NextResponse.json({ success: true });
+      response.cookies.set("gwc_session", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      return response;
+    }
+
+    // For "guest" role, no credentials needed
+    if (role === "guest") {
+      if (!validateGuestAccess()) {
+        return NextResponse.json(
+          { error: "Guest access unavailable" },
           { status: 503 }
         );
       }
 
-      if (!password || password !== sitePassword) {
-        return NextResponse.json(
-          { error: "Invalid password" },
-          { status: 401 }
-        );
-      }
+      const token = await signSession("guest");
+
+      const response = NextResponse.json({ success: true });
+      response.cookies.set("gwc_session", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      return response;
     }
 
-    // Sign the session token
-    const token = await signSession(role);
-
-    // Create response with redirect
-    const response = NextResponse.json({ success: true });
-
-    // Set httpOnly, secure cookie with 7-day expiration
-    response.cookies.set("gwc_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      path: "/",
-    });
-
-    return response;
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
