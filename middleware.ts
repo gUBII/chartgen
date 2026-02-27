@@ -5,13 +5,13 @@ import { verifySession, getSessionCookie } from "./src/lib/session";
 const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness", "/whats-new"];
 const publicPrefixRoutes = ["/_next", "/api/auth"];
 const staticRoutes = ["/favicon.ico", "/gubii-profile.png"];
-const fullAccessApiPrefixes = ["/api/ops"];
+const fullAccessApiPrefixes = ["/api/ops", "/api/audit"];
 
 // Routes that only allow guests to preview (read-only)
 const guestPreviewRoutes = ["/mar", "/mealtime-chartgen"];
 
 // Routes that require authentication
-const protectedRoutes = ["/restoration", "/kpigen", "/uat"];
+const protectedRoutes = ["/restoration", "/kpigen", "/uat", "/audit-engine", "/audit-explorer"];
 
 const staticExtensionRegex = /\.(png|jpg|jpeg|gif|svg|webp)$/i;
 

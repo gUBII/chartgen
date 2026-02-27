@@ -15,20 +15,20 @@ export function TabNav() {
   const isMarActive = pathname.startsWith("/mar");
   const isMealtimeActive =
     pathname.startsWith("/mealtime-chartgen") || pathname.startsWith("/restoration");
-  const isKpiActive = pathname.startsWith("/kpigen");
-  const isUatActive = pathname.startsWith("/uat");
+  const isAuditEngineActive = pathname.startsWith("/audit-engine");
+  const isAuditExplorerActive = pathname.startsWith("/audit-explorer");
   const isFullUser = userRole === "full";
   const restrictedView = isRoleResolved && userRole !== "full";
-  const kpiHref = isFullUser || !isRoleResolved ? "/kpigen" : "/login";
-  const uatHref = isFullUser || !isRoleResolved ? "/uat" : "/login";
+  const auditEngineHref = isFullUser || !isRoleResolved ? "/audit-engine" : "/login";
+  const auditExplorerHref = isFullUser || !isRoleResolved ? "/audit-explorer" : "/login";
   const activeModuleLabel = isMarActive
     ? "MAR"
     : isMealtimeActive
       ? "Mealtime"
-      : isKpiActive
-        ? "Traceability"
-        : isUatActive
-          ? "Integrity"
+      : isAuditEngineActive
+        ? "Audit Engine"
+        : isAuditExplorerActive
+          ? "Audit Explorer"
           : "Modules";
 
   useEffect(() => {
@@ -90,27 +90,27 @@ export function TabNav() {
                   )}
                 </Link>
                 <Link
-                  href={kpiHref}
+                  href={auditEngineHref}
                   aria-disabled={restrictedView}
-                  className={`tab-link ${isKpiActive ? "tab-link-active" : ""} ${
+                  className={`tab-link ${isAuditEngineActive ? "tab-link-active" : ""} ${
                     restrictedView ? "tab-link-login-required" : ""
                   }`}
                 >
                   <span className="tab-dot" aria-hidden />
-                  Audit Traceability Layer
+                  Audit Engine
                   {restrictedView && (
                     <span className="ml-2 text-xs text-orange-300 font-normal">(login required)</span>
                   )}
                 </Link>
                 <Link
-                  href={uatHref}
+                  href={auditExplorerHref}
                   aria-disabled={restrictedView}
-                  className={`tab-link ${isUatActive ? "tab-link-active" : ""} ${
+                  className={`tab-link ${isAuditExplorerActive ? "tab-link-active" : ""} ${
                     restrictedView ? "tab-link-login-required" : ""
                   }`}
                 >
                   <span className="tab-dot" aria-hidden />
-                  Integrity Checks Engine
+                  Audit Explorer
                   {restrictedView && (
                     <span className="ml-2 text-xs text-orange-300 font-normal">(login required)</span>
                   )}
