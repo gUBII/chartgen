@@ -106,9 +106,52 @@ body::before {
   position: relative;
 }
 
+.tab-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.tab-list-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.tab-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.62rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(133, 235, 255, 0.6);
+  background: rgba(6, 13, 31, 0.72);
+  color: #d5ebff;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.tab-list-wrap {
+  display: none;
+}
+
+.tab-list-wrap-open {
+  display: block;
+}
+
 .tab-list {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.7rem;
 }
 
@@ -162,6 +205,26 @@ body::before {
   border-radius: 999px;
   background: currentColor;
   opacity: 0.65;
+}
+
+@media (min-width: 640px) {
+  .tab-shell {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .tab-list-panel {
+    flex: 1;
+  }
+
+  .tab-list-wrap {
+    display: block;
+  }
+
+  .tab-actions {
+    margin-left: 1rem;
+  }
 }
 
 .futuristic-panel {
