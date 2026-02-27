@@ -60,11 +60,13 @@ function fromBase64Url(base64Url: string): Uint8Array {
   return decodeBase64(withPadding);
 }
 
-function bytesToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
+function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
 }
 
 async function importSigningKey() {
@@ -171,13 +173,14 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
     }
 
     const key = await importSigningKey();
-    const signatureBytes = fromBase64Url(signature);
-    const isValidSignature = await crypto.subtle.verify(
+    const providedSignatureBytes = fromBase64Url(signature);
+    const expectedSignatureBuffer = await crypto.subtle.sign(
       "HMAC",
       key,
-      bytesToArrayBuffer(signatureBytes),
       encoder.encode(payloadB64),
     );
+    const expectedSignatureBytes = new Uint8Array(expectedSignatureBuffer);
+    const isValidSignature = timingSafeEqualBytes(expectedSignatureBytes, providedSignatureBytes);
 
     if (!isValidSignature) {
       return null;
