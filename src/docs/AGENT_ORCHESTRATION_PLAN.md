@@ -287,3 +287,25 @@ Goal: maximize delivery per token while keeping reliability high.
 3. Ops reliability guardrails:
    - continue pooled/direct latency trend checks
    - define alert thresholds and reporting cadence
+
+## 15) Result Compliance Guard
+
+Purpose: automatically reject malformed agent `RESULT` payloads before they are accepted into workflow truth.
+
+Guard command:
+
+```bash
+npm run agent:check:result -- /tmp/codex_claude_handshake.log <UUID>
+npm run agent:check:result -- /tmp/codex_gemini_handshake.log <UUID>
+```
+
+Interpretation:
+
+- exit `0`: compliant concrete result
+- exit `1`: non-compliant placeholder/template output
+- exit `2`: missing result block
+
+Policy:
+
+- non-compliant results are rejected and reissued with strict one-line schema
+- missing results are treated as pending, not pass

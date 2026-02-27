@@ -152,6 +152,8 @@ From `prisma/seed.cjs`:
 ```bash
 npm run build
 npm run db:health
+npm run agent:check:result -- /tmp/codex_claude_handshake.log <UUID>
+npm run agent:check:result -- /tmp/codex_gemini_handshake.log <UUID>
 npx prisma validate
 npx prisma migrate status
 npm run db:stress -- --concurrency 20 --duration-sec 45 --mode simple
