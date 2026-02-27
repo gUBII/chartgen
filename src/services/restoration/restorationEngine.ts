@@ -2,7 +2,7 @@ import { createHash, randomInt } from "node:crypto";
 import { AmountEaten, MARStatus, MealType, SwallowObservation } from "@prisma/client";
 import { generateTemporalRealism, type TemporalRealismOptions } from "./temporalRealism";
 import { Mulberry32 } from "./stochasticEngine";
-import type { ChartModule, DayContext, GenerationContext } from "./modules/types";
+import type { ChartModule, DayContext, GenerationContext, RealizedTask } from "./modules/types";
 
 const RNG_SCALE = 1_000_000;
 const BASE_SUCCESS_RATE = 0.9;
@@ -324,17 +324,25 @@ export class RestorationEngine {
       const scheduledTasks = module.buildSchedule(day);
 
       for (const task of scheduledTasks) {
+        const realizedTask: RealizedTask = {
+          ...task,
+          actualAt: task.scheduledAt,
+          cascadeOffsetMin: 0,
+        };
+
         const ctx: GenerationContext = {
           rng,
           day,
           link: {
             ...(options?.link ?? {}),
             moduleType: module.type,
-            task,
+            task: realizedTask,
           },
         };
 
-        generatedRecords.push(...module.realizeTask(task, ctx));
+        const realizedRows = module.realizeTask(realizedTask, ctx);
+        const defectedRows = module.injectDefects ? module.injectDefects(realizedRows, ctx) : realizedRows;
+        generatedRecords.push(...defectedRows);
       }
     }
 
