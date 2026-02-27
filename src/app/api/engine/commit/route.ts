@@ -8,10 +8,23 @@ export const runtime = "nodejs";
 const ALLOWED_COMMIT_ROLES = new Set(["SUPERVISOR", "CLINICAL_LEAD"]);
 const COMMITTED_STATUS = "APPROVED";
 
-type CommitRequestBody = {
+type LegacyCommitRequestBody = {
   batchId?: string;
   actorStaffId?: string;
 };
+
+type GroupedCommitRequestBody = {
+  marLogs?: any[];
+  mealLogs?: any[];
+  sleepLogs?: any[];
+  bglLogs?: any[];
+  bowelLogs?: any[];
+  hygieneLogs?: any[];
+  communityLogs?: any[];
+  repositionLogs?: any[];
+};
+
+type CommitRequestBody = LegacyCommitRequestBody & GroupedCommitRequestBody;
 
 type DynamicTx = Record<string, any>;
 
@@ -118,14 +131,15 @@ const updateBatchAsCommitted = async (
   return COMMITTED_STATUS;
 };
 
-const parseBody = async (request: NextRequest): Promise<Required<CommitRequestBody>> => {
-  let body: CommitRequestBody;
+const parseJsonBody = async (request: NextRequest): Promise<CommitRequestBody> => {
   try {
-    body = (await request.json()) as CommitRequestBody;
+    return (await request.json()) as CommitRequestBody;
   } catch {
     throw new CommitApiError(400, "INVALID_JSON", "Request body must be valid JSON.");
   }
+};
 
+const parseLegacyBody = (body: CommitRequestBody): Required<LegacyCommitRequestBody> => {
   const batchId = body.batchId?.trim();
   const actorStaffId = body.actorStaffId?.trim();
 
@@ -140,9 +154,326 @@ const parseBody = async (request: NextRequest): Promise<Required<CommitRequestBo
   return { batchId, actorStaffId };
 };
 
+const hasGroupedPayload = (body: CommitRequestBody): boolean => {
+  return [
+    "marLogs",
+    "mealLogs",
+    "sleepLogs",
+    "bglLogs",
+    "bowelLogs",
+    "hygieneLogs",
+    "communityLogs",
+    "repositionLogs",
+  ].some((key) => key in body);
+};
+
+const asArray = (value: unknown, field: string): any[] => {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new CommitApiError(400, "INVALID_PAYLOAD", `${field} must be an array.`);
+  }
+  return value;
+};
+
+const parseGroupedBody = (
+  body: CommitRequestBody
+): Required<GroupedCommitRequestBody> => {
+  return {
+    marLogs: asArray(body.marLogs, "marLogs"),
+    mealLogs: asArray(body.mealLogs, "mealLogs"),
+    sleepLogs: asArray(body.sleepLogs, "sleepLogs"),
+    bglLogs: asArray(body.bglLogs, "bglLogs"),
+    bowelLogs: asArray(body.bowelLogs, "bowelLogs"),
+    hygieneLogs: asArray(body.hygieneLogs, "hygieneLogs"),
+    communityLogs: asArray(body.communityLogs, "communityLogs"),
+    repositionLogs: asArray(body.repositionLogs, "repositionLogs"),
+  };
+};
+
+const toDate = (value: unknown, field: string): Date => {
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) {
+    throw new CommitApiError(422, "INVALID_DATE", `Invalid ${field} value: ${String(value)}`);
+  }
+  return date;
+};
+
+const normalizeEntrySource = (value: unknown): "LIVE" | "RESTORED_APPROVED" | "AUDIT_RECOVERY" | "SYNTHETIC_QA" => {
+  const source = String(value ?? "").toUpperCase();
+  if (source === "RESTORED_APPROVED" || source === "AUDIT_RECOVERY" || source === "SYNTHETIC_QA") {
+    return source;
+  }
+  return "LIVE";
+};
+
+const normalizeDataSource = (value: unknown): "SYNTHETIC_QA" | "PRODUCTION" => {
+  const source = String(value ?? "").toUpperCase();
+  return source === "PRODUCTION" ? "PRODUCTION" : "SYNTHETIC_QA";
+};
+
+const normalizeBowelType = (row: any): "BOWEL" | "FLUID_IN" | "FLUID_OUT" => {
+  const explicit = String(row?.type ?? "").toUpperCase();
+  if (explicit === "BOWEL") return "BOWEL";
+  if (explicit === "FLUID_IN" || explicit === "INTAKE") return "FLUID_IN";
+  if (explicit === "FLUID_OUT" || explicit === "OUTPUT") return "FLUID_OUT";
+
+  if (row?.hadBowelMotion) return "BOWEL";
+  const intake = Number(row?.fluidIntakeDeltaMl ?? 0);
+  const output = Number(row?.fluidOutputDeltaMl ?? 0);
+  return intake >= output ? "FLUID_IN" : "FLUID_OUT";
+};
+
+const normalizeBristolScore = (value: unknown): number | null => {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value === "number") return value;
+  const match = String(value).toUpperCase().match(/^S([1-7])$/);
+  if (match) return Number(match[1]);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const commitGroupedLogs = async (body: CommitRequestBody) => {
+  const {
+    marLogs = [],
+    mealLogs = [],
+    sleepLogs = [],
+    bglLogs = [],
+    bowelLogs = [],
+    hygieneLogs = [],
+    communityLogs = [],
+    repositionLogs = [],
+  } = parseGroupedBody(body);
+
+  return prisma.$transaction(async (tx) => {
+    const txAny = tx as unknown as DynamicTx;
+    const marModel = txAny.mARLog ?? txAny.marLog;
+
+    if (!marModel?.createMany || !txAny.mealLog?.createMany) {
+      throw new CommitApiError(500, "SCHEMA_NOT_READY", "Core MAR/Meal models are not available.");
+    }
+    if (!txAny.bglDiabetesLog?.createMany || !txAny.hygieneLog?.createMany) {
+      throw new CommitApiError(500, "SCHEMA_NOT_READY", "Phase A strict models are not available.");
+    }
+
+    const writes = [];
+
+    if (marLogs.length > 0) {
+      writes.push(
+        marModel.createMany({
+          data: marLogs.map((row: any) => ({
+            participantId: String(row.participantId),
+            createdByStaffId: String(row.createdByStaffId ?? row.staffId),
+            approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
+            restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
+            source: normalizeEntrySource(row.source),
+            scheduledAdminTime: toDate(row.scheduledAdminTime ?? row.loggedAt ?? row.actualAdminTime, "scheduledAdminTime"),
+            actualAdminTime: toDate(row.actualAdminTime ?? row.loggedAt ?? row.scheduledAdminTime, "actualAdminTime"),
+            medicationName: String(row.medicationName ?? "Unknown"),
+            dosage: String(row.dosage ?? "Unknown"),
+            route: String(row.route ?? "Unknown"),
+            status: String(row.status ?? "ADMINISTERED"),
+            omissionReason: row.omissionReason ? String(row.omissionReason) : null,
+            provenanceHash: String(row.provenanceHash ?? sha256(row)),
+          })),
+        })
+      );
+    }
+
+    if (mealLogs.length > 0) {
+      writes.push(
+        txAny.mealLog.createMany({
+          data: mealLogs.map((row: any) => ({
+            participantId: String(row.participantId),
+            createdByStaffId: String(row.createdByStaffId ?? row.staffId),
+            approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
+            restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
+            source: normalizeEntrySource(row.source),
+            timestamp: toDate(row.timestamp ?? row.loggedAt ?? row.checkedAt, "timestamp"),
+            mealType: String(row.mealType ?? "SNACK"),
+            foodTexture: Number(row.foodTexture ?? 1),
+            fluidThickness: Number(row.fluidThickness ?? 1),
+            volumeMl: Number(row.volumeMl ?? 0),
+            amountEaten: String(row.amountEaten ?? "ZERO"),
+            swallowingObservations: Array.isArray(row.swallowingObservations) ? row.swallowingObservations : [],
+            deviationReason: row.deviationReason ? String(row.deviationReason) : null,
+            incidentReference: row.incidentReference ? String(row.incidentReference) : null,
+            provenanceHash: String(row.provenanceHash ?? sha256(row)),
+          })),
+        })
+      );
+    }
+
+    if (sleepLogs.length > 0 && txAny.sleepSettlingLog?.createMany) {
+      writes.push(
+        txAny.sleepSettlingLog.createMany({
+          data: sleepLogs.map((row: any) => {
+            const status = String(row.status ?? "").toUpperCase();
+            return {
+              participantId: String(row.participantId),
+              loggedByStaffId: String(row.loggedByStaffId ?? row.staffId),
+              checkTime: toDate(row.checkTime ?? row.checkedAt ?? row.loggedAt, "checkTime"),
+              status: status === "ASLEEP" || status === "AWAKE" || status === "AGITATED" ? status : null,
+              intervention: row.intervention ? String(row.intervention) : null,
+              source: normalizeEntrySource(row.source),
+            };
+          }),
+        })
+      );
+    }
+
+    if (bglLogs.length > 0) {
+      writes.push(
+        txAny.bglDiabetesLog.createMany({
+          data: bglLogs.map((row: any) => ({
+            source: normalizeDataSource(row.source),
+            participantId: String(row.participantId),
+            staffId: String(row.staffId ?? row.loggedByStaffId),
+            localDate: String(row.localDate ?? toDate(row.loggedAt, "loggedAt").toISOString().slice(0, 10)),
+            loggedAt: toDate(row.loggedAt, "loggedAt"),
+            bglReadingMmolL: row.bglReadingMmolL == null ? null : Number(row.bglReadingMmolL),
+            fastingStatus: String(row.fastingStatus ?? "UNKNOWN"),
+            insulinAdministered: Boolean(row.insulinAdministered),
+            insulinMarRefId: row.insulinMarRefId ? String(row.insulinMarRefId) : null,
+            actionTaken: row.actionTaken ? String(row.actionTaken) : null,
+            qaMeta: row.qaMeta ?? null,
+          })),
+        })
+      );
+    }
+
+    if (bowelLogs.length > 0 && txAny.bowelFluidLog?.createMany) {
+      writes.push(
+        txAny.bowelFluidLog.createMany({
+          data: bowelLogs.map((row: any) => {
+            const type = normalizeBowelType(row);
+            const volumeMl =
+              row.volumeMl != null
+                ? Number(row.volumeMl)
+                : type === "FLUID_IN"
+                  ? Number(row.fluidIntakeDeltaMl ?? 0)
+                  : type === "FLUID_OUT"
+                    ? Number(row.fluidOutputDeltaMl ?? 0)
+                    : null;
+            return {
+              participantId: String(row.participantId),
+              loggedByStaffId: String(row.loggedByStaffId ?? row.staffId),
+              timestamp: toDate(row.timestamp ?? row.loggedAt, "timestamp"),
+              type,
+              volumeMl,
+              bristolScale: normalizeBristolScore(row.bristolScale),
+              notes: row.notes ? String(row.notes) : null,
+              source: normalizeEntrySource(row.source),
+            };
+          }),
+        })
+      );
+    }
+
+    if (hygieneLogs.length > 0) {
+      writes.push(
+        txAny.hygieneLog.createMany({
+          data: hygieneLogs.map((row: any) => ({
+            source: normalizeDataSource(row.source),
+            participantId: String(row.participantId),
+            staffId: String(row.staffId ?? row.loggedByStaffId),
+            localDate: String(row.localDate ?? toDate(row.loggedAt, "loggedAt").toISOString().slice(0, 10)),
+            loggedAt: toDate(row.loggedAt, "loggedAt"),
+            showerStatus: String(row.showerStatus ?? "UNKNOWN"),
+            oralCareStatus: String(row.oralCareStatus ?? "UNKNOWN"),
+            groomingStatus: String(row.groomingStatus ?? "UNKNOWN"),
+            continenceCareStatus: String(row.continenceCareStatus ?? "UNKNOWN"),
+            skinIntegrityChecked: String(row.skinIntegrityChecked ?? "UNKNOWN"),
+            refusalReason: row.refusalReason ? String(row.refusalReason) : null,
+            alternativeMethod: row.alternativeMethod ? String(row.alternativeMethod) : null,
+            notes: row.notes ? String(row.notes) : null,
+            qaMeta: row.qaMeta ?? null,
+          })),
+        })
+      );
+    }
+
+    const communityModel = txAny.communityAccessLog ?? txAny.communityAccessQaLog;
+    if (communityLogs.length > 0 && communityModel?.createMany) {
+      writes.push(
+        communityModel.createMany({
+          data: communityLogs.map((row: any) => ({
+            source: normalizeDataSource(row.source),
+            participantId: String(row.participantId),
+            staffId: String(row.staffId ?? row.loggedByStaffId),
+            localDate: String(row.localDate ?? toDate(row.departedAt, "departedAt").toISOString().slice(0, 10)),
+            departedAt: toDate(row.departedAt ?? row.loggedAt, "departedAt"),
+            returnedAt: row.returnedAt ? toDate(row.returnedAt, "returnedAt") : null,
+            destination: String(row.destination ?? "Unknown"),
+            purpose: String(row.purpose ?? "OTHER"),
+            transportMethod: String(row.transportMethod ?? "OTHER"),
+            odometerStart: row.odometerStart == null ? null : Number(row.odometerStart),
+            odometerEnd: row.odometerEnd == null ? null : Number(row.odometerEnd),
+            notes: row.notes ? String(row.notes) : null,
+            qaMeta: row.qaMeta ?? null,
+          })),
+        })
+      );
+    }
+
+    const repositionModel = txAny.repositioningLog ?? txAny.repositioningQaLog;
+    if (repositionLogs.length > 0 && repositionModel?.createMany) {
+      writes.push(
+        repositionModel.createMany({
+          data: repositionLogs.map((row: any) => ({
+            source: normalizeDataSource(row.source),
+            participantId: String(row.participantId),
+            staffId: String(row.staffId ?? row.loggedByStaffId),
+            localDate: String(row.localDate ?? toDate(row.turnedAt, "turnedAt").toISOString().slice(0, 10)),
+            turnedAt: toDate(row.turnedAt ?? row.loggedAt, "turnedAt"),
+            position: String(row.position ?? "OTHER"),
+            skinCheckOutcome: String(row.skinCheckOutcome ?? "UNKNOWN"),
+            notes: row.notes ? String(row.notes) : null,
+            planIntervalMin: row.planIntervalMin == null ? null : Number(row.planIntervalMin),
+            qaMeta: row.qaMeta ?? null,
+          })),
+        })
+      );
+    }
+
+    if (writes.length === 0) {
+      throw new CommitApiError(400, "EMPTY_PAYLOAD", "No log arrays were provided for commit.");
+    }
+
+    await Promise.all(writes);
+
+    return {
+      mode: "grouped",
+      marCommitted: marLogs.length,
+      mealCommitted: mealLogs.length,
+      sleepCommitted: sleepLogs.length,
+      bglCommitted: bglLogs.length,
+      bowelCommitted: bowelLogs.length,
+      hygieneCommitted: hygieneLogs.length,
+      communityCommitted: communityLogs.length,
+      repositionCommitted: repositionLogs.length,
+      totalCommitted:
+        marLogs.length +
+        mealLogs.length +
+        sleepLogs.length +
+        bglLogs.length +
+        bowelLogs.length +
+        hygieneLogs.length +
+        communityLogs.length +
+        repositionLogs.length,
+    };
+  });
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { batchId, actorStaffId } = await parseBody(request);
+    const body = await parseJsonBody(request);
+
+    if (hasGroupedPayload(body)) {
+      const groupedResult = await commitGroupedLogs(body);
+      return NextResponse.json({ ok: true, data: groupedResult }, { status: 200 });
+    }
+
+    const { batchId, actorStaffId } = parseLegacyBody(body);
 
     const result = await prisma.$transaction(async (tx) => {
       const txAny = tx as unknown as DynamicTx;
