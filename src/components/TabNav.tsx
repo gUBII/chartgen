@@ -8,7 +8,7 @@ import { useAuth } from "./AuthProvider";
 export function TabNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role: userRole, applyRole } = useAuth();
+  const { role: userRole, isRoleResolved, applyRole } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isMarActive = pathname.startsWith("/mar");
@@ -16,9 +16,10 @@ export function TabNav() {
     pathname.startsWith("/mealtime-chartgen") || pathname.startsWith("/restoration");
   const isKpiActive = pathname.startsWith("/kpigen");
   const isUatActive = pathname.startsWith("/uat");
-  const restrictedView = userRole !== "full";
-  const kpiHref = restrictedView ? "/login" : "/kpigen";
-  const uatHref = restrictedView ? "/login" : "/uat";
+  const isFullUser = userRole === "full";
+  const restrictedView = isRoleResolved && userRole !== "full";
+  const kpiHref = isFullUser || !isRoleResolved ? "/kpigen" : "/login";
+  const uatHref = isFullUser || !isRoleResolved ? "/uat" : "/login";
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -86,7 +87,7 @@ export function TabNav() {
             </Link>
           </div>
 
-          {userRole === "full" && (
+          {isFullUser && (
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
@@ -95,7 +96,7 @@ export function TabNav() {
               {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           )}
-          {userRole !== "full" && (
+          {isRoleResolved && !isFullUser && (
             <Link
               href="/login"
               className="inline-flex min-h-[44px] items-center rounded-full border border-cyan-300/40 bg-cyan-400/15 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-400/25 transition sm:ml-4"

@@ -15,6 +15,14 @@ type Capability = {
   tone: "cyan" | "emerald" | "amber" | "blue";
 };
 
+type WhatsNewItem = {
+  date: string;
+  title: string;
+  detail: string;
+  href?: string;
+  hrefLabel?: string;
+};
+
 const CAPABILITIES: Capability[] = [
   {
     key: "mar",
@@ -110,6 +118,33 @@ const CAPABILITIES: Capability[] = [
   },
 ];
 
+const WHATS_NEW: WhatsNewItem[] = [
+  {
+    date: "February 27, 2026",
+    title: "Mobile UAT Set A Shipped",
+    detail:
+      "Delivered KPIgen content, responsive toolbars, wrapped command deck output, and improved root typography scaling for smaller devices.",
+    href: "/uat",
+    hrefLabel: "Open UAT Control Center",
+  },
+  {
+    date: "February 27, 2026",
+    title: "Production Deploy Verification",
+    detail:
+      "Latest Netlify production deploy is healthy and tied to the most recent main branch truth updates and governance docs.",
+    href: "/deployment-notes",
+    hrefLabel: "View Deployment Notes",
+  },
+  {
+    date: "February 27, 2026",
+    title: "Governance Messaging v2.0",
+    detail:
+      "Homepage positioning, ownership boundaries, and compliance framing were tightened for enterprise clarity and audit-readiness communication.",
+    href: "/audit-readiness",
+    hrefLabel: "Read Audit-readiness Overview",
+  },
+];
+
 function ProfileImage() {
   const [imageError, setImageError] = useState(false);
 
@@ -161,6 +196,28 @@ export default function HomePage() {
         <p className="mt-5 max-w-3xl rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-3 text-xs leading-6 text-cyan-100/90">
           Deployed in Nexis365-hosted environments supporting GoodwillCare and COHS (independently authored).
         </p>
+      </section>
+
+      <section className="futuristic-panel p-6 border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
+        <p className="landing-mono text-xs text-blue-200">What&apos;s New</p>
+        <h3 className="landing-mono mt-2 text-2xl text-blue-50">Recent Platform Updates</h3>
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          {WHATS_NEW.map((item) => (
+            <article key={item.title} className="rounded-xl border border-blue-400/25 bg-slate-900/60 p-4">
+              <p className="text-[11px] uppercase tracking-widest text-blue-200/80">{item.date}</p>
+              <h4 className="mt-2 text-sm font-semibold text-blue-50">{item.title}</h4>
+              <p className="mt-2 text-xs leading-6 text-slate-200">{item.detail}</p>
+              {item.href && item.hrefLabel ? (
+                <Link
+                  href={item.href}
+                  className="mt-4 inline-flex rounded-full border border-blue-300/45 bg-blue-400/20 px-3 py-2 text-[11px] font-semibold text-blue-50 hover:bg-blue-400/30 transition"
+                >
+                  {item.hrefLabel}
+                </Link>
+              ) : null}
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="futuristic-panel p-6 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">

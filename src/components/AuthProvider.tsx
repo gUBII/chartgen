@@ -4,6 +4,7 @@ import { ReactNode, createContext, useContext, useState, useEffect, useCallback 
 
 interface AuthContextValue {
   role: "full" | "guest" | null;
+  isRoleResolved: boolean;
   refreshRole: () => Promise<void>;
   applyRole: (nextRole: "full" | "guest" | null) => void;
 }
@@ -12,6 +13,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<"full" | "guest" | null>(null);
+  const [isRoleResolved, setIsRoleResolved] = useState(false);
 
   const refreshRole = useCallback(async () => {
     try {
@@ -26,9 +28,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setRole(null);
       }
+      setIsRoleResolved(true);
     } catch (error) {
       console.error("Failed to check auth role:", error);
       setRole(null);
+      setIsRoleResolved(true);
     }
   }, []);
 
@@ -36,11 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshRole();
   }, [refreshRole]);
 
-  return (
-    <AuthContext.Provider value={{ role, refreshRole, applyRole: setRole }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const applyRole = (nextRole: "full" | "guest" | null) => {
+    setRole(nextRole);
+    setIsRoleResolved(true);
+  };
+
+  return <AuthContext.Provider value={{ role, isRoleResolved, refreshRole, applyRole }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
