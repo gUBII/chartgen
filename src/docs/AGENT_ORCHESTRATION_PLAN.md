@@ -98,6 +98,11 @@ Expected output quality:
 - protocol doc: `/Users/moofasa/chartgen/gemini.md`
 - runtime log: `/tmp/codex_gemini_handshake.log`
 
+### Brainstormz channel
+
+- protocol doc: `/Users/moofasa/chartgen/brainstormz.md`
+- shared decision log: `/tmp/brainstormz_chat.log`
+
 Rule:
 
 - protocol content stays in `.md` files
@@ -162,18 +167,25 @@ Fallback sequence:
 - production login + db-health verification
 - auth role reactivity fix implemented (TabNav/login/AuthProvider path)
 - Gemini channel normalization (protocol-only doc, runtime log separation)
+- mobile UAT Set A implementation:
+  - `/kpigen` placeholder removed
+  - guest/full nav clarity updated
+  - root scaling and touch targets improved
+  - command wrapping + narrow-toolbar layout improvements
 
 ### In progress
 
+- runtime/mobile verification pass from Claude on latest UI patch
 - sustained latency monitoring for direct DB connection warnings
-- next auth maturity step planning
+- lint debt split strategy decision (`lint:report` vs `lint:strict`) if strict pass cannot be achieved quickly
 
 ### Next queue
 
-1. harden authentication model beyond shared password
-2. add formal test coverage for login-to-nav state transitions
-3. resolve lint command mismatch for Next 16-compatible lint workflow
+1. live browser UAT capture across 375/768/1280 breakpoints
+2. harden authentication model beyond shared password
+3. close lint debt lane with explicit policy and docs
 4. run UAT stress/cleanup with artifact capture in `/uat`
+5. wire KPIgen cards to live signals/API output
 
 ## 9) Acceptance Criteria for Next Stage Start
 

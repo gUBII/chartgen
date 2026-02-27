@@ -86,3 +86,11 @@ USAGE
 - Estimated tokens remaining:
 - Constraint risk: low|medium|high
 ```
+
+## Active Queue (2026-02-27)
+- `F9F25075-56DB-4126-B16E-5AE750D66823`
+  - Task: independent verification pass for latest mobile UAT patch.
+  - Expected: blocker mapping, remaining high risks (max 3), concise evidence.
+- `1C4046A4-1466-4A1C-9847-A370C759FD0D`
+  - Task: resolve lint discrepancy with exact exit-code truth.
+  - Expected: either strict pass or explicit blocked policy with split scripts and docs.

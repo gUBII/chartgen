@@ -78,7 +78,7 @@ export default function LoginPage() {
           Governance-first clinical documentation audit engine deployed in Nexis365-hosted environments.
         </p>
         <p className="mt-4 rounded-xl border border-cyan-400/25 bg-cyan-500/10 px-4 py-3 text-xs leading-6 text-cyan-100/90">
-          Full access is restricted to authorized governance and operations users. Guest access provides read-only module preview.
+          Full access is restricted to authorized governance and operations users. Guest access is read-only (preview mode).
         </p>
 
         {error ? (

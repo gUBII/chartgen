@@ -95,12 +95,6 @@ const emptyMedication = (): MedicationInput => ({
   minute: 0,
 });
 
-const getDatePreset = (days: number): string => {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return toDateInput(d);
-};
-
 const getDirtyCount = (rows: CandidateRow[]): number => {
   return rows.filter((r) => r.dirty).length;
 };
@@ -370,12 +364,12 @@ export default function MARPage() {
     <main className="mx-auto max-w-7xl p-6">
       <h1 className="text-3xl font-semibold">Medical Chart Commission (MAR)</h1>
       <p className="mt-2 text-sm text-slate-300">
-        Generate preview candidates for medication administration, review and edit fields, then commit to the ledger.
+        Generate preview records, edit fields, and then commit approved entries to the ledger.
       </p>
 
       <section className="mt-6 rounded-lg border border-gray-200 p-4">
         <h2 className="text-lg font-medium mb-4">Participant & Date Range</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 min-[430px]:grid-cols-2 lg:grid-cols-5">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Participant ID</span>
             <input

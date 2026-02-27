@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 type Capability = {
@@ -121,9 +122,11 @@ function ProfileImage() {
   }
 
   return (
-    <img
+    <Image
       src="/gubii-profile.png"
       alt="Farhan Rashid (gUBII)"
+      width={192}
+      height={192}
       className="w-48 h-48 rounded-full object-cover border-2 border-cyan-400/50 shadow-lg"
       onError={() => setImageError(true)}
     />
@@ -148,7 +151,7 @@ export default function HomePage() {
     <main className="mx-auto max-w-7xl px-6 pt-10 pb-16 space-y-6">
       <section className="futuristic-panel futuristic-grid relative p-8 sm:p-12">
         <p className="landing-mono text-xs text-cyan-100/80">Governance and Traceability Enhancement</p>
-        <h2 className="landing-mono mt-3 max-w-4xl text-4xl leading-[1.05] text-cyan-50 sm:text-6xl">
+        <h2 className="landing-mono mt-3 max-w-4xl text-[clamp(2rem,6vw,3.8rem)] leading-[1.08] text-cyan-50">
           Chartgen by gUBII
         </h2>
         <p className="text-muted mt-4 max-w-3xl text-sm sm:text-base leading-relaxed">

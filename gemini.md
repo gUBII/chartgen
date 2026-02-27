@@ -86,3 +86,11 @@ USAGE
 - Estimated tokens remaining:
 - Constraint risk: low|medium|high
 ```
+
+## Active Queue (2026-02-27)
+- `696438BD-5523-4D0E-9A92-FB24B4F71117`
+  - Task: contradiction check for latest mobile UI patch.
+  - Expected: auth regression risks + overflow risks with file:line evidence.
+- `3954B2B6-6C7F-469B-A517-94B7C903AE91`
+  - Task: diff-level verification of blocker coverage (already reported PASS).
+  - Expected follow-up: runtime confirmation on mobile breakpoints if requested.

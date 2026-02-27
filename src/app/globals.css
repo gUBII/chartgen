@@ -17,10 +17,15 @@ body {
   min-height: 100%;
 }
 
+html {
+  font-size: clamp(15px, 1.55vw, 17px);
+}
+
 body {
   position: relative;
   margin: 0;
   color: var(--text-main);
+  line-height: 1.55;
   font-family: var(--font-body), "Segoe UI", sans-serif;
   background:
     radial-gradient(circle at 8% 12%, rgba(58, 130, 246, 0.32), transparent 40%),
@@ -111,6 +116,7 @@ body::before {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  min-height: 44px;
   padding: 0.62rem 1rem;
   border-radius: 999px;
   border: 1px solid rgba(124, 168, 221, 0.3);
@@ -124,6 +130,11 @@ body::before {
     border-color 160ms ease,
     transform 160ms ease,
     background-color 160ms ease;
+}
+
+.tab-link-login-required {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(120, 53, 15, 0.26);
 }
 
 .tab-link:hover {

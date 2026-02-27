@@ -408,9 +408,8 @@ export default function UatPage() {
           Online UAT Control Center
         </h2>
         <p className="text-muted mt-4 max-w-3xl text-sm">
-          Execute protected online database diagnostics, stress runs, and
-          confirmation-gated cleanup. Every run generates a JSON artifact with
-          timestamp and commit reference.
+          Run DB health checks, stress tests, and confirmation-gated cleanup.
+          Each run generates a JSON artifact with timestamp and commit reference.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
@@ -494,7 +493,7 @@ export default function UatPage() {
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="futuristic-panel p-6 border-cyan-500/30">
           <p className="landing-mono text-xs text-cyan-200">Stress Runner</p>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+          <div className="mt-4 grid grid-cols-1 gap-3 text-xs min-[430px]:grid-cols-2">
             <label className="flex flex-col gap-1">
               <span className="text-cyan-100/80">Concurrency</span>
               <input
@@ -540,7 +539,7 @@ export default function UatPage() {
                 className="rounded-md border border-cyan-400/30 bg-slate-900/70 px-2 py-1 text-cyan-50"
               />
             </label>
-            <label className="col-span-2 flex flex-col gap-1">
+            <label className="flex flex-col gap-1 min-[430px]:col-span-2">
               <span className="text-cyan-100/80">Max p95 (ms)</span>
               <input
                 type="number"
@@ -552,7 +551,7 @@ export default function UatPage() {
             </label>
           </div>
 
-          <pre className="mt-4 rounded-lg border border-cyan-400/20 bg-slate-950/70 p-3 text-[11px] text-cyan-100 overflow-x-auto">
+          <pre className="mt-4 rounded-lg border border-cyan-400/20 bg-slate-950/70 p-3 text-[11px] text-cyan-100 whitespace-pre-wrap break-words">
             {stressCommand}
           </pre>
 
@@ -586,8 +585,8 @@ export default function UatPage() {
 
         <div className="futuristic-panel p-6 border-emerald-500/30">
           <p className="landing-mono text-xs text-emerald-200">Cleanup Runner</p>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-            <label className="col-span-2 flex flex-col gap-1">
+          <div className="mt-4 grid grid-cols-1 gap-3 text-xs min-[430px]:grid-cols-2">
+            <label className="flex flex-col gap-1 min-[430px]:col-span-2">
               <span className="text-emerald-100/80">Participant Key (id or externalReference)</span>
               <input
                 type="text"
@@ -616,11 +615,11 @@ export default function UatPage() {
             </label>
           </div>
 
-          <pre className="mt-4 rounded-lg border border-emerald-400/20 bg-slate-950/70 p-3 text-[11px] text-emerald-100 overflow-x-auto">
+          <pre className="mt-4 rounded-lg border border-emerald-400/20 bg-slate-950/70 p-3 text-[11px] text-emerald-100 whitespace-pre-wrap break-words">
             {cleanupDryRunCommand}
           </pre>
 
-          <pre className="mt-2 rounded-lg border border-amber-400/20 bg-slate-950/70 p-3 text-[11px] text-amber-100 overflow-x-auto">
+          <pre className="mt-2 rounded-lg border border-amber-400/20 bg-slate-950/70 p-3 text-[11px] text-amber-100 whitespace-pre-wrap break-words">
             {cleanupApplyCommand}
           </pre>
 

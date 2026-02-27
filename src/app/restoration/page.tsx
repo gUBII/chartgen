@@ -300,10 +300,10 @@ export default function RestorationPage() {
     <main className="mx-auto max-w-7xl p-6">
       <h1 className="text-3xl font-semibold">Mealtime Chartgen</h1>
       <p className="mt-2 text-sm text-slate-300">
-        Generate mealtime preview candidates, review deviations, edit fields, then commit to the ledger.
+        Generate preview records, review deviations, and then commit approved entries to the ledger.
       </p>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 rounded-lg border border-gray-200 p-4 md:grid-cols-5">
+      <section className="mt-6 grid grid-cols-1 gap-4 rounded-lg border border-gray-200 p-4 min-[430px]:grid-cols-2 lg:grid-cols-5">
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Participant ID</span>
           <input
