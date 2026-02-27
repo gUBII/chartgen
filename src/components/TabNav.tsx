@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
 
 export function TabNav() {
   const pathname = usePathname();
-  const { role: userRole } = useAuth();
+  const router = useRouter();
+  const { role: userRole, applyRole } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isMarActive = pathname.startsWith("/mar");
@@ -20,7 +21,9 @@ export function TabNav() {
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/login";
+      applyRole(null);
+      router.push("/login");
+      router.refresh();
     } catch (err) {
       console.error("Logout error:", err);
       setIsLoggingOut(false);

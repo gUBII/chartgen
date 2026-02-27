@@ -5,6 +5,7 @@ import { ReactNode, createContext, useContext, useState, useEffect } from "react
 interface AuthContextValue {
   role: "full" | "guest" | null;
   refreshRole: () => Promise<void>;
+  applyRole: (nextRole: "full" | "guest" | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -14,7 +15,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshRole = async () => {
     try {
-      const response = await fetch("/api/auth/check", { method: "GET" });
+      const response = await fetch("/api/auth/check", {
+        method: "GET",
+        cache: "no-store",
+        credentials: "same-origin",
+      });
       if (response.ok) {
         const data = await response.json();
         setRole(data.role);
@@ -32,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ role, refreshRole }}>
+    <AuthContext.Provider value={{ role, refreshRole, applyRole: setRole }}>
       {children}
     </AuthContext.Provider>
   );

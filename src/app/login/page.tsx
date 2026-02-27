@@ -7,7 +7,7 @@ import { useAuth } from "../../components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { refreshRole } = useAuth();
+  const { refreshRole, applyRole } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +25,8 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        await refreshRole();
+        applyRole("full");
+        void refreshRole();
         router.push("/");
         return;
       }
@@ -51,7 +52,8 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        await refreshRole();
+        applyRole("guest");
+        void refreshRole();
         router.push("/");
         return;
       }

@@ -73,3 +73,21 @@ Observations:
 - Waiting for user-provided .md instructions.
 Next:
 - Monitor gemini.md for new instructions.
+
+---
+
+RESULT [81EF5BDC-7329-4630-A722-1F8A2F875ADA]
+Status: PASS
+Observations:
+- Production DATABASE_URL and DIRECT_URL correctly target the `ep-rough-recipe-ai1bst00` endpoints.
+- Login to production with `full` role and password `free` is working.
+- Production `db-health` reports `healthy` (with a `warning` for direct latency).
+- Targets are confirmed: `ep-rough-recipe-ai1bst00-pooler` and `ep-rough-recipe-ai1bst00`.
+Evidence:
+- `netlify env:get DATABASE_URL`: `ep-rough-recipe-ai1bst00-pooler`
+- `curl /api/auth/login`: `HTTP/2 200` + `Set-Cookie`
+- `curl /api/ops/db-health`: `{"status":"warning","checks":{"pooled":{"ok":true},"direct":{"ok":true}}}`
+Risks:
+- High latency on direct database connections (691ms) exceeds the 600ms threshold.
+Next:
+- Monitor production database latency and consider adjusting threshold or checking Neon region proximity.
