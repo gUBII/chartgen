@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
-import { verifySession } from "../../../../lib/session";
+import { verifySession, getSessionCookie } from "../../../../lib/session";
 
 export const runtime = "nodejs";
 
@@ -116,7 +116,7 @@ function normalizeDbError(error: unknown): ProbeError {
 }
 
 async function requireFullSession(request: NextRequest): Promise<boolean> {
-  const sessionCookie = request.cookies.get("gwc_session");
+  const sessionCookie = getSessionCookie(request.cookies);
   if (!sessionCookie?.value) return false;
   const session = await verifySession(sessionCookie.value);
   return session?.role === "full";

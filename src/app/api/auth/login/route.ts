@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { signSession } from "../../../../lib/session";
+import { signSession, SESSION_TTL_SEC } from "../../../../lib/session";
 import {
   validateFullUserCredentials,
   validateGuestAccess,
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60,
+        maxAge: SESSION_TTL_SEC,
         path: "/",
       });
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60,
+        maxAge: SESSION_TTL_SEC,
         path: "/",
       });
 

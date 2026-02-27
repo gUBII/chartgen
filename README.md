@@ -199,10 +199,21 @@ npm run db:cleanup:uat -- --participant-key 112334
 
 Set these in Netlify Dashboard (Settings > Build & Deploy > Environment):
 
+#### Database
 ```
 DATABASE_URL=postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require
 DIRECT_URL=postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require
 ```
+
+#### Authentication
+```
+SESSION_SECRET=<long-random-string-for-HMAC-signing>
+SESSION_TTL_SEC=604800
+```
+
+- `SESSION_SECRET`: HMAC signing key for session tokens (required). Use a long random string (32+ chars).
+- `SESSION_TTL_SEC`: Session time-to-live in seconds (optional, default: 604800 = 7 days). Affects both token expiry and cookie maxAge.
+- **Cookie parity**: Sessions read `gwc_session` first, then fallback to legacy `session` cookie for backward compatibility.
 
 ### Build Context
 

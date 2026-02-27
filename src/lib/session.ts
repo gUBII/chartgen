@@ -1,3 +1,5 @@
+import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
+
 export type SessionRole = "full" | "guest";
 
 interface SessionPayload {
@@ -8,7 +10,7 @@ interface SessionPayload {
 }
 
 const SECRET = process.env.SESSION_SECRET || "dev-secret-key-change-in-production";
-const SESSION_TTL_SEC = 7 * 24 * 60 * 60;
+export const SESSION_TTL_SEC = parseInt(process.env.SESSION_TTL_SEC || String(7 * 24 * 60 * 60), 10);
 
 const encoder = new TextEncoder();
 
@@ -64,6 +66,17 @@ async function importSigningKey() {
     false,
     ["sign", "verify"],
   );
+}
+
+/**
+ * Helper: Extract session cookie with parity support.
+ * Reads 'gwc_session' first (new), falls back to 'session' (legacy).
+ * Used across check/ops/middleware routes for consistent cookie handling.
+ */
+export function getSessionCookie(cookies: {
+  get: (name: string) => RequestCookie | undefined;
+}): RequestCookie | undefined {
+  return cookies.get("gwc_session") || cookies.get("session");
 }
 
 /**

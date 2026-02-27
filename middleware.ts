@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "./src/lib/session";
+import { verifySession, getSessionCookie } from "./src/lib/session";
 
 // Routes that don't require authentication
 const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness", "/whats-new"];
@@ -29,8 +29,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get session cookie
-  const sessionCookie = request.cookies.get("gwc_session");
+  // Get session cookie (with fallback to legacy session cookie)
+  const sessionCookie = getSessionCookie(request.cookies);
   let sessionRole: "full" | "guest" | null = null;
 
   if (sessionCookie) {
