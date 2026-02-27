@@ -28,11 +28,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <AuthProvider>
           <div className="app-shell">
             <header className="site-header">
-              <div className="mx-auto max-w-7xl px-6 pt-6 pb-4">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="brand-kicker">Chartgen by gUBII</p>
-                    <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">
+                    <h1 className="mt-1 text-2xl font-semibold sm:text-4xl">
                       <Link href="/" className="brand-link">
                         Chartgen
                       </Link>
@@ -53,7 +53,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     </a>
                   </div>
                 </div>
-                <p className="mt-3 text-[11px] leading-5 text-cyan-100/75 max-w-4xl">
+                <p className="mt-2 text-[10px] leading-4 text-cyan-100/75 sm:hidden">
+                  Independently authored. Deployed in Nexis365-hosted environments.
+                </p>
+                <p className="mt-3 hidden text-[11px] leading-5 text-cyan-100/75 max-w-4xl sm:block">
                   Independently authored product. Deployed in Nexis365-hosted environments supporting GoodwillCare and COHS.
                 </p>
               </div>

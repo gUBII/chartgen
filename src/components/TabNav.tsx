@@ -50,7 +50,7 @@ export function TabNav() {
 
   return (
     <nav className="tab-nav">
-      <div className="mx-auto max-w-7xl px-6 pb-5">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-3 sm:pb-5">
         <div className="tab-shell">
           <div className="tab-list-panel">
             <button
