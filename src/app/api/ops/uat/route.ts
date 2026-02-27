@@ -5,7 +5,7 @@ import process from "node:process";
 import { NextRequest, NextResponse } from "next/server";
 import { EntrySource, PrismaClient } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
-import { verifySession, getSessionCookie } from "../../../../lib/session";
+import { verifySession, getSessionTokenFromRequest } from "../../../../lib/session";
 
 export const runtime = "nodejs";
 
@@ -100,12 +100,12 @@ function normalizeError(error: unknown): string {
 }
 
 async function requireFullSession(request: NextRequest): Promise<void> {
-  const sessionCookie = getSessionCookie(request.cookies);
-  if (!sessionCookie?.value) {
+  const sessionToken = getSessionTokenFromRequest(request);
+  if (!sessionToken) {
     throw new OpsApiError(401, "UNAUTHORIZED", "Login required.");
   }
 
-  const session = await verifySession(sessionCookie.value);
+  const session = await verifySession(sessionToken);
   if (!session || session.role !== "full") {
     throw new OpsApiError(401, "UNAUTHORIZED", "Full access session required.");
   }

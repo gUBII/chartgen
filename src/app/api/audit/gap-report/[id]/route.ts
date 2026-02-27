@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookie, verifySession } from "../../../../../lib/session";
+import { getSessionTokenFromRequest, verifySession } from "../../../../../lib/session";
 import { prisma } from "../../../../../lib/prisma";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -24,12 +24,12 @@ interface GapReportResult {
 }
 
 async function requireFullSession(request: NextRequest): Promise<void> {
-  const sessionCookie = getSessionCookie(request.cookies);
-  if (!sessionCookie?.value) {
+  const sessionToken = getSessionTokenFromRequest(request);
+  if (!sessionToken) {
     throw new Error("UNAUTHORIZED");
   }
 
-  const session = await verifySession(sessionCookie.value);
+  const session = await verifySession(sessionToken);
   if (!session || session.role !== "full") {
     throw new Error("UNAUTHORIZED");
   }

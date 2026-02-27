@@ -89,6 +89,52 @@ export function getSessionCookie(cookies: {
 }
 
 /**
+ * Fallback parser for environments where `request.cookies` may omit custom cookies.
+ * Returns the raw session token from Cookie header for `gwc_session` or legacy `session`.
+ */
+export function getSessionTokenFromCookieHeader(cookieHeader: string | null | undefined): string | null {
+  if (!cookieHeader) return null;
+
+  const segments = cookieHeader.split(";");
+  for (const segment of segments) {
+    const trimmed = segment.trim();
+    if (!trimmed) continue;
+    const separator = trimmed.indexOf("=");
+    if (separator === -1) continue;
+
+    const name = trimmed.slice(0, separator).trim();
+    if (name !== "gwc_session" && name !== "session") continue;
+
+    const rawValue = trimmed.slice(separator + 1).trim();
+    if (!rawValue) continue;
+
+    try {
+      return decodeURIComponent(rawValue);
+    } catch {
+      return rawValue;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Unified session token extraction with cookie-parser fallback.
+ * Prefer structured `request.cookies`, then fallback to raw Cookie header parsing.
+ */
+export function getSessionTokenFromRequest(request: {
+  cookies: { get: (name: string) => { value: string } | undefined };
+  headers: { get: (name: string) => string | null };
+}): string | null {
+  const cookie = getSessionCookie(request.cookies);
+  if (cookie?.value) {
+    return cookie.value;
+  }
+
+  return getSessionTokenFromCookieHeader(request.headers.get("cookie"));
+}
+
+/**
  * Sign a session token using HMAC
  */
 export async function signSession(role: SessionRole, identity?: string): Promise<string> {

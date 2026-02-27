@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import { getSessionCookie, verifySession } from "./session";
+import { getSessionTokenFromRequest, verifySession } from "./session";
 
 export async function requireFullSession(request: NextRequest): Promise<boolean> {
-  const sessionCookie = getSessionCookie(request.cookies);
-  if (!sessionCookie?.value) return false;
-  const session = await verifySession(sessionCookie.value);
+  const sessionToken = getSessionTokenFromRequest(request);
+  if (!sessionToken) return false;
+  const session = await verifySession(sessionToken);
   return session?.role === "full";
 }

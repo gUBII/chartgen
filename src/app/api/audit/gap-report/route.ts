@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getSessionCookie, verifySession } from "../../../../lib/session";
+import { getSessionTokenFromRequest, verifySession } from "../../../../lib/session";
 import { computeAuditKpi } from "../../../../lib/audit-kpi";
 import { prisma } from "../../../../lib/prisma";
 
@@ -28,12 +28,12 @@ async function ensureReportsDir() {
 
 // Verify full session
 async function requireFullSession(request: NextRequest): Promise<void> {
-  const sessionCookie = getSessionCookie(request.cookies);
-  if (!sessionCookie?.value) {
+  const sessionToken = getSessionTokenFromRequest(request);
+  if (!sessionToken) {
     throw new Error("UNAUTHORIZED");
   }
 
-  const session = await verifySession(sessionCookie.value);
+  const session = await verifySession(sessionToken);
   if (!session || session.role !== "full") {
     throw new Error("UNAUTHORIZED");
   }
@@ -224,4 +224,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

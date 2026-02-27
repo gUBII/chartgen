@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession, getSessionCookie } from "./src/lib/session";
+import { verifySession, getSessionTokenFromRequest } from "./src/lib/session";
 
 // Routes that don't require authentication
 const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness", "/whats-new"];
@@ -29,12 +29,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get session cookie (with fallback to legacy session cookie)
-  const sessionCookie = getSessionCookie(request.cookies);
+  // Get session token (structured cookies first, raw Cookie header fallback)
+  const sessionToken = getSessionTokenFromRequest(request);
   let sessionRole: "full" | "guest" | null = null;
 
-  if (sessionCookie) {
-    const session = await verifySession(sessionCookie.value);
+  if (sessionToken) {
+    const session = await verifySession(sessionToken);
     if (session) {
       sessionRole = session.role;
     }
