@@ -8,6 +8,8 @@ This document stages all delivered features so far from `v1.0` through `v3.2`.
 
 - Added homepage `What's New` feature cards.
 - Reduced first-paint auth/nav flicker by gating restricted UI labels until role resolution.
+- Added mobile-only dropdown navigation toggle so tabs are collapsed by default on narrow screens.
+- Compacted mobile header/title/support-line spacing to reduce above-the-fold obstruction.
 - Published complete version timeline route: `/whats-new`.
 
 ## v3.1

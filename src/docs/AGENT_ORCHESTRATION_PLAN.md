@@ -172,10 +172,11 @@ Fallback sequence:
   - guest/full nav clarity updated
   - root scaling and touch targets improved
   - command wrapping + narrow-toolbar layout improvements
+  - mobile dropdown navigation and compact header spacing shipped to production
+  - Claude queue hard-reset completed; standby ACK received
 
 ### In progress
 
-- runtime/mobile verification pass from Claude on latest UI patch
 - sustained latency monitoring for direct DB connection warnings
 - lint debt split strategy decision (`lint:report` vs `lint:strict`) if strict pass cannot be achieved quickly
 

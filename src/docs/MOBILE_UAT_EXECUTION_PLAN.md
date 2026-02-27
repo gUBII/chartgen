@@ -31,6 +31,7 @@ Status: implemented locally, validated with `npm run build`.
   - MAR/Mealtime chips show `(preview)` for non-full users.
   - Header controls are mobile-safe (`flex-col` on small screens).
   - Login/Logout controls now meet 44px touch target.
+  - Mobile dropdown toggle added so navigation chips are collapsed by default on small screens.
 
 ### C. Typography and interaction baseline
 
@@ -39,16 +40,19 @@ Status: implemented locally, validated with `npm run build`.
   - Root scaling: `html { font-size: clamp(15px, 1.55vw, 17px); }`
   - Body readability: `line-height: 1.55`
   - Tab chip touch targets raised (`min-height: 44px`).
+  - Added `tab-list-wrap` collapsed/expanded states for mobile menu behavior.
 
 ### D. Hero and copy quality
 
 - Files:
   - `src/app/page.tsx`
+  - `src/app/layout.tsx`
   - `src/app/login/page.tsx`
   - `src/app/mar/page.tsx`
   - `src/app/restoration/page.tsx`
 - Changes:
   - Home hero size uses clamp to prevent hierarchy crush.
+  - Mobile header spacing reduced and support line shortened for better first-screen density.
   - Access-control copy reduced for mobile scan speed.
   - MAR/Mealtime lead copy shortened and action-oriented.
 

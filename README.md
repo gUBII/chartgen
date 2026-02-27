@@ -15,6 +15,7 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 ## Current Release
 
 - `v3.2.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
+- Latest `v3.2` patch includes optional mobile dropdown nav and compact mobile header spacing.
 
 ## Current Truth
 

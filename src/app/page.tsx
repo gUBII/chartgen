@@ -123,9 +123,9 @@ const WHATS_NEW: WhatsNewItem[] = [
   {
     version: "v3.2",
     date: "February 27, 2026",
-    title: "Mobile UAT Set A Shipped",
+    title: "Mobile Navigation Hardening",
     detail:
-      "Delivered KPIgen content, responsive toolbars, wrapped command deck output, and improved root typography scaling for smaller devices.",
+      "Shipped optional mobile dropdown navigation, reduced sticky-header footprint, and compacted mobile brand/header spacing after live screenshot validation.",
     href: "/uat",
     hrefLabel: "Open UAT Control Center",
   },

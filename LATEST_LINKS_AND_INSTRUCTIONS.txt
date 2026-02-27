@@ -12,12 +12,15 @@ Creator Links
 
 Current Deployment Truth
 - Branch: main
-- Latest verified commit deployed: 183bf0400711ea5b9fe4bc533961d66dbe264bc1
-- Previous verified commit deployed: e87d27c1246a6f0c7a8ebafe3d9aed82035ad451
-- Latest deploy id: 69a13d2d21868f000802702c
-- Netlify deploy state: ready (published 2026-02-27T06:44:49.344Z)
+- Latest verified commit deployed: 620a86bceea9efc6b5121b30c7accb1787278912
+- Previous verified commit deployed: e514785828c0e8d1db5d6938e5f364c963e06dff
+- Latest deploy id: 69a143bb852dc60008e69dbe
+- Netlify deploy state: ready (published 2026-02-27T07:12:47.750Z)
 - Current release: v3.2.0
 - Version timeline route: /whats-new
+- Latest mobile patch truth:
+  - mobile nav is collapsible via `Menu` toggle on small screens
+  - mobile header spacing is compacted to reduce above-the-fold obstruction
 - Product boundary truth:
   - Chartgen is independently authored by Farhan Rashid (gUBII)
   - Deployed in Nexis365-hosted environments for GoodwillCare and COHS
