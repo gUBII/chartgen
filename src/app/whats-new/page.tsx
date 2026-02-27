@@ -9,6 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "v3.5",
+    title: "Database-Backed Gap Report Storage",
+    date: "February 27, 2026",
+    highlights: [
+      "Migrated gap-report storage from `/tmp` disk artifacts to PostgreSQL database.",
+      "Added `GapReport` Prisma model with JSONB columns for metrics and recommendations.",
+      "Implemented database-first read strategy with optional `/tmp` fallback for compatibility.",
+      "Added `GET /api/audit/gap-report?limit=N` endpoint for paginated report listing.",
+      "Enhanced report persistence with optional `expiresAt` field for retention policy support.",
+    ],
+  },
+  {
     version: "v3.4",
     title: "KPI Engine & Gemini Flash AI Gap-Report",
     date: "February 27, 2026",
@@ -171,7 +183,7 @@ export default function WhatsNewPage() {
     <main className="mx-auto max-w-7xl px-6 pt-10 pb-16 space-y-6">
       <section className="futuristic-panel p-8 sm:p-10">
         <p className="landing-mono text-xs text-blue-200">Release Timeline</p>
-        <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.4</h2>
+        <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.5</h2>
         <p className="text-muted mt-4 max-w-3xl text-sm sm:text-base">
           Full staged feature ledger of everything delivered so far, organized by release milestone.
         </p>

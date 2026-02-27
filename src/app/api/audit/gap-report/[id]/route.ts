@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie, verifySession } from "../../../../../lib/session";
+import { prisma } from "../../../../../lib/prisma";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -47,6 +48,30 @@ export async function GET(
       return NextResponse.json({ error: "Missing report ID" }, { status: 400 });
     }
 
+    // Try database first (source of truth)
+    try {
+      const report = await prisma.gapReport.findUnique({
+        where: { id },
+      });
+
+      if (report) {
+        return NextResponse.json({
+          id: report.id,
+          from: report.from.toISOString(),
+          to: report.to.toISOString(),
+          scope: report.scope,
+          kpiMetrics: report.kpiMetrics,
+          aiSummary: report.aiSummary,
+          recommendations: report.recommendations,
+          generatedAt: report.createdAt.toISOString(),
+        });
+      }
+    } catch (dbError) {
+      console.warn("Database lookup failed:", dbError);
+      // Fall through to /tmp fallback
+    }
+
+    // Fallback to disk artifact if DB record not found
     try {
       const reportPath = path.join(REPORTS_DIR, `${id}.json`);
       const content = await fs.readFile(reportPath, "utf-8");

@@ -2,9 +2,17 @@
 
 Last updated: 2026-02-27
 
-This document stages all delivered features so far from `v1.0` through `v3.4`.
+This document stages all delivered features so far from `v1.0` through `v3.5`.
 
-## v3.4 (Current)
+## v3.5 (Current)
+
+- Migrated gap-report storage from `/tmp` disk artifacts to PostgreSQL database.
+- Added `GapReport` Prisma model with JSONB columns for KPI metrics and recommendations.
+- Implemented database-first read strategy with optional `/tmp` fallback for gap-report retrieval.
+- Added `GET /api/audit/gap-report?limit=N` endpoint for paginated report listing.
+- Enhanced report persistence with optional `expiresAt` field for retention policies.
+
+## v3.4
 
 - Implemented KPI Engine with Gemini Flash AI gap-report analysis.
 - Added primary navigation overhaul: `/audit-engine` (KPI trends) and `/audit-explorer` (data browser).

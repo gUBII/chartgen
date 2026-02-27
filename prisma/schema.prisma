@@ -266,3 +266,21 @@ model AuditEvent {
   @@index([entityType, entityId, createdAt])
   @@index([participantId, createdAt])
 }
+
+model GapReport {
+  id              String   @id @default(uuid())
+  from            DateTime
+  to              DateTime
+  scope           String?  // meal | mar | audit | batch
+  kpiMetrics      Json     // { completionRate, errorRate, avgProcessingTime }
+  aiSummary       String
+  recommendations Json     // String[]
+  geminiModel     String   @default("gemini-2.0-flash")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  expiresAt       DateTime? // Optional: for auto-cleanup of old reports
+
+  @@index([createdAt])
+  @@index([from, to])
+  @@index([expiresAt])
+}

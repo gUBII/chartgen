@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getSessionCookie, verifySession } from "../../../../lib/session";
 import { computeAuditKpi } from "../../../../lib/audit-kpi";
+import { prisma } from "../../../../lib/prisma";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
@@ -15,21 +15,6 @@ interface GapReportRequest {
   from: string; // ISO date
   to: string; // ISO date
   scope?: "meal" | "mar" | "audit" | "batch";
-}
-
-interface GapReportResult {
-  id: string;
-  from: string;
-  to: string;
-  scope?: string;
-  kpiMetrics: {
-    completionRate: number;
-    errorRate: number;
-    avgProcessingTime: number;
-  };
-  aiSummary: string;
-  recommendations: string[];
-  generatedAt: string;
 }
 
 // Ensure reports directory exists
@@ -108,6 +93,44 @@ Provide:
   }
 }
 
+export async function GET(request: NextRequest) {
+  try {
+    await requireFullSession(request);
+
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const limit = limitParam ? Math.min(parseInt(limitParam, 10), 100) : 10;
+
+    const reports = await prisma.gapReport.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+
+    const formattedReports = reports.map((report) => ({
+      id: report.id,
+      from: report.from.toISOString(),
+      to: report.to.toISOString(),
+      scope: report.scope,
+      kpiMetrics: report.kpiMetrics,
+      aiSummary: report.aiSummary,
+      recommendations: report.recommendations,
+      generatedAt: report.createdAt.toISOString(),
+    }));
+
+    return NextResponse.json(formattedReports);
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    console.error("Gap report listing error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     await requireFullSession(request);
@@ -122,9 +145,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate report ID
-    const reportId = randomUUID();
-
     // Compute KPI metrics from actual committed audit data
     const auditKpi = await computeAuditKpi(new Date(from), new Date(to));
     const kpiMetrics = {
@@ -137,27 +157,61 @@ export async function POST(request: NextRequest) {
     // Get AI summary from Gemini
     const aiSummary = await callGeminiGapReport(from, to, scope);
 
-    const report: GapReportResult = {
-      id: reportId,
+    const recommendations = [
+      "Review high-error audit batches",
+      "Optimize processing workflow",
+      "Increase supervisor oversight",
+    ];
+
+    // Persist report to database (source of truth)
+    const dbReport = await prisma.gapReport.create({
+      data: {
+        from: new Date(from),
+        to: new Date(to),
+        scope: scope || null,
+        kpiMetrics: kpiMetrics as any,
+        aiSummary,
+        recommendations: recommendations as any,
+        geminiModel: GEMINI_MODEL,
+      },
+    });
+
+    // Optionally save to disk for debugging/ops
+    try {
+      await ensureReportsDir();
+      const reportPath = path.join(REPORTS_DIR, `${dbReport.id}.json`);
+      await fs.writeFile(
+        reportPath,
+        JSON.stringify(
+          {
+            id: dbReport.id,
+            from,
+            to,
+            scope,
+            kpiMetrics,
+            aiSummary,
+            recommendations,
+            generatedAt: dbReport.createdAt.toISOString(),
+          },
+          null,
+          2
+        )
+      );
+    } catch (diskError) {
+      console.warn("Failed to write disk artifact:", diskError);
+      // Non-fatal - DB is source of truth
+    }
+
+    return NextResponse.json({
+      id: dbReport.id,
       from,
       to,
       scope,
       kpiMetrics,
       aiSummary,
-      recommendations: [
-        "Review high-error audit batches",
-        "Optimize processing workflow",
-        "Increase supervisor oversight",
-      ],
-      generatedAt: new Date().toISOString(),
-    };
-
-    // Save report to disk
-    await ensureReportsDir();
-    const reportPath = path.join(REPORTS_DIR, `${reportId}.json`);
-    await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
-
-    return NextResponse.json(report);
+      recommendations,
+      generatedAt: dbReport.createdAt.toISOString(),
+    });
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
