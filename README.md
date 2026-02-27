@@ -212,7 +212,7 @@ SESSION_TTL_SEC=604800
 ```
 
 - `SESSION_SECRET`: HMAC signing key for session tokens (required). Use a long random string (32+ chars).
-- `SESSION_TTL_SEC`: Session time-to-live in seconds (optional, default: 604800 = 7 days). Affects both token expiry and cookie maxAge.
+- `SESSION_TTL_SEC`: Session time-to-live in seconds (optional, default: 604800 = 7 days). Invalid or non-positive values fallback to default.
 - **Cookie parity**: Sessions read `gwc_session` first, then fallback to legacy `session` cookie for backward compatibility.
 
 ### Build Context

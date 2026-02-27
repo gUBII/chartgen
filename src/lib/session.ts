@@ -1,5 +1,3 @@
-import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
-
 export type SessionRole = "full" | "guest";
 
 interface SessionPayload {
@@ -10,7 +8,18 @@ interface SessionPayload {
 }
 
 const SECRET = process.env.SESSION_SECRET || "dev-secret-key-change-in-production";
-export const SESSION_TTL_SEC = parseInt(process.env.SESSION_TTL_SEC || String(7 * 24 * 60 * 60), 10);
+const DEFAULT_SESSION_TTL_SEC = 7 * 24 * 60 * 60;
+
+function resolveSessionTtlSec(raw: string | undefined): number {
+  if (!raw) return DEFAULT_SESSION_TTL_SEC;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_SESSION_TTL_SEC;
+  }
+  return parsed;
+}
+
+export const SESSION_TTL_SEC = resolveSessionTtlSec(process.env.SESSION_TTL_SEC);
 
 const encoder = new TextEncoder();
 
@@ -74,8 +83,8 @@ async function importSigningKey() {
  * Used across check/ops/middleware routes for consistent cookie handling.
  */
 export function getSessionCookie(cookies: {
-  get: (name: string) => RequestCookie | undefined;
-}): RequestCookie | undefined {
+  get: (name: string) => { value: string } | undefined;
+}): { value: string } | undefined {
   return cookies.get("gwc_session") || cookies.get("session");
 }
 
