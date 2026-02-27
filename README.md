@@ -155,8 +155,8 @@ npm run db:cleanup:uat -- --participant-key 112334
 
 - `/uat` now executes online operations via protected APIs (full-login required):
   - `GET /api/ops/db-health`
-  - `POST /api/ops/uat` with `action: \"stress\"`
-  - `POST /api/ops/uat` with `action: \"cleanup\"` (`DRY_RUN` + confirmation-gated `APPLY`)
+  - `POST /api/ops/uat` with `action: "stress"`
+  - `POST /api/ops/uat` with `action: "cleanup"` (`DRY_RUN` + confirmation-gated `APPLY`)
 - Each online run writes a JSON artifact with timestamp and commit reference.
 - Default artifact directory:
   - local: `reports/uat`
