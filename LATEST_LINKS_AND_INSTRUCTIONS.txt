@@ -12,10 +12,10 @@ Creator Links
 
 Current Deployment Truth
 - Branch: main
-- Latest verified commit deployed: 620a86bceea9efc6b5121b30c7accb1787278912
-- Previous verified commit deployed: e514785828c0e8d1db5d6938e5f364c963e06dff
-- Latest deploy id: 69a143bb852dc60008e69dbe
-- Netlify deploy state: ready (published 2026-02-27T07:12:47.750Z)
+- Latest verified commit deployed: 81232b0fb1c3c9b41f78417903af9fc2db90aa22
+- Previous verified commit deployed: 620a86bceea9efc6b5121b30c7accb1787278912
+- Latest deploy id: 69a144d7bbd5cc0008549b29
+- Netlify deploy state: ready (published 2026-02-27T07:17:38.128Z)
 - Current release: v3.2.0
 - Version timeline route: /whats-new
 - Latest mobile patch truth:
