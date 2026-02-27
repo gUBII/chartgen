@@ -6,3 +6,13 @@ node_modules/
 *.log
 # Local Netlify folder
 .netlify
+
+# Neon CLI
+.neonctl/
+neon.json
+
+# IDE and local development
+.vscode/
+.idea/
+*.swp
+*.swo
