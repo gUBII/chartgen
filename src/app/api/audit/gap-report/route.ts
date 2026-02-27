@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getSessionCookie, verifySession } from "../../../../lib/session";
+import { computeAuditKpi } from "../../../../lib/audit-kpi";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
@@ -124,11 +125,13 @@ export async function POST(request: NextRequest) {
     // Generate report ID
     const reportId = randomUUID();
 
-    // Mock KPI metrics (in production, compute from actual data)
+    // Compute KPI metrics from actual committed audit data
+    const auditKpi = await computeAuditKpi(new Date(from), new Date(to));
     const kpiMetrics = {
-      completionRate: Math.random() * 0.2 + 0.8,
-      errorRate: Math.random() * 0.1,
-      avgProcessingTime: Math.random() * 5000 + 2000,
+      completionRate: auditKpi.readiness.overallScore / 100,
+      errorRate: (auditKpi.gaps.missingEvidence + auditKpi.gaps.continuityIssues) /
+                 (auditKpi.totals.auditEvents || 1),
+      avgProcessingTime: 3200, // Default; would compute from audit timestamps in production
     };
 
     // Get AI summary from Gemini
