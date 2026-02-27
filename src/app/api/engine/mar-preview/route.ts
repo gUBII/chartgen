@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { MARStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { RestorationEngine } from "../../../../services/restoration/restorationEngine";

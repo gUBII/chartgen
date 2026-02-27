@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useState, useEffect } from "react";
+import { ReactNode, createContext, useContext, useState, useEffect, useCallback } from "react";
 
 interface AuthContextValue {
   role: "full" | "guest" | null;
@@ -13,7 +13,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<"full" | "guest" | null>(null);
 
-  const refreshRole = async () => {
+  const refreshRole = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/check", {
         method: "GET",
@@ -30,11 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Failed to check auth role:", error);
       setRole(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshRole();
-  }, []);
+    void refreshRole();
+  }, [refreshRole]);
 
   return (
     <AuthContext.Provider value={{ role, refreshRole, applyRole: setRole }}>

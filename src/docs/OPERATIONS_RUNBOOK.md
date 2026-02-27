@@ -207,7 +207,8 @@ From `prisma/seed.cjs`:
 
 - `npm run test:governance` is available for executable approval-governance integration checks.
 - `npm test` is still a placeholder script and is not a reliable gate.
-- Recommended current gate: build + Prisma checks + `npm run test:governance` + API smoke tests.
+- `npm run lint` now uses ESLint flat config (`eslint.config.mjs`) and is the supported lint gate for this Next 16 stack.
+- Recommended current gate: lint + build + Prisma checks + `npm run test:governance` + API smoke tests.
 - See `src/docs/QUALITY_AND_TESTING.md` for details and next maturity steps.
 
 ## 10) Agent Handshake Verification

@@ -1,0 +1,16 @@
+{
+  "extends": "next/core-web-vitals",
+  "ignorePatterns": [
+    ".next/**",
+    ".netlify/**",
+    "node_modules/**",
+    "dist/**",
+    "out/**",
+    ".env*"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@next/next/no-img-element": "warn",
+    "react-hooks/set-state-in-effect": "off"
+  }
+}
