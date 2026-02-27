@@ -16,6 +16,7 @@ type Capability = {
 };
 
 type WhatsNewItem = {
+  version?: string;
   date: string;
   title: string;
   detail: string;
@@ -120,6 +121,7 @@ const CAPABILITIES: Capability[] = [
 
 const WHATS_NEW: WhatsNewItem[] = [
   {
+    version: "v3.2",
     date: "February 27, 2026",
     title: "Mobile UAT Set A Shipped",
     detail:
@@ -128,6 +130,7 @@ const WHATS_NEW: WhatsNewItem[] = [
     hrefLabel: "Open UAT Control Center",
   },
   {
+    version: "v3.1",
     date: "February 27, 2026",
     title: "Production Deploy Verification",
     detail:
@@ -136,12 +139,22 @@ const WHATS_NEW: WhatsNewItem[] = [
     hrefLabel: "View Deployment Notes",
   },
   {
+    version: "v2.0",
     date: "February 27, 2026",
     title: "Governance Messaging v2.0",
     detail:
       "Homepage positioning, ownership boundaries, and compliance framing were tightened for enterprise clarity and audit-readiness communication.",
     href: "/audit-readiness",
     hrefLabel: "Read Audit-readiness Overview",
+  },
+  {
+    version: "v1.0-v3.2",
+    date: "Version Ledger",
+    title: "Full Version History",
+    detail:
+      "Open the complete staged feature timeline from foundation release v1.0 through the latest v3.2 release.",
+    href: "/whats-new",
+    hrefLabel: "View Full Version History",
   },
 ];
 
@@ -204,7 +217,14 @@ export default function HomePage() {
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
           {WHATS_NEW.map((item) => (
             <article key={item.title} className="rounded-xl border border-blue-400/25 bg-slate-900/60 p-4">
-              <p className="text-[11px] uppercase tracking-widest text-blue-200/80">{item.date}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {item.version ? (
+                  <span className="rounded-full border border-blue-300/40 bg-blue-400/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-100">
+                    {item.version}
+                  </span>
+                ) : null}
+                <p className="text-[11px] uppercase tracking-widest text-blue-200/80">{item.date}</p>
+              </div>
               <h4 className="mt-2 text-sm font-semibold text-blue-50">{item.title}</h4>
               <p className="mt-2 text-xs leading-6 text-slate-200">{item.detail}</p>
               {item.href && item.hrefLabel ? (

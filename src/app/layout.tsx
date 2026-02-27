@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className="inline-block rounded-full border border-emerald-400/50 bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200 uppercase tracking-widest">
-                      v2.0
+                      v3.2
                     </span>
                     <a
                       href="https://github.com/gUBII"

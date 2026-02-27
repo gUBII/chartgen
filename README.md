@@ -12,6 +12,10 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 - GitHub repo: https://github.com/gUBII/chartgen
 - Creator GitHub: https://github.com/gUBII
 
+## Current Release
+
+- `v3.2.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
+
 ## Current Truth
 
 Chartgen currently implements:
@@ -75,6 +79,7 @@ Migration applied:
 ### Pages
 
 - `GET /` - landing page
+- `GET /whats-new` - full version timeline from `v1.0` to `v3.2`
 - `GET /login` - access-control login page
 - `GET /deployment-notes` - deployment and hosting boundary notes
 - `GET /audit-readiness` - audit-modelling and readiness framing

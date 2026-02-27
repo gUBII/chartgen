@@ -17,6 +17,7 @@ Design goals:
 ### UI
 
 - `/` - enterprise landing page and product positioning
+- `/whats-new` - staged release timeline (v1.0 through current release)
 - `/login` - role-gated access control entrypoint
 - `/deployment-notes` - deployment/ownership boundary notes
 - `/audit-readiness` - audit-modelling framing page

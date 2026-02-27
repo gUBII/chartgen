@@ -12,10 +12,12 @@ Creator Links
 
 Current Deployment Truth
 - Branch: main
-- Latest verified commit deployed: fbed4665784fdec45046196fba123d8b8875c99d
-- Previous verified commit deployed: 7bd48c6b57fb7cfd0d2daa1bda10cc343c73983d
-- Latest deploy id: 69a1356fab8b7800087aafc9
-- Netlify deploy state: ready (published 2026-02-27T06:11:44.642Z)
+- Latest verified commit deployed: 183bf0400711ea5b9fe4bc533961d66dbe264bc1
+- Previous verified commit deployed: e87d27c1246a6f0c7a8ebafe3d9aed82035ad451
+- Latest deploy id: 69a13d2d21868f000802702c
+- Netlify deploy state: ready (published 2026-02-27T06:44:49.344Z)
+- Current release: v3.2.0
+- Version timeline route: /whats-new
 - Product boundary truth:
   - Chartgen is independently authored by Farhan Rashid (gUBII)
   - Deployed in Nexis365-hosted environments for GoodwillCare and COHS

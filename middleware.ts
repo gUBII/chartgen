@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "./src/lib/session";
 
 // Routes that don't require authentication
-const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness"];
+const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness", "/whats-new"];
 const publicPrefixRoutes = ["/_next", "/api/auth"];
 const staticRoutes = ["/favicon.ico", "/gubii-profile.png"];
 const fullAccessApiPrefixes = ["/api/ops"];
