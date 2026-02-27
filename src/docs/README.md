@@ -1,6 +1,6 @@
 # Docs Index
 
-Last updated: 2026-02-26
+Last updated: 2026-02-27
 
 ## Primary Entry
 
@@ -14,3 +14,4 @@ Last updated: 2026-02-26
 - `QUALITY_AND_TESTING.md` - current test reality, verification strategy, and recommended next test steps
 - `TECHNOLOGY_CONTEXT.md` - stack rationale and compliance-oriented design constraints
 - `PHASE1_AUDIT.md` - historical phase-1 audit findings with closure status against current codebase
+- `../../LATEST_LINKS_AND_INSTRUCTIONS.txt` - latest live links and command checklist

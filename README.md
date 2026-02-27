@@ -1,8 +1,17 @@
 # ChartGen
 
-Last updated: 2026-02-26
+Last updated: 2026-02-27
 
 Clinical mealtime and medication restoration + audit-ledger control center built with Next.js, Prisma, and PostgreSQL.
+
+## Live Links (Verified 2026-02-27)
+
+- Production app: https://chartgen-gubii.netlify.app
+- Main deploy alias: https://main--chartgen-gubii.netlify.app
+- Netlify admin: https://app.netlify.com/projects/chartgen-gubii
+- GitHub repo: https://github.com/gUBII/chartgen
+- Creator GitHub: https://github.com/gUBII
+- WhatsApp support/contact: https://wa.me/61423016859?text=Hi%20gUBII%2C%20I%27d%20like%20to%20support%20Chartgen
 
 ## Current Truth
 
@@ -84,6 +93,7 @@ Set `.env`:
 
 ```bash
 DATABASE_URL="postgresql://admin:password123@localhost:5432/chartgen_audit?schema=public"
+DIRECT_URL="postgresql://admin:password123@localhost:5432/chartgen_audit?schema=public"
 ```
 
 ### 3) Migrate + generate + seed
@@ -202,7 +212,7 @@ netlify deploy --prod --trigger
 After successful production deploy:
 
 1. `npx netlify status` shows the correct linked project and production URL
-2. Visit deployed site (e.g., `https://chartgen.netlify.app`)
+2. Visit deployed site (e.g., `https://chartgen-gubii.netlify.app`)
 3. Test `/mar` endpoint: Generate and download PDF
 4. Test `/restoration` endpoint: Verify database writes
 5. Monitor Netlify function logs for errors
@@ -272,3 +282,4 @@ See: `src/docs/QUALITY_AND_TESTING.md`.
 - `src/docs/QUALITY_AND_TESTING.md` - testing reality and quality gates
 - `src/docs/TECHNOLOGY_CONTEXT.md` - design principles and constraints
 - `src/docs/PHASE1_AUDIT.md` - historical audit record with closure status
+- `LATEST_LINKS_AND_INSTRUCTIONS.txt` - one-file live links and operational command checklist

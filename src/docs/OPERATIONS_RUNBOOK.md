@@ -1,6 +1,13 @@
 # Operations Runbook
 
-Last updated: 2026-02-26
+Last updated: 2026-02-27
+
+## 0) Current Live Links (Verified 2026-02-27)
+
+- Production app: https://chartgen-gubii.netlify.app
+- Main deploy alias: https://main--chartgen-gubii.netlify.app
+- Netlify admin: https://app.netlify.com/projects/chartgen-gubii
+- GitHub repo: https://github.com/gUBII/chartgen
 
 ## 1) Process and Port Checks
 
@@ -40,6 +47,13 @@ pkill -f "next start -p 4000" || true
 cd /Users/moofasa/chartgen
 npx prisma validate
 npx prisma migrate status
+```
+
+Recommended for Neon setup (both URLs required by Prisma datasource config):
+
+```bash
+DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma validate
+DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status
 ```
 
 If local DB was reset:
@@ -166,3 +180,30 @@ From `prisma/seed.cjs`:
 - `npm test` is still a placeholder script and is not a reliable gate.
 - Recommended current gate: build + Prisma checks + `npm run test:governance` + API smoke tests.
 - See `src/docs/QUALITY_AND_TESTING.md` for details and next maturity steps.
+
+## 9) Claude Handshake Verification
+
+Handshake file:
+
+- `/tmp/codex_claude_handshake.log`
+
+Instruction format:
+
+```text
+INSTRUCTION [UUID]
+<task description>
+```
+
+Result format:
+
+```text
+RESULT [UUID]
+<status/output>
+```
+
+Quick check commands:
+
+```bash
+tail -n 80 /tmp/codex_claude_handshake.log
+rg -n "INSTRUCTION|RESULT" /tmp/codex_claude_handshake.log
+```

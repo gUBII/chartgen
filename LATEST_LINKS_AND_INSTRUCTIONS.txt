@@ -1,0 +1,55 @@
+ChartGen - Latest Links and Instructions
+Last verified: 2026-02-27
+
+Production Links
+- App URL: https://chartgen-gubii.netlify.app
+- Main deploy alias: https://main--chartgen-gubii.netlify.app
+- Netlify admin: https://app.netlify.com/projects/chartgen-gubii
+- GitHub repository: https://github.com/gUBII/chartgen
+
+Creator Links
+- GitHub: https://github.com/gUBII
+- WhatsApp contact: https://wa.me/61423016859?text=Hi%20gUBII%2C%20I%27d%20like%20to%20support%20Chartgen
+- WhatsApp donation: https://wa.me/61423016859?text=I%27d%20like%20to%20donate%20to%20support%20Chartgen%20development
+
+Current Deployment Truth
+- Branch: main
+- Latest verified commit deployed: 45e38cf2
+- Netlify deploy state: ready
+- Netlify production environment keys required:
+  - DATABASE_URL (Neon pooled URL, host includes "-pooler")
+  - DIRECT_URL (Neon direct URL, no "-pooler")
+  - NODE_VERSION
+
+Operational Commands
+1) Check project/link status
+   npx netlify status
+
+2) Set production environment variables
+   npx netlify env:set DATABASE_URL "postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require" --context production
+   npx netlify env:set DIRECT_URL "postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require" --context production
+
+3) Validate Prisma schema and migration status
+   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma validate
+   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status
+
+4) Apply migrations and seed
+   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate deploy
+   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma db seed
+
+5) Trigger production redeploy
+   npx netlify deploy --prod --trigger
+
+6) Check latest deploy state quickly
+   npx netlify api listSiteDeploys --data '{"site_id":"288b3602-09cb-4368-877f-535974603584","page":1,"per_page":3}'
+
+Claude Workflow Handshake
+- Handshake file: /tmp/codex_claude_handshake.log
+- Write instruction:
+  INSTRUCTION [UUID]
+  <task description>
+- Expect response:
+  RESULT [UUID]
+  <status/output>
+- Tail messages:
+  tail -n 80 /tmp/codex_claude_handshake.log
