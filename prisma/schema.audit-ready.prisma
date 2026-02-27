@@ -48,6 +48,7 @@ enum StaffRole {
 enum EntrySource {
   LIVE
   RESTORED_APPROVED
+  SYNTHETIC_QA
 }
 
 enum CandidateStatus {
@@ -72,6 +73,22 @@ model Participant {
 
   mealLogs           MealLog[]
   marLogs            MARLog[]
+  bglLogs            BglLog[]
+  sleepSettlingLogs  SleepSettlingLog[]
+  bowelFluidLogs     BowelFluidLog[]
+  personalCareLogs   PersonalCareLog[]
+  communityAccessLogs CommunityAccessLog[]
+  repositioningLogs  RepositioningLog[]
+  incidents          Incident[]
+  incidentNotifications IncidentNotification[]
+  restrictivePracticeEvents RestrictivePracticeEvent[]
+  monthlyReports     MonthlyReport[]
+  highIntensityEvents HighIntensityEventLog[]
+  trainingRecords    TrainingRecord[]
+  seizureEvents      SeizureEvent[]
+  shiftNotes         ShiftNote[]
+  goalProgress       GoalProgress[]
+  recordCorrections  RecordCorrection[]
   restorationBatches RestorationBatch[]
   mealCandidates     RestoredMealCandidate[]
   marCandidates      RestoredMARCandidate[]
@@ -91,6 +108,22 @@ model Staff {
   approvedMealLogs            MealLog[]               @relation("MealApprovedBy")
   createdMARLogs              MARLog[]                @relation("MARCreatedBy")
   approvedMARLogs             MARLog[]                @relation("MARApprovedBy")
+  loggedBgls                  BglLog[]                @relation("BglLoggedBy")
+  loggedSleepSettling         SleepSettlingLog[]      @relation("SleepLoggedBy")
+  loggedBowelFluid            BowelFluidLog[]         @relation("BowelFluidLoggedBy")
+  loggedPersonalCare          PersonalCareLog[]       @relation("PersonalCareLoggedBy")
+  loggedCommunityAccess       CommunityAccessLog[]    @relation("CommunityAccessLoggedBy")
+  loggedRepositioning         RepositioningLog[]      @relation("RepositioningLoggedBy")
+  reportedIncidents           Incident[]              @relation("IncidentReportedBy")
+  incidentNotifications       IncidentNotification[]  @relation("IncidentNotifiedBy")
+  restrictivePracticeEvents   RestrictivePracticeEvent[] @relation("RestrictivePracticeLoggedBy")
+  monthlyReports              MonthlyReport[]         @relation("MonthlyReportCompiledBy")
+  highIntensityEvents         HighIntensityEventLog[] @relation("HighIntensityLoggedBy")
+  trainingRecords             TrainingRecord[]        @relation("TrainingRecordedBy")
+  seizureEvents               SeizureEvent[]          @relation("SeizureLoggedBy")
+  shiftNotes                  ShiftNote[]             @relation("ShiftNoteAuthoredBy")
+  goalProgressEntries         GoalProgress[]          @relation("GoalProgressRecordedBy")
+  recordCorrections           RecordCorrection[]      @relation("RecordCorrectionBy")
   requestedRestorationBatches RestorationBatch[]      @relation("BatchRequestedBy")
   reviewedRestorationBatches  RestorationBatch[]      @relation("BatchReviewedBy")
   generatedMealCandidates     RestoredMealCandidate[] @relation("MealCandidateGeneratedBy")
@@ -238,12 +271,410 @@ model MARLog {
   status             MARStatus
   omissionReason     String?
   provenanceHash     String
+  linkedBglLogs      BglLog[]                @relation("BglLinkedMar")
+  restrictivePracticeEvents RestrictivePracticeEvent[] @relation("RestrictivePracticeLinkedMar")
+  seizureEvents      SeizureEvent[]          @relation("SeizureLinkedMar")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([participantId, scheduledAdminTime])
   @@index([source, status, scheduledAdminTime])
+}
+
+enum SleepStatus {
+  ASLEEP
+  AWAKE
+  AGITATED
+}
+
+enum BowelFluidType {
+  BOWEL
+  FLUID_IN
+  FLUID_OUT
+}
+
+enum SkinIntegrityStatus {
+  INTACT
+  REDNESS
+  BROKEN
+}
+
+enum RepositioningPosition {
+  LEFT
+  RIGHT
+  SUPINE
+  SEATED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  UNDER_REVIEW
+  CLOSED
+}
+
+enum RestrictivePracticeType {
+  CHEMICAL
+  PHYSICAL
+  MECHANICAL
+  ENVIRONMENTAL
+}
+
+enum HighIntensityType {
+  COMPLEX_BOWEL_CARE
+  ENTERAL_FEEDING
+  RESPIRATORY_SUPPORT
+  EPILEPSY_SUPPORT
+}
+
+enum TrainingStatus {
+  CURRENT
+  EXPIRED
+  PENDING
+}
+
+enum SeizureType {
+  FOCAL
+  GENERALIZED
+  UNKNOWN
+}
+
+enum ShiftNoteCategory {
+  ROUTINE
+  ESCALATION
+  INCIDENT_FOLLOWUP
+  CLINICAL_HANDOVER
+}
+
+enum GoalStatus {
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+}
+
+enum CorrectionReason {
+  TRANSCRIPTION_ERROR
+  MISSING_INFORMATION
+  CLINICAL_AMENDMENT
+  AUDIT_REMEDIATION
+}
+
+model BglLog {
+  id             String      @id @default(uuid())
+  participantId  String
+  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId String
+  loggedByStaff  Staff       @relation("BglLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  linkedMarLogId String?
+  linkedMarLog   MARLog?     @relation("BglLinkedMar", fields: [linkedMarLogId], references: [id], onDelete: SetNull)
+  reading        Float
+  fasting        Boolean
+  actionTaken    String
+  source         EntrySource @default(LIVE)
+  shiftNotes     ShiftNote[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([source, createdAt])
+}
+
+model SleepSettlingLog {
+  id              String      @id @default(uuid())
+  participantId   String
+  participant     Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId String
+  loggedByStaff   Staff       @relation("SleepLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  checkTime       DateTime
+  status          SleepStatus
+  intervention    String?
+  source          EntrySource @default(LIVE)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([participantId, checkTime])
+  @@index([source, checkTime])
+}
+
+model BowelFluidLog {
+  id               String         @id @default(uuid())
+  participantId    String
+  participant      Participant    @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId  String
+  loggedByStaff    Staff          @relation("BowelFluidLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  type             BowelFluidType
+  bristolScale     Int?
+  volumeMl         Int?
+  source           EntrySource    @default(LIVE)
+  highIntensityEvents HighIntensityEventLog[] @relation("HighIntensityLinkedBowelFluid")
+  shiftNotes       ShiftNote[]       @relation("ShiftNoteBowelFluidLink")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([type, createdAt])
+  @@index([source, createdAt])
+}
+
+model PersonalCareLog {
+  id               String              @id @default(uuid())
+  participantId    String
+  participant      Participant         @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId  String
+  loggedByStaff    Staff               @relation("PersonalCareLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  shower           Boolean
+  oralCare         Boolean
+  skinIntegrity    SkinIntegrityStatus
+  refusalReason    String?
+  source           EntrySource         @default(LIVE)
+  shiftNotes       ShiftNote[]         @relation("ShiftNotePersonalCareLink")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([source, createdAt])
+}
+
+model CommunityAccessLog {
+  id               String      @id @default(uuid())
+  participantId    String
+  participant      Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId  String
+  loggedByStaff    Staff       @relation("CommunityAccessLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  destination      String
+  purpose          String
+  durationMin      Int
+  odometerStart    Int?
+  odometerEnd      Int?
+  source           EntrySource @default(LIVE)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([source, createdAt])
+}
+
+model RepositioningLog {
+  id               String               @id @default(uuid())
+  participantId    String
+  participant      Participant          @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId  String
+  loggedByStaff    Staff                @relation("RepositioningLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  position         RepositioningPosition
+  skinCheckOutcome String
+  source           EntrySource          @default(LIVE)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([source, createdAt])
+}
+
+model Incident {
+  id                String           @id @default(uuid())
+  participantId     String
+  participant       Participant      @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  reportedByStaffId String
+  reportedByStaff   Staff            @relation("IncidentReportedBy", fields: [reportedByStaffId], references: [id], onDelete: Restrict)
+  severity          IncidentSeverity
+  description       String
+  status            IncidentStatus   @default(OPEN)
+  source            EntrySource      @default(LIVE)
+  notifications     IncidentNotification[]
+  restrictivePracticeEvents RestrictivePracticeEvent[]
+  shiftNotes        ShiftNote[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([status, createdAt])
+  @@index([source, createdAt])
+}
+
+model IncidentNotification {
+  id                String      @id @default(uuid())
+  incidentId        String
+  incident          Incident    @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  participantId     String
+  participant       Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  notifiedByStaffId String
+  notifiedByStaff   Staff       @relation("IncidentNotifiedBy", fields: [notifiedByStaffId], references: [id], onDelete: Restrict)
+  method            String
+  recipient         String
+  sentAt            DateTime
+  source            EntrySource @default(LIVE)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([incidentId, sentAt])
+  @@index([participantId, sentAt])
+}
+
+model RestrictivePracticeEvent {
+  id                String                   @id @default(uuid())
+  participantId     String
+  participant       Participant              @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId   String
+  loggedByStaff     Staff                    @relation("RestrictivePracticeLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  incidentId        String?
+  incident          Incident?                @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  relatedMarLogId   String?
+  relatedMarLog     MARLog?                  @relation("RestrictivePracticeLinkedMar", fields: [relatedMarLogId], references: [id], onDelete: SetNull)
+  type              RestrictivePracticeType
+  reason            String
+  durationMin       Int?
+  source            EntrySource              @default(LIVE)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([type, createdAt])
+  @@index([source, createdAt])
+}
+
+model MonthlyReport {
+  id                 String      @id @default(uuid())
+  participantId      String
+  participant        Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  compiledByStaffId  String
+  compiledByStaff    Staff       @relation("MonthlyReportCompiledBy", fields: [compiledByStaffId], references: [id], onDelete: Restrict)
+  monthStart         DateTime
+  monthEnd           DateTime
+  summary            String
+  totalIncidents     Int         @default(0)
+  totalRestrictiveEvents Int     @default(0)
+  source             EntrySource @default(LIVE)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([participantId, monthStart, monthEnd])
+}
+
+model HighIntensityEventLog {
+  id                  String            @id @default(uuid())
+  participantId       String
+  participant         Participant       @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId     String
+  loggedByStaff       Staff             @relation("HighIntensityLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  type                HighIntensityType
+  details             String
+  linkedBowelFluidLogId String?
+  linkedBowelFluidLog BowelFluidLog?   @relation("HighIntensityLinkedBowelFluid", fields: [linkedBowelFluidLogId], references: [id], onDelete: SetNull)
+  source              EntrySource       @default(LIVE)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([type, createdAt])
+}
+
+model TrainingRecord {
+  id                 String         @id @default(uuid())
+  participantId      String
+  participant        Participant    @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  staffId            String
+  staff              Staff          @relation("TrainingRecordedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  competency         HighIntensityType
+  status             TrainingStatus
+  validUntil         DateTime?
+  source             EntrySource    @default(LIVE)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([participantId, competency, status])
+  @@index([staffId, competency, status])
+}
+
+model SeizureEvent {
+  id                String       @id @default(uuid())
+  participantId     String
+  participant       Participant  @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  loggedByStaffId   String
+  loggedByStaff     Staff        @relation("SeizureLoggedBy", fields: [loggedByStaffId], references: [id], onDelete: Restrict)
+  type              SeizureType
+  onsetAt           DateTime
+  durationSec       Int?
+  relatedMarLogId   String?
+  relatedMarLog     MARLog?      @relation("SeizureLinkedMar", fields: [relatedMarLogId], references: [id], onDelete: SetNull)
+  intervention      String?
+  source            EntrySource  @default(LIVE)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([participantId, onsetAt])
+  @@index([source, onsetAt])
+}
+
+model ShiftNote {
+  id                 String            @id @default(uuid())
+  participantId      String
+  participant        Participant       @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  authoredByStaffId  String
+  authoredByStaff    Staff             @relation("ShiftNoteAuthoredBy", fields: [authoredByStaffId], references: [id], onDelete: Restrict)
+  category           ShiftNoteCategory @default(ROUTINE)
+  note               String
+  linkedPersonalCareLogId String?
+  linkedPersonalCareLog PersonalCareLog? @relation("ShiftNotePersonalCareLink", fields: [linkedPersonalCareLogId], references: [id], onDelete: SetNull)
+  linkedIncidentId   String?
+  linkedIncident     Incident?         @relation(fields: [linkedIncidentId], references: [id], onDelete: SetNull)
+  linkedBglLogId     String?
+  linkedBglLog       BglLog?           @relation(fields: [linkedBglLogId], references: [id], onDelete: SetNull)
+  linkedBowelFluidLogId String?
+  linkedBowelFluidLog BowelFluidLog? @relation("ShiftNoteBowelFluidLink", fields: [linkedBowelFluidLogId], references: [id], onDelete: SetNull)
+  source             EntrySource       @default(LIVE)
+  goalProgress       GoalProgress[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([category, createdAt])
+  @@index([source, createdAt])
+}
+
+model GoalProgress {
+  id                 String      @id @default(uuid())
+  participantId      String
+  participant        Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  recordedByStaffId  String
+  recordedByStaff    Staff       @relation("GoalProgressRecordedBy", fields: [recordedByStaffId], references: [id], onDelete: Restrict)
+  shiftNoteId        String?
+  shiftNote          ShiftNote?  @relation(fields: [shiftNoteId], references: [id], onDelete: SetNull)
+  goalName           String
+  status             GoalStatus
+  progressNote       String?
+  source             EntrySource @default(LIVE)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([participantId, goalName, createdAt])
+}
+
+model RecordCorrection {
+  id                 String         @id @default(uuid())
+  participantId      String
+  participant        Participant    @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  correctedByStaffId String
+  correctedByStaff   Staff          @relation("RecordCorrectionBy", fields: [correctedByStaffId], references: [id], onDelete: Restrict)
+  auditEventId       String?
+  auditEvent         AuditEvent?    @relation(fields: [auditEventId], references: [id], onDelete: SetNull)
+  entityType         String
+  entityId           String
+  reason             CorrectionReason
+  beforeHash         String
+  afterHash          String
+  source             EntrySource    @default(LIVE)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([participantId, createdAt])
+  @@index([entityType, entityId, createdAt])
 }
 
 model AuditEvent {
@@ -257,6 +688,7 @@ model AuditEvent {
   entityId      String
   payloadHash   String
   previousHash  String?
+  recordCorrections RecordCorrection[]
   createdAt     DateTime     @default(now())
 
   @@index([entityType, entityId, createdAt])
