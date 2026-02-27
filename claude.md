@@ -88,9 +88,9 @@ USAGE
 ```
 
 ## Active Queue (2026-02-27)
-- `F9F25075-56DB-4126-B16E-5AE750D66823`
-  - Task: independent verification pass for latest mobile UAT patch.
-  - Expected: blocker mapping, remaining high risks (max 3), concise evidence.
-- `1C4046A4-1466-4A1C-9847-A370C759FD0D`
-  - Task: resolve lint discrepancy with exact exit-code truth.
-  - Expected: either strict pass or explicit blocked policy with split scripts and docs.
+- `4BC2E06D-1EE6-4D43-B5A5-82F1321739A5`
+  - Task: hard reset and standby acknowledgment only.
+  - Expected: exact one-line ACK in handshake log with `Status: PASS | Mode: STANDBY | Ready: yes`.
+- Notes:
+  - All earlier unresolved UUIDs are cancelled for execution.
+  - Do not edit repository files until a new UUID is issued by Codex.
