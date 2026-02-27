@@ -3,6 +3,7 @@
 ## Channel
 - Handshake log file: `/tmp/codex_claude_handshake.log`
 - Protocol doc scope: this file only defines behavior; runtime instructions and results stay in the handshake log.
+- Frugal workflow reference: `src/docs/WORKFLOW_FRUGAL.md`
 
 ## Operating Profile (CTO Allocation)
 - Primary lane: complex implementation and multi-file refactors.

@@ -3,6 +3,7 @@
 ## Channel
 - Handshake log file: `/tmp/codex_gemini_handshake.log`
 - Protocol doc scope: static behavior and schemas only. Runtime activity stays in handshake log.
+- Frugal workflow reference: `src/docs/WORKFLOW_FRUGAL.md`
 
 ## Operating Profile (CTO Allocation)
 - Model: Gemini (upgraded runtime profile, 2026-02-27).
