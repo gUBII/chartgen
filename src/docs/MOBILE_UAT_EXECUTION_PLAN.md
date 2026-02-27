@@ -108,6 +108,7 @@ All required:
 ## 6) Next Stage Queue (after merge)
 
 1. Run live browser UAT on device matrix (375/768/1280) and capture screenshots.
-2. Close remaining lint debt lane with explicit policy:
+2. Remove first-paint auth flicker in header/nav by making initial role server-aware from session cookie (avoid guest-style chips before hydration).
+3. Close remaining lint debt lane with explicit policy:
    - either fix errors, or split `lint:report` vs `lint:strict`.
-3. Implement KPIgen live metrics wiring (replace static signal cards with API data).
+4. Implement KPIgen live metrics wiring (replace static signal cards with API data).
