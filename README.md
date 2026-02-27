@@ -16,6 +16,7 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 
 - `v3.2.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
 - Latest `v3.2` patch includes optional mobile dropdown nav and compact mobile header spacing.
+- Auth hydration now reads `gwc_session` (with `session` fallback) to reduce first-paint role mismatch.
 
 ## Current Truth
 

@@ -9,6 +9,11 @@ interface AuthContextValue {
   applyRole: (nextRole: "full" | "guest" | null) => void;
 }
 
+type AuthState = {
+  role: "full" | "guest" | null;
+  isRoleResolved: boolean;
+};
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /**
@@ -18,11 +23,24 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 function extractRoleFromCookie(): "full" | "guest" | null {
   try {
     const cookies = document.cookie.split(";");
-    const sessionCookie = cookies.find((c) => c.trim().startsWith("session="));
-    if (!sessionCookie) return null;
+    const sessionCookie = cookies.find((cookie) => {
+      const trimmed = cookie.trim();
+      return trimmed.startsWith("gwc_session=") || trimmed.startsWith("session=");
+    });
+    if (!sessionCookie) {
+      return null;
+    }
 
-    const token = sessionCookie.split("=")[1];
-    if (!token) return null;
+    const separatorIndex = sessionCookie.indexOf("=");
+    if (separatorIndex === -1) {
+      return null;
+    }
+
+    const rawToken = sessionCookie.slice(separatorIndex + 1).trim();
+    if (!rawToken) {
+      return null;
+    }
+    const token = decodeURIComponent(rawToken);
 
     // Decode the payload (first part before the dot, no signature verification needed yet)
     const [payloadB64] = token.split(".");
@@ -44,15 +62,17 @@ function extractRoleFromCookie(): "full" | "guest" | null {
   }
 }
 
+function getInitialAuthState(): AuthState {
+  const role = extractRoleFromCookie();
+  return {
+    role,
+    isRoleResolved: role !== null,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Initialize both role and isRoleResolved from the cookie during hydration.
-  const [role, setRole] = useState<"full" | "guest" | null>(() =>
-    extractRoleFromCookie()
-  );
-  const [isRoleResolved, setIsRoleResolved] = useState(() => {
-    // Mark as resolved if we successfully extracted a role from the cookie.
-    return extractRoleFromCookie() !== null;
-  });
+  // Parse cookie once on hydration and derive both values from the same snapshot.
+  const [authState, setAuthState] = useState<AuthState>(() => getInitialAuthState());
 
   const refreshRole = useCallback(async () => {
     try {
@@ -63,15 +83,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (response.ok) {
         const data = await response.json();
-        setRole(data.role);
+        setAuthState({
+          role: data.role,
+          isRoleResolved: true,
+        });
       } else {
-        setRole(null);
+        setAuthState({
+          role: null,
+          isRoleResolved: true,
+        });
       }
-      setIsRoleResolved(true);
     } catch (error) {
       console.error("Failed to check auth role:", error);
-      setRole(null);
-      setIsRoleResolved(true);
+      setAuthState({
+        role: null,
+        isRoleResolved: true,
+      });
     }
   }, []);
 
@@ -84,11 +111,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshRole]);
 
   const applyRole = (nextRole: "full" | "guest" | null) => {
-    setRole(nextRole);
-    setIsRoleResolved(true);
+    setAuthState({
+      role: nextRole,
+      isRoleResolved: true,
+    });
   };
 
-  return <AuthContext.Provider value={{ role, isRoleResolved, refreshRole, applyRole }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        role: authState.role,
+        isRoleResolved: authState.isRoleResolved,
+        refreshRole,
+        applyRole,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

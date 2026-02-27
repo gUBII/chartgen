@@ -15,6 +15,7 @@ const RELEASES: Release[] = [
     highlights: [
       "Added homepage What's New section with release cards.",
       "Reduced first-paint auth/nav flicker by resolving role state before restricted indicators.",
+      "Fixed auth hydration cookie-parity to read `gwc_session` with legacy `session` fallback.",
       "Added mobile-only dropdown menu toggle to prevent navigation from occupying half of the viewport.",
       "Compacted mobile header spacing and support text for higher first-screen content density.",
       "Raised visible app release marker to v3.2.",
