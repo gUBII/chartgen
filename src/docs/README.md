@@ -1,6 +1,6 @@
 # Docs Index
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 ## Primary Entry
 
@@ -14,6 +14,7 @@ Last updated: 2026-02-27
 - `AGENT_ORCHESTRATION_PLAN.md` - multi-agent routing model, verification gates, and continuous improvement digest cadence
 - `WORKFLOW_FRUGAL.md` - token-efficient operating system for Codex + Claude + Gemini, with release gates
 - `AGENT_TASK_TEMPLATES.md` - reusable low-noise instruction templates for implementation and verification tasks
+- schema safety guard command: `npm run schema:check:collision` (mandatory before overwrite/append-as-is schema proposals)
 - `QUALITY_AND_TESTING.md` - current test reality, verification strategy, and recommended next test steps
 - `MOBILE_UAT_EXECUTION_PLAN.md` - actionable mobile UAT remediation plan with implemented patch mapping and stage exit criteria
 - `RELEASE_HISTORY.md` - staged feature ledger from v1.0 through current release v3.5

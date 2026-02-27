@@ -17,7 +17,8 @@
     "lint": "eslint src/ --max-warnings=15",
     "lint:report": "eslint src/ --max-warnings=999999 || true",
     "lint:strict": "eslint src/ --max-warnings=0",
-    "agent:check:result": "bash scripts/check-agent-result-compliance.sh"
+    "agent:check:result": "bash scripts/check-agent-result-compliance.sh",
+    "schema:check:collision": "node scripts/check-schema-collisions.mjs"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,6 @@
 # Agent Task Templates
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 Use these templates to keep instructions concise and token-efficient.
 
@@ -49,6 +49,25 @@ No edits. Verify:
 3) <assertion>
 Reply one line only:
 RESULT [UUID] PASS|FAIL <k1>=<yes|no> <k2>=<yes|no> <k3>=<yes|no> risk=<short>
+```
+
+## Schema Safety Template
+
+```text
+INSTRUCTION [UUID]
+Mode: ACTIVE
+No edits. Evaluate schema overwrite safety.
+Run:
+1) npm run schema:check:collision
+Reply format:
+RESULT [UUID]
+Status: PASS|FAIL|BLOCKED
+CpSafeNow: yes|no
+CollisionCount: <n>
+TopCollisions:
+- <model>: <collision-kind>
+Rule:
+- If CpSafeNow=no or CollisionCount>0 => Status must be FAIL or BLOCKED (never PASS)
 ```
 
 ## Deploy Truth Template

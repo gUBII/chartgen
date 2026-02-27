@@ -1,6 +1,6 @@
 # Frugal Multi-Agent Workflow
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 Owner: Codex
 
 ## Objective
@@ -66,8 +66,17 @@ Deliver fast without wasting tokens by separating implementation, verification, 
    - Gemini PASS for requested checks
 5. Deploy truth:
    - Netlify `state=ready` on expected commit
+6. Schema safety truth (schema/migration tasks only):
+   - `npm run schema:check:collision` result reviewed
+   - overwrite/append-as-is path allowed only when `cp_safe_now=yes collisions=0`
 
-No merge without all five.
+No merge without all required gates.
+
+## Status Integrity Rule
+
+- `PASS` must mean safe-to-ship for the declared scope.
+- Any result that includes `UNSAFE`, `CpSafeNow: no`, or `collisions>0` cannot be treated as `PASS`.
+- Such outputs must be normalized to `FAIL` or `BLOCKED` before planning continues.
 
 ## Minimal Communication Policy
 

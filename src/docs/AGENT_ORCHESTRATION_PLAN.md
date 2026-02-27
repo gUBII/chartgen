@@ -1,6 +1,6 @@
 # Agent Orchestration Plan
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 Owner: Codex (orchestrator)
 
 ## 1) Objective
@@ -120,8 +120,20 @@ Every task result must include:
 3. validation evidence (command => key output)
 4. commit hash (or `no commit`)
 5. blockers and single next action
+6. safety declaration for migration/schema tasks:
+   - `CpSafeNow: yes|no`
+   - `CollisionCount: <n>`
 
 Any missing field means the task is not accepted.
+
+### Status semantics (hard rule)
+
+- `PASS` means deploy-eligible for stated scope.
+- `PASS` is invalid when paired with explicit safety blockers such as:
+  - `append_as_is=UNSAFE`
+  - `CpSafeNow: no`
+  - `CollisionCount > 0`
+- If any of the above are present, result must be `FAIL` or `BLOCKED`.
 
 ## 6) Verification Gates
 
@@ -144,7 +156,14 @@ Any missing field means the task is not accepted.
 
 - Gemini or Codex validates claims made by implementer
 
-Only after A+B+C+D can a change be considered ready.
+### Gate E: Schema safety gate (required for schema/migration work)
+
+- run `npm run schema:check:collision`
+- for any overwrite/append-as-is proposal between `schema.audit-ready.prisma` and `schema.prisma`:
+  - must return `cp_safe_now=yes` and `collisions=0`
+- if `collisions>0`, overwrite path is blocked and only non-breaking modular merge is allowed
+
+Only after A+B+C+D(+E when applicable) can a change be considered ready.
 
 ## 7) Escalation and Fallback
 

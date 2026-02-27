@@ -35,5 +35,14 @@ if printf '%s\n' "$result_block" | rg -q '<[^>]+>|PASS\|FAIL\|BLOCKED|Status:[[:
   exit 1
 fi
 
+# Reject contradictory outputs where PASS is paired with explicit unsafe signals.
+if printf '%s\n' "$result_block" | rg -q '(^RESULT \[[^]]+\][[:space:]]+PASS|^Status:[[:space:]]*PASS)'; then
+  if printf '%s\n' "$result_block" | rg -q 'append_as_is=UNSAFE|AppendAsIs:[[:space:]]*UNSAFE|cp_safe_now=no|CpSafeNow:[[:space:]]*no|collisions=[1-9][0-9]*|CollisionCount:[[:space:]]*[1-9][0-9]*'; then
+    echo "SAFETY_CONTRADICTION uuid=$uuid line=$start_line"
+    echo "$result_block"
+    exit 1
+  fi
+fi
+
 echo "COMPLIANT uuid=$uuid line=$start_line"
 echo "$result_block" | head -n 1

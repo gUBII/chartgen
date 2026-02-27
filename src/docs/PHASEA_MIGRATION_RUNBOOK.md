@@ -21,6 +21,7 @@ A modular merge path was applied to both Prisma schemas:
 - `npx prisma validate --schema prisma/schema.audit-ready.prisma` -> PASS
 - `npx prisma generate` -> PASS
 - `npm run build` -> PASS
+- `npm run schema:check:collision` -> FAIL (expected for overwrite path), modular merge required
 
 ## Why This Path
 `append-as-is` or `cp prisma/schema.audit-ready.prisma prisma/schema.prisma` was high-risk due name/shape collisions and would risk breaking:
@@ -33,21 +34,25 @@ Do **not** run migration if any is true:
 2. Production and staging DB target are not clearly separated.
 3. `prisma migrate diff` preview was not reviewed.
 4. Build is failing.
+5. `npm run schema:check:collision` reports `collisions>0` and proposed action is overwrite/append-as-is.
 
 ## Safe Migration Sequence
 1. Confirm target DB environment (`dev` vs `staging` vs `production`).
-2. Create migration SQL only:
+2. Run schema collision gate:
+   - `npm run schema:check:collision`
+   - if output includes `cp_safe_now=no` or `collisions>0`, block overwrite path and use modular merge only.
+3. Create migration SQL only:
    - `npx prisma migrate dev --name phasea_modular_qa --create-only`
-3. Review generated migration SQL for:
+4. Review generated migration SQL for:
    - Only `CREATE TABLE`, `CREATE TYPE`, `CREATE INDEX`
    - No `DROP`, no destructive `ALTER TYPE` rewrites
-4. Apply on non-production first:
+5. Apply on non-production first:
    - `npx prisma migrate deploy`
-5. Run smoke checks:
+6. Run smoke checks:
    - `npx prisma validate`
    - `npm run build`
    - Auth + key API routes
-6. Promote to production using `migrate deploy` only.
+7. Promote to production using `migrate deploy` only.
 
 ## Rollback
 If migration must be reverted:
