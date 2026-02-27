@@ -76,3 +76,13 @@ DIGEST
 - What failed/repeated:
 - One process change for next cycle:
 ```
+
+## Usage Update Format
+When asked for usage, reply in 4 lines only:
+
+```text
+USAGE
+- Estimated tokens used:
+- Estimated tokens remaining:
+- Constraint risk: low|medium|high
+```
