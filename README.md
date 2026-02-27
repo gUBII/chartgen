@@ -69,6 +69,7 @@ Migration applied:
 - `GET /` - landing page
 - `GET /restoration` - meal chart control center
 - `GET /mar` - medication chart (MAR) control center
+- `GET /uat` - UAT command center (stress test + cleanup command composer)
 
 ### API
 
@@ -114,6 +115,7 @@ Open:
 
 - `http://localhost:3000/restoration`
 - `http://localhost:3000/mar`
+- `http://localhost:3000/uat`
 
 ## Seed Baseline IDs
 
@@ -128,6 +130,8 @@ From `prisma/seed.cjs`:
 npm run build
 npx prisma validate
 npx prisma migrate status
+npm run db:stress -- --concurrency 20 --duration-sec 45 --mode simple
+npm run db:cleanup:uat -- --participant-key 112334
 ```
 
 ## Netlify Deployment
@@ -282,4 +286,5 @@ See: `src/docs/QUALITY_AND_TESTING.md`.
 - `src/docs/QUALITY_AND_TESTING.md` - testing reality and quality gates
 - `src/docs/TECHNOLOGY_CONTEXT.md` - design principles and constraints
 - `src/docs/PHASE1_AUDIT.md` - historical audit record with closure status
+- `src/docs/UAT_AND_AUTH_ROADMAP.md` - UAT execution plan plus login/auth rollout roadmap
 - `LATEST_LINKS_AND_INSTRUCTIONS.txt` - one-file live links and operational command checklist

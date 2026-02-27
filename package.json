@@ -6,6 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:governance": "node scripts/test-approval-governance.mjs",
+    "db:stress": "node scripts/stress-db.mjs",
+    "db:cleanup:uat": "node scripts/cleanup-uat-data.mjs",
     "dev": "next dev",
     "build": "next build",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -28,6 +30,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
+    "@tanstack/react-table": "^8.21.3",
     "next": "^16.1.6",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.4",

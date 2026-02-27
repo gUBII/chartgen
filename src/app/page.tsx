@@ -50,7 +50,7 @@ export default function HomePage() {
         </p>
 
         {/* Feature Cards */}
-        <div className="mt-10 grid gap-3 sm:grid-cols-3">
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link href="/mar" className="futuristic-panel p-5 transition hover:-translate-y-1 group">
             <p className="landing-mono text-xs text-cyan-100/70 group-hover:text-cyan-100">
               Tab 01
@@ -86,6 +86,17 @@ export default function HomePage() {
             <p className="text-muted mt-2 text-xs">Reserved for KPI pipeline workspace</p>
             <div className="mt-4 h-px bg-gradient-to-r from-blue-500/20 to-transparent" />
           </Link>
+
+          <Link href="/uat" className="futuristic-panel p-5 transition hover:-translate-y-1 group">
+            <p className="landing-mono text-xs text-cyan-100/70 group-hover:text-cyan-100">
+              Tab 04
+            </p>
+            <h3 className="landing-mono mt-2 text-lg text-white group-hover:text-amber-100 transition">
+              UAT Center
+            </h3>
+            <p className="text-muted mt-2 text-xs">Stress tests, cleanup controls, sortable UAT tracks</p>
+            <div className="mt-4 h-px bg-gradient-to-r from-amber-500/20 to-transparent" />
+          </Link>
         </div>
       </section>
 
@@ -116,6 +127,12 @@ export default function HomePage() {
               className="landing-mono rounded-full border border-emerald-200/50 bg-emerald-300/15 px-4 py-2 text-xs text-emerald-50 hover:bg-emerald-300/25 transition text-center"
             >
               Open MAR
+            </Link>
+            <Link
+              href="/uat"
+              className="landing-mono rounded-full border border-amber-200/50 bg-amber-300/15 px-4 py-2 text-xs text-amber-50 hover:bg-amber-300/25 transition text-center"
+            >
+              Open UAT Center
             </Link>
           </div>
         </div>

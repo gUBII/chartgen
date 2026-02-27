@@ -10,6 +10,7 @@ export function TabNav() {
   const isMealtimeActive =
     pathname.startsWith("/mealtime-chartgen") || pathname.startsWith("/restoration");
   const isKpiActive = pathname.startsWith("/kpigen");
+  const isUatActive = pathname.startsWith("/uat");
 
   return (
     <nav className="tab-nav">
@@ -35,6 +36,13 @@ export function TabNav() {
           >
             <span className="tab-dot" aria-hidden />
             KPIgen
+          </Link>
+          <Link
+            href="/uat"
+            className={`tab-link ${isUatActive ? "tab-link-active" : ""}`}
+          >
+            <span className="tab-dot" aria-hidden />
+            UAT
           </Link>
         </div>
       </div>
