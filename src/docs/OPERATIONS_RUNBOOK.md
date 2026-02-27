@@ -45,6 +45,7 @@ pkill -f "next start -p 4000" || true
 
 ```bash
 cd /Users/moofasa/chartgen
+npm run db:health
 npx prisma validate
 npx prisma migrate status
 ```
@@ -55,6 +56,8 @@ Recommended for Neon setup (both URLs required by Prisma datasource config):
 DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma validate
 DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status
 ```
+
+`npm run db:health` returns pooled/direct connectivity, latency, and remediation hints. Exit code `2` indicates degraded status.
 
 If local DB was reset:
 
@@ -91,7 +94,33 @@ Expected:
 - approve returns `approvedCount > 0`
 - commit returns `marCommitted >= 0` (MAR-only batch is valid)
 
-## 5) Governance Error Handling
+## 5) Online UAT Ops APIs
+
+Protected endpoints (full-login required):
+
+- `GET /api/ops/db-health`
+- `POST /api/ops/uat`
+
+Sample calls:
+
+```bash
+# health
+curl -X GET http://localhost:3000/api/ops/db-health
+
+# stress
+curl -X POST http://localhost:3000/api/ops/uat \
+  -H "Content-Type: application/json" \
+  -d '{"action":"stress","concurrency":20,"durationSec":45,"mode":"simple","maxErrorRate":0.02,"maxP95Ms":350}'
+
+# cleanup dry-run
+curl -X POST http://localhost:3000/api/ops/uat \
+  -H "Content-Type: application/json" \
+  -d '{"action":"cleanup","participantKey":"112334","olderThanDays":2,"includeLive":false,"apply":false}'
+```
+
+Cleanup apply requires the exact `requiredConfirmationText` returned by dry-run.
+
+## 6) Governance Error Handling
 
 ### `FORBIDDEN_ROLE` during `approveAll`
 
@@ -123,7 +152,7 @@ Fix:
 
 - create or use a valid staff record
 
-## 6) Commit Error Handling
+## 7) Commit Error Handling
 
 ### `NO_APPROVED_CANDIDATES`
 
@@ -167,21 +196,21 @@ Fix:
 2. verify `DATABASE_URL` in `.env`
 3. restart app after env changes
 
-## 7) Seed Baseline IDs
+## 8) Seed Baseline IDs
 
 From `prisma/seed.cjs`:
 
 - Supervisor: `32213`
 - Participant: `112334`
 
-## 8) Testing Reality
+## 9) Testing Reality
 
 - `npm run test:governance` is available for executable approval-governance integration checks.
 - `npm test` is still a placeholder script and is not a reliable gate.
 - Recommended current gate: build + Prisma checks + `npm run test:governance` + API smoke tests.
 - See `src/docs/QUALITY_AND_TESTING.md` for details and next maturity steps.
 
-## 9) Claude Handshake Verification
+## 10) Claude Handshake Verification
 
 Handshake file:
 

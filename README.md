@@ -23,6 +23,8 @@ Chartgen currently implements:
 - Transactional commit into official ledger (`POST /api/engine/commit`)
 - Provenance hash verification and audit-event chaining
 - Signed cookie session auth with role-aware access (`full` and `guest`)
+- Protected Ops API for online DB health checks and UAT execution
+- UAT JSON artifact persistence for stress/cleanup runs
 
 ### Brand and deployment clarity
 
@@ -79,7 +81,7 @@ Migration applied:
 - `GET /mealtime-chartgen` - mealtime chart module
 - `GET /restoration` - meal chart control center
 - `GET /mar` - medication chart (MAR) control center
-- `GET /uat` - UAT command center (stress test + cleanup command composer)
+- `GET /uat` - online UAT control center (health check + stress + cleanup runners)
 
 ### API
 
@@ -88,6 +90,8 @@ Migration applied:
 - `POST /api/engine/mar-preview` - generate MAR candidates
 - `PATCH /api/engine/mar-preview` - edit MAR candidate or `approveAll`
 - `POST /api/engine/commit` - commit approved candidates to ledger
+- `GET /api/ops/db-health` - protected pooled/direct DB connectivity probe
+- `POST /api/ops/uat` - protected online stress and cleanup execution endpoint
 
 ## Local Setup
 
@@ -140,11 +144,23 @@ From `prisma/seed.cjs`:
 
 ```bash
 npm run build
+npm run db:health
 npx prisma validate
 npx prisma migrate status
 npm run db:stress -- --concurrency 20 --duration-sec 45 --mode simple
 npm run db:cleanup:uat -- --participant-key 112334
 ```
+
+## Online UAT Automation
+
+- `/uat` now executes online operations via protected APIs (full-login required):
+  - `GET /api/ops/db-health`
+  - `POST /api/ops/uat` with `action: \"stress\"`
+  - `POST /api/ops/uat` with `action: \"cleanup\"` (`DRY_RUN` + confirmation-gated `APPLY`)
+- Each online run writes a JSON artifact with timestamp and commit reference.
+- Default artifact directory:
+  - local: `reports/uat`
+  - Netlify runtime: `/tmp/chartgen-uat-reports`
 
 ## Netlify Deployment
 

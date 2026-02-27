@@ -21,21 +21,24 @@ Run:
 
 ```bash
 npx netlify status
+npm run db:health
 DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma validate
 DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status
 ```
 
 Pass criteria:
 
+- pooled + direct checks visible from `npm run db:health`
 - Prisma schema valid
 - migration status clean
 - Netlify project linked to `chartgen-gubii`
 
 ### 2.2 Stress test
 
-Script:
+Execution paths:
 
-- `scripts/stress-db.mjs`
+- UI: `/uat` -> `Run Stress Online` (calls `POST /api/ops/uat` with `action: "stress"`)
+- CLI: `scripts/stress-db.mjs`
 
 Command:
 
@@ -52,9 +55,10 @@ Suggested acceptance targets:
 
 ### 2.3 Cleanup procedure
 
-Script:
+Execution paths:
 
-- `scripts/cleanup-uat-data.mjs`
+- UI: `/uat` cleanup dry-run + confirmation-gated apply (`POST /api/ops/uat` with `action: "cleanup"`)
+- CLI: `scripts/cleanup-uat-data.mjs`
 
 Dry-run first:
 
@@ -71,8 +75,10 @@ CONFIRM_UAT_CLEANUP=YES npm run db:cleanup:uat -- --participant-key 112334 --old
 Safety controls:
 
 - default mode is dry-run
-- destructive mode requires `--apply`
-- destructive mode also requires `CONFIRM_UAT_CLEANUP=YES`
+- UI apply mode requires exact confirmation phrase returned by dry-run
+- CLI destructive mode requires `--apply`
+- CLI destructive mode also requires `CONFIRM_UAT_CLEANUP=YES`
+- both flows emit JSON report artifacts
 
 ## 3) API and UI UAT
 
@@ -85,8 +91,10 @@ Safety controls:
 ### UI checks
 
 1. `/`, `/mar`, `/mealtime-chartgen`, `/restoration`, `/kpigen`, `/uat`
-2. UAT command generation buttons copy expected commands
-3. table sorting behavior works on UAT page
+2. `/uat` can run DB health, stress, cleanup dry-run, and cleanup apply
+3. cleanup apply enforces required confirmation phrase
+4. artifact download button exports latest run report JSON
+5. table sorting behavior works on UAT page
 
 ## 4) Authentication Status and Next Phases
 

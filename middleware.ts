@@ -5,6 +5,7 @@ import { verifySession } from "./src/lib/session";
 const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness"];
 const publicPrefixRoutes = ["/_next", "/api/auth"];
 const staticRoutes = ["/favicon.ico", "/gubii-profile.png"];
+const fullAccessApiPrefixes = ["/api/ops"];
 
 // Routes that only allow guests to preview (read-only)
 const guestPreviewRoutes = ["/mar", "/mealtime-chartgen"];
@@ -41,6 +42,10 @@ export async function middleware(request: NextRequest) {
 
   // No session at all - redirect to login
   if (!sessionRole) {
+    if (fullAccessApiPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Allow guest preview routes for reading
     if (
       guestPreviewRoutes.includes(pathname) &&
@@ -70,6 +75,10 @@ export async function middleware(request: NextRequest) {
 
   // Session exists
   if (sessionRole === "guest") {
+    if (fullAccessApiPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Guests can only access preview routes (GET)
     if (guestPreviewRoutes.includes(pathname) && method === "GET") {
       const response = NextResponse.next();

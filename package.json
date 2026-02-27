@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:governance": "node scripts/test-approval-governance.mjs",
+    "db:health": "node scripts/db-health-check.mjs",
     "db:stress": "node scripts/stress-db.mjs",
     "db:cleanup:uat": "node scripts/cleanup-uat-data.mjs",
     "dev": "next dev",
