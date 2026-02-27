@@ -210,22 +210,24 @@ From `prisma/seed.cjs`:
 - Recommended current gate: build + Prisma checks + `npm run test:governance` + API smoke tests.
 - See `src/docs/QUALITY_AND_TESTING.md` for details and next maturity steps.
 
-## 10) Claude Handshake Verification
+## 10) Agent Handshake Verification
 
-Handshake file:
+Protocol docs:
+
+- `/Users/moofasa/chartgen/claude.md`
+- `/Users/moofasa/chartgen/gemini.md`
+
+Runtime logs:
 
 - `/tmp/codex_claude_handshake.log`
+- `/tmp/codex_gemini_handshake.log`
 
-Instruction format:
+Standard message format:
 
 ```text
 INSTRUCTION [UUID]
 <task description>
-```
 
-Result format:
-
-```text
 RESULT [UUID]
 <status/output>
 ```
@@ -234,5 +236,14 @@ Quick check commands:
 
 ```bash
 tail -n 80 /tmp/codex_claude_handshake.log
-rg -n "INSTRUCTION|RESULT" /tmp/codex_claude_handshake.log
+tail -n 80 /tmp/codex_gemini_handshake.log
+rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_claude_handshake.log
+rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_gemini_handshake.log
 ```
+
+Rules:
+
+- keep protocol guidance in `.md` files only
+- keep runtime execution records in `/tmp` handshake logs only
+- reject placeholder/template-only `RESULT` messages
+- prefer non-interactive commands when assigning agent checks
