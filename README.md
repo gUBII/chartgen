@@ -133,7 +133,8 @@ npx prisma migrate status
 Set these in Netlify Dashboard (Settings > Build & Deploy > Environment):
 
 ```
-DATABASE_URL=postgresql://user:password@host:port/dbname?schema=public
+DATABASE_URL=postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require
+DIRECT_URL=postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require
 ```
 
 ### Build Context
@@ -146,28 +147,29 @@ Database migrations are intentionally run outside the build step so production d
 
 1. Create/confirm Neon project + database in region closest to Netlify runtime.
 2. Reset the database user password in Neon.
-3. Build a fresh connection string:
+3. Build fresh Neon connection strings:
 
 ```bash
-postgresql://<user>:<url-encoded-password>@<host>/<db>?sslmode=require
+DATABASE_URL=postgresql://<user>:<url-encoded-password>@<endpoint>-pooler.<region>.aws.neon.tech/<db>?sslmode=require
+DIRECT_URL=postgresql://<user>:<url-encoded-password>@<endpoint>.<region>.aws.neon.tech/<db>?sslmode=require
 ```
 
-4. Validate credentials from this repo:
+4. Validate credentials from this repo (use `DIRECT_URL` for Prisma CLI):
 
 ```bash
-DATABASE_URL="postgresql://..." npx prisma migrate status
+DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status
 ```
 
 5. Apply migrations:
 
 ```bash
-DATABASE_URL="postgresql://..." npx prisma migrate deploy
+DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate deploy
 ```
 
 6. Optional: seed baseline data:
 
 ```bash
-DATABASE_URL="postgresql://..." npx prisma db seed
+DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma db seed
 ```
 
 ### Deployment Steps
@@ -180,17 +182,18 @@ DATABASE_URL="postgresql://..." npx prisma db seed
 4. Publish directory: `.next`
 5. Click Deploy
 6. After deploy, go Settings > Build & Deploy > Environment
-7. Add `DATABASE_URL` environment variable
+7. Add both `DATABASE_URL` and `DIRECT_URL` environment variables
 8. Trigger production redeploy via Deploys tab
-9. Run migrations from a terminal using the same `DATABASE_URL`
+9. Run migrations from a terminal using both URLs
 
 **Via Netlify CLI:**
 
 ```bash
 npm install -g netlify-cli
 netlify login
-netlify env:set DATABASE_URL "postgresql://user:password@host:port/dbname?sslmode=require" --context production
-DATABASE_URL="postgresql://user:password@host:port/dbname?sslmode=require" npx prisma migrate deploy
+netlify env:set DATABASE_URL "postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require" --context production
+netlify env:set DIRECT_URL "postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require" --context production
+DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate deploy
 netlify deploy --prod --trigger
 ```
 
@@ -209,7 +212,7 @@ After successful production deploy:
 If deployment fails:
 - Re-run `netlify deploy --prod` with corrected DATABASE_URL
 - Check PostgreSQL connectivity and permissions
-- Verify migrations ran successfully via `DATABASE_URL="postgresql://..." npx prisma migrate status`
+- Verify migrations ran successfully via `DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status`
 
 ## API Smoke Examples
 
