@@ -9,14 +9,17 @@
  * - SILENT_DEHYDRATION: Low fluid intake (<800ml/24h) with no escalation
  *
  * Usage:
- *   node scripts/test-blue-team-detector.mjs [--base-url=http://localhost:3000] [--cookie=<cookie>]
+ *   SITE_PASSWORD=free node scripts/test-blue-team-detector.mjs [--base-url=http://localhost:3000]
+ *   or
+ *   FULL_USER_CREDENTIALS='[{\"username\":\"admin\",\"password\":\"secret\"}]' LOGIN_USERNAME=admin LOGIN_PASSWORD=secret node scripts/test-blue-team-detector.mjs
  */
 
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-const SESSION_COOKIE = process.env.SESSION_COOKIE || "test-session";
+const LOGIN_USERNAME = process.env.LOGIN_USERNAME || "";
+const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD || process.env.SITE_PASSWORD || "";
+let SESSION_COOKIE = process.env.SESSION_COOKIE || "";
 
 const TEST_DATE_FROM = "2026-03-01";
 const TEST_DATE_TO = "2026-03-07";
@@ -24,6 +27,42 @@ const TEST_DATE_TO = "2026-03-07";
 console.log("🧪 Blue Team Anomaly Detector — QA Test Suite\n");
 console.log(`Base URL: ${BASE_URL}`);
 console.log(`Test window: ${TEST_DATE_FROM} to ${TEST_DATE_TO}\n`);
+
+async function ensureSessionCookie() {
+  if (SESSION_COOKIE) return SESSION_COOKIE;
+
+  if (!LOGIN_PASSWORD) {
+    console.error("❌ Missing auth. Set SESSION_COOKIE or LOGIN_PASSWORD/SITE_PASSWORD.");
+    return null;
+  }
+
+  const response = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      role: "full",
+      username: LOGIN_USERNAME || undefined,
+      password: LOGIN_PASSWORD,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    console.error(`❌ Login failed: HTTP ${response.status} ${response.statusText}`);
+    console.error(body);
+    return null;
+  }
+
+  const setCookie = response.headers.get("set-cookie") || "";
+  const match = setCookie.match(/gwc_session=([^;]+)/);
+  if (!match?.[1]) {
+    console.error("❌ Login succeeded but gwc_session cookie missing in response.");
+    return null;
+  }
+
+  SESSION_COOKIE = match[1];
+  return SESSION_COOKIE;
+}
 
 // ============================================================================
 // PHASE 1: Seed Synthetic Anomalies
@@ -136,12 +175,15 @@ console.log("🔍 PHASE 2: Running Anomaly Detection\n");
 
 async function detectAnomalies() {
   try {
+    const cookie = await ensureSessionCookie();
+    if (!cookie) return null;
+
     const response = await fetch(
       `${BASE_URL}/api/qa/detect-anomalies?from=${TEST_DATE_FROM}&to=${TEST_DATE_TO}`,
       {
         method: "GET",
         headers: {
-          Cookie: `gwc_session=${SESSION_COOKIE}`,
+          Cookie: `gwc_session=${cookie}`,
           "Content-Type": "application/json",
         },
       }

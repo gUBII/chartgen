@@ -89,6 +89,12 @@ model Participant {
   shiftNotes         ShiftNote[]
   goalProgress       GoalProgress[]
   recordCorrections  RecordCorrection[]
+  bglDiabetesLogs    BglDiabetesLog[]
+  sleepSettlingQaLogs SleepSettlingQaLog[]
+  bowelFluidQaLogs   BowelFluidQaLog[]
+  hygieneLogs        HygieneLog[]
+  communityAccessQaLogs CommunityAccessQaLog[]
+  repositioningQaLogs RepositioningQaLog[]
   restorationBatches RestorationBatch[]
   mealCandidates     RestoredMealCandidate[]
   marCandidates      RestoredMARCandidate[]
@@ -124,6 +130,12 @@ model Staff {
   shiftNotes                  ShiftNote[]             @relation("ShiftNoteAuthoredBy")
   goalProgressEntries         GoalProgress[]          @relation("GoalProgressRecordedBy")
   recordCorrections           RecordCorrection[]      @relation("RecordCorrectionBy")
+  bglDiabetesLogs             BglDiabetesLog[]        @relation("BglDiabetesLoggedBy")
+  sleepSettlingQaLogs         SleepSettlingQaLog[]    @relation("SleepSettlingQaLoggedBy")
+  bowelFluidQaLogs            BowelFluidQaLog[]       @relation("BowelFluidQaLoggedBy")
+  hygieneLogs                 HygieneLog[]            @relation("HygieneLoggedBy")
+  communityAccessQaLogs       CommunityAccessQaLog[]  @relation("CommunityAccessQaLoggedBy")
+  repositioningQaLogs         RepositioningQaLog[]    @relation("RepositioningQaLoggedBy")
   requestedRestorationBatches RestorationBatch[]      @relation("BatchRequestedBy")
   reviewedRestorationBatches  RestorationBatch[]      @relation("BatchReviewedBy")
   generatedMealCandidates     RestoredMealCandidate[] @relation("MealCandidateGeneratedBy")
@@ -364,6 +376,102 @@ enum CorrectionReason {
   MISSING_INFORMATION
   CLINICAL_AMENDMENT
   AUDIT_REMEDIATION
+}
+
+enum DataSource {
+  SYNTHETIC_QA
+  PRODUCTION
+}
+
+enum QaSeverity {
+  NONE
+  INFO
+  WARN
+  ERROR
+  CRITICAL
+}
+
+enum FastingStatus {
+  FASTING
+  NON_FASTING
+  UNKNOWN
+}
+
+enum QaSleepStatus {
+  ASLEEP
+  AWAKE
+  AGITATED
+  OUT_OF_BED
+}
+
+enum SleepIntervention {
+  NONE
+  VERBAL_PROMPT
+  REDIRECTION
+  CPAP_CHECK
+  CONTINENCE_AID_CHANGE
+  COMFORT_MEASURES
+  OTHER
+}
+
+enum BristolScale {
+  S1
+  S2
+  S3
+  S4
+  S5
+  S6
+  S7
+}
+
+enum StoolSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum CompletionStatus {
+  COMPLETED
+  PARTIAL
+  REFUSED
+  NOT_APPLICABLE
+  UNKNOWN
+}
+
+enum CommunityPurpose {
+  SOCIAL
+  MEDICAL
+  CAPACITY_BUILDING
+  OTHER
+}
+
+enum TransportMethod {
+  WALK
+  PUBLIC_TRANSPORT
+  TAXI_RIDESHARE
+  PROVIDER_VEHICLE
+  PRIVATE_VEHICLE
+  OTHER
+}
+
+enum RepositionPosition {
+  LEFT_SIDE
+  RIGHT_SIDE
+  SUPINE
+  PRONE
+  SEATED
+  TILT_IN_SPACE
+  OTHER
+}
+
+enum SkinCheckOutcome {
+  INTACT
+  REDNESS
+  BREAKDOWN
+  PAIN
+  REQUIRES_ESCALATION
+  UNKNOWN
+  OTHER
 }
 
 model BglLog {
@@ -675,6 +783,167 @@ model RecordCorrection {
 
   @@index([participantId, createdAt])
   @@index([entityType, entityId, createdAt])
+}
+
+model BglDiabetesLog {
+  id                  String        @id @default(uuid())
+  source              DataSource    @default(SYNTHETIC_QA)
+  participantId       String
+  participant         Participant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  staffId             String
+  staff               Staff         @relation("BglDiabetesLoggedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  localDate           String
+  loggedAt            DateTime
+  bglReadingMmolL     Float?
+  fastingStatus       FastingStatus @default(UNKNOWN)
+  insulinAdministered Boolean       @default(false)
+  insulinMarRefId     String?
+  actionTaken         String?
+  qaSeverity          QaSeverity    @default(NONE)
+  qaAnomalyFlag       Boolean       @default(false)
+  qaMeta              Json?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([participantId, loggedAt])
+  @@index([staffId, loggedAt])
+  @@index([localDate])
+  @@index([source])
+}
+
+model SleepSettlingQaLog {
+  id            String            @id @default(uuid())
+  source        DataSource        @default(SYNTHETIC_QA)
+  participantId String
+  participant   Participant       @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  staffId       String
+  staff         Staff             @relation("SleepSettlingQaLoggedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  localDate     String
+  checkedAt     DateTime
+  status        QaSleepStatus
+  intervention  SleepIntervention @default(NONE)
+  notes         String?
+  qaSeverity    QaSeverity        @default(NONE)
+  qaAnomalyFlag Boolean           @default(false)
+  qaMeta        Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([participantId, checkedAt])
+  @@index([staffId, checkedAt])
+  @@index([localDate])
+  @@index([source])
+}
+
+model BowelFluidQaLog {
+  id                    String      @id @default(uuid())
+  source                DataSource  @default(SYNTHETIC_QA)
+  participantId         String
+  participant           Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  staffId               String
+  staff                 Staff       @relation("BowelFluidQaLoggedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  localDate             String
+  loggedAt              DateTime
+  hadBowelMotion        Boolean     @default(false)
+  bristolScale          BristolScale?
+  stoolSize             StoolSize?
+  fluidIntakeDeltaMl    Int         @default(0)
+  fluidOutputDeltaMl    Int         @default(0)
+  cumulativeIntakeMl    Int         @default(0)
+  cumulativeOutputMl    Int         @default(0)
+  netBalanceMl          Int         @default(0)
+  qaSeverity            QaSeverity  @default(NONE)
+  qaAnomalyFlag         Boolean     @default(false)
+  qaMeta                Json?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([participantId, loggedAt])
+  @@index([staffId, loggedAt])
+  @@index([localDate])
+  @@index([source])
+}
+
+model HygieneLog {
+  id                   String           @id @default(uuid())
+  source               DataSource       @default(SYNTHETIC_QA)
+  participantId        String
+  participant          Participant      @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  staffId              String
+  staff                Staff            @relation("HygieneLoggedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  localDate            String
+  loggedAt             DateTime
+  showerStatus         CompletionStatus @default(UNKNOWN)
+  oralCareStatus       CompletionStatus @default(UNKNOWN)
+  groomingStatus       CompletionStatus @default(UNKNOWN)
+  continenceCareStatus CompletionStatus @default(UNKNOWN)
+  skinIntegrityChecked CompletionStatus @default(UNKNOWN)
+  refusalReason        String?
+  alternativeMethod    String?
+  notes                String?
+  qaSeverity           QaSeverity       @default(NONE)
+  qaAnomalyFlag        Boolean          @default(false)
+  qaMeta               Json?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([participantId, loggedAt])
+  @@index([staffId, loggedAt])
+  @@index([localDate])
+  @@index([source])
+}
+
+model CommunityAccessQaLog {
+  id              String           @id @default(uuid())
+  source          DataSource       @default(SYNTHETIC_QA)
+  participantId   String
+  participant     Participant      @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  staffId         String
+  staff           Staff            @relation("CommunityAccessQaLoggedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  localDate       String
+  departedAt      DateTime
+  returnedAt      DateTime?
+  destination     String
+  purpose         CommunityPurpose
+  transportMethod TransportMethod
+  odometerStart   Int?
+  odometerEnd     Int?
+  notes           String?
+  qaSeverity      QaSeverity       @default(NONE)
+  qaAnomalyFlag   Boolean          @default(false)
+  qaMeta          Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([participantId, departedAt])
+  @@index([staffId, departedAt])
+  @@index([localDate])
+  @@index([source])
+}
+
+model RepositioningQaLog {
+  id               String            @id @default(uuid())
+  source           DataSource        @default(SYNTHETIC_QA)
+  participantId    String
+  participant      Participant       @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  staffId          String
+  staff            Staff             @relation("RepositioningQaLoggedBy", fields: [staffId], references: [id], onDelete: Restrict)
+  localDate        String
+  turnedAt         DateTime
+  position         RepositionPosition
+  skinCheckOutcome SkinCheckOutcome  @default(UNKNOWN)
+  notes            String?
+  planIntervalMin  Int?
+  qaSeverity       QaSeverity        @default(NONE)
+  qaAnomalyFlag    Boolean           @default(false)
+  qaMeta           Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([participantId, turnedAt])
+  @@index([staffId, turnedAt])
+  @@index([localDate])
+  @@index([source])
 }
 
 model AuditEvent {
