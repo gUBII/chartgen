@@ -14,7 +14,7 @@ Creator Links
 
 Current Deployment Truth
 - Branch: main
-- Latest verified commit deployed: 45e38cf2
+- Latest verified commit deployed: abafb4a9
 - Netlify deploy state: ready
 - Netlify production environment keys required:
   - DATABASE_URL (Neon pooled URL, host includes "-pooler")
