@@ -33,6 +33,17 @@ Usage:
 - Constraint risk: low|medium|high
 ```
 
+## Speed Modes
+
+- `FAST`:
+  - max 3 thought bullets
+  - one proposal only
+  - one risk only
+  - prefer this mode by default
+- `DEEP`:
+  - use only for architecture or migration decisions
+  - requires Codex approval in prompt
+
 ## Round Structure
 
 1. `CODEX` posts prompt and candidate options.
@@ -49,6 +60,8 @@ Usage:
 - prioritize low-risk, high-impact fixes first
 - no speculative future-state assumptions
 - evidence from current code + live behavior only
+- no placeholder text in decisions or recommendations
+- prioritize smallest change that closes a blocker
 
 ## Output Requirement
 

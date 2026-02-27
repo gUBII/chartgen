@@ -243,3 +243,47 @@ RESULT [UUID]
 Status: PASS|FAIL|BLOCKED
 <required evidence fields>
 ```
+
+## 13) Resource-Aware CTO Model (New)
+
+Goal: maximize delivery per token while keeping reliability high.
+
+### Allocation by capability and budget
+
+- Claude:
+  - use for implementation-heavy or architecture-sensitive tasks
+  - avoid for wide diagnostics and repetitive checks
+  - concurrency cap: 1 implementation UUID active at a time
+- Gemini:
+  - use for assertion-based verification and contradiction checks
+  - avoid for broad exploratory repo reads
+  - concurrency cap: up to 2 verification UUIDs in parallel when high budget
+- Codex:
+  - own integration, decisioning, staging/commit, and final truth docs
+
+### Response minimization policy
+
+- PASS + no edits:
+  - one-line schema only
+- FAIL/BLOCKED:
+  - full schema with evidence and one unblock action
+- Placeholder outputs (`<...>` or literal option lists) are invalid and auto-rejected
+
+### Efficiency constraints
+
+- scope-lock every UUID to explicit files/endpoints
+- no re-reading protocol docs per task
+- batch independent commands
+- use assertion language for verification tasks
+
+## 14) Immediate Next Stage (v3.3)
+
+1. Auth/session hardening baseline:
+   - verify cookie parity and hydration correctness
+   - tighten non-breaking login/session reliability
+2. Live mobile UAT matrix:
+   - verify 375/390/430/768 viewports
+   - capture residual issues with evidence
+3. Ops reliability guardrails:
+   - continue pooled/direct latency trend checks
+   - define alert thresholds and reporting cadence

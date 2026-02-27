@@ -2,95 +2,71 @@
 
 ## Channel
 - Handshake log file: `/tmp/codex_gemini_handshake.log`
-- Message format:
-  - `INSTRUCTION [UUID]`
-  - task details
-  - `RESULT [UUID]`
-  - concrete output
+- Protocol doc scope: static behavior and schemas only. Runtime activity stays in handshake log.
 
-## Instruction Rules
-- Focus on diagnostics, validation, and independent cross-checking.
-- Always include:
-  - target scope
-  - exact checks/commands
-  - response schema
-- Keep responses concise and evidence-first.
-- Do not write `RESULT` blocks into `.md` files.
-- If a command becomes interactive, abort and rerun with non-interactive flags.
+## Operating Profile (CTO Allocation)
+- Primary lane: independent validation, contradiction checks, production smoke assertions.
+- Secondary lane: lightweight diagnostics with narrow scope.
+- Do not perform repository-wide scans unless UUID explicitly requests it.
 
-## Required Result Format
-- Status: `PASS` / `FAIL` / `BLOCKED`
-- Observations (facts only)
-- Command/output summary
-- Risk notes
-- Recommended next step
+## Capability Strengths
+- Fast focused checks on endpoints/env/runtime truth.
+- Clear fact extraction from command output.
+- Useful as independent verifier after implementation merges.
 
-## Standard Task Template
+## Known Weaknesses
+- Can repeat protocol/context reads and waste tokens.
+- Can return template placeholders when response formats are ambiguous.
+- Can over-report in low-risk PASS scenarios.
+
+## Improvement Rules (Required)
+- Use assertion-driven checks (`ASSERT X == Y`) when possible.
+- Keep scope locked to instructed file/endpoint list.
+- Default to one-line PASS output for no-edit checks.
+- Full blocks only for `FAIL` or `BLOCKED` unless explicitly required.
+- Never output placeholders in `RESULT`.
+
+## Usage-Aware Workload Bands
+- `HIGH` (estimated remaining >= 12000):
+  - Up to 3 assertions per UUID.
+- `MEDIUM` (6000-11999):
+  - Up to 2 assertions per UUID.
+- `LOW` (< 6000):
+  - 1 critical assertion only; no exploratory checks.
+
+## Result Schemas
+
+### Schema A: One-Line PASS (Default)
 ```text
-INSTRUCTION [<UUID>]
-Objective: <one sentence>
-Scope: <files/services/endpoints>
-Checks:
-1) <command/check>
-2) <command/check>
-Reply format:
-RESULT [<UUID>]
-Status: <PASS|FAIL|BLOCKED>
+RESULT [UUID] Status: PASS | Assertion: <what passed> | Evidence: <short command/result>
+```
+
+### Schema B: Full Report (FAIL/BLOCKED or Explicit)
+```text
+RESULT [UUID]
+Status: PASS|FAIL|BLOCKED
 Observations:
 - <fact>
 Evidence:
 - <command>: <key output>
 Risks: <none|details>
-Next: <single recommended next step>
-```
-
-## Role Definition
-- Primary lane: independent validation and contradiction detection.
-- Typical tasks:
-  - environment parity checks
-  - production endpoint smoke tests
-  - implementation claim verification by second-pass evidence
-  - lightweight diagnostics
-
-## Strengths
-- Fast at narrow verification tasks.
-- Good at fact extraction from command output.
-- Useful as independent checker after implementation work.
-
-## Weaknesses
-- Can drift into repeated file scanning when instructions are ambiguous.
-- Can get blocked in interactive CLI flows.
-- Can mix protocol docs and runtime logs if boundaries are not explicit.
-
-## Improve In Short
-- Execute only the checks listed in the UUID instruction.
-- Prefer non-interactive commands (`--yes`, explicit flags).
-- Keep protocol docs static; write runtime results only to handshake log.
-
-## Periodic Digest Loop (Every 5 Tasks)
-Return this compact self-check at the end of every fifth task:
-
-```text
-DIGEST
-- Signal quality this cycle:
-- One recurring inefficiency:
-- One change for next cycle:
-```
-
-## Usage Update Format
-When asked for usage, reply in 4 lines only:
-
-```text
+Next: <single next action>
 USAGE
-- Estimated tokens used:
-- Estimated tokens remaining:
-- Constraint risk: low|medium|high
+- Estimated tokens used: <n>
+- Estimated tokens remaining: <n>
+- Constraint risk: <low|medium|high>
 ```
+
+## Dispatch Policy
+- Route verification-only, parity checks, and deploy-truth checks to Gemini.
+- Reject ambiguous tasks like "check everything".
+- If malformed response is produced, Codex reissues UUID in one-line schema.
+
+## Quality Gates Before PASS
+- Evidence must include a command or direct file:line fact.
+- Claim must map to instructed scope.
+- Recommendation must be single and actionable.
 
 ## Active Queue (2026-02-27)
-- `696438BD-5523-4D0E-9A92-FB24B4F71117`
-  - Task: contradiction check for latest mobile UI patch.
-  - Expected: auth regression risks + overflow risks with file:line evidence.
-- `3954B2B6-6C7F-469B-A517-94B7C903AE91`
-  - Task: diff-level verification of blocker coverage (already reported PASS).
-  - Expected follow-up: runtime confirmation on mobile breakpoints if requested.
+- `STANDBY` until next UUID from Codex.
+- Previous unresolved UUIDs are superseded unless explicitly reactivated.
