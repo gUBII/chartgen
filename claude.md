@@ -60,6 +60,7 @@ USAGE
 ## Dispatch Policy
 - Give Claude only scoped tasks with explicit files, checks, and acceptance.
 - If task is verification-only, route to Gemini instead.
+- Gemini is now preferred for focused verification triage when short causal reasoning is needed.
 - If Claude returns malformed `RESULT`, mark task `REJECTED` and reissue as one-line schema.
 
 ## Quality Gates Before PASS (Edit Tasks)

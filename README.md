@@ -155,6 +155,7 @@ npm run lint
 npm run lint:report
 npm run lint:strict
 npm run db:health
+npm run db:health:trend -- --url https://chartgen-gubii.netlify.app --samples 3 --interval 1 --cookie "gwc_session=<full-session-token>"
 npm run agent:check:result -- /tmp/codex_claude_handshake.log <UUID>
 npm run agent:check:result -- /tmp/codex_gemini_handshake.log <UUID>
 npx prisma validate
@@ -178,6 +179,9 @@ npm run db:cleanup:uat -- --participant-key 112334
   - `GET /api/ops/db-health`
   - `POST /api/ops/uat` with `action: "stress"`
   - `POST /api/ops/uat` with `action: "cleanup"` (`DRY_RUN` + confirmation-gated `APPLY`)
+- Trend monitor command (JSON summary + non-zero on degraded samples):
+  - `npm run db:health:trend -- --url https://chartgen-gubii.netlify.app --samples 5 --interval 10 --cookie "gwc_session=<full-session-token>"`
+  - Output keys: `samples`, `warning_count`, `degraded_count`, `pooled_max_ms`, `direct_max_ms`, `final_status`
 - Each online run writes a JSON artifact with timestamp and commit reference.
 - Default artifact directory:
   - local: `reports/uat`

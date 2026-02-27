@@ -56,12 +56,14 @@ Responsibilities:
 - contradiction detection versus implementation claims
 - concise risk signaling based on direct evidence
 - lightweight diagnostic runs and sanity checks
+- short causal reasoning for verification failures (single-root-cause hypothesis)
 
 Expected output quality:
 
 - facts first
 - command-output mapping
 - clear risk statement
+- one actionable next check
 
 ## 3) Task Routing Matrix
 
@@ -256,8 +258,9 @@ Goal: maximize delivery per token while keeping reliability high.
   - concurrency cap: 1 implementation UUID active at a time
 - Gemini:
   - use for assertion-based verification and contradiction checks
+  - use upgraded reasoning for focused verification triage
   - avoid for broad exploratory repo reads
-  - concurrency cap: up to 2 verification UUIDs in parallel when high budget
+  - concurrency cap: up to 3 verification UUIDs in parallel when high budget
 - Codex:
   - own integration, decisioning, staging/commit, and final truth docs
 
