@@ -12,8 +12,9 @@ Creator Links
 
 Current Deployment Truth
 - Branch: main
-- Latest verified commit deployed: check Netlify latest main build (should be state "ready")
-- Netlify deploy state: ready
+- Latest verified commit deployed: e073a0b74c02eb61d132a1ef3008895ed4370f57
+- Latest deploy id: 69a1088a0863a400087793bc
+- Netlify deploy state: ready (published 2026-02-27T03:00:09.975Z)
 - Product boundary truth:
   - Chartgen is independently authored by Farhan Rashid (gUBII)
   - Deployed in Nexis365-hosted environments for GoodwillCare and COHS
