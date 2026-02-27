@@ -1,6 +1,8 @@
 import { createHash, randomInt } from "node:crypto";
 import { AmountEaten, MARStatus, MealType, SwallowObservation } from "@prisma/client";
 import { generateTemporalRealism, type TemporalRealismOptions } from "./temporalRealism";
+import { Mulberry32 } from "./stochasticEngine";
+import type { ChartModule, DayContext, GenerationContext } from "./modules/types";
 
 const RNG_SCALE = 1_000_000;
 const BASE_SUCCESS_RATE = 0.9;
@@ -309,6 +311,36 @@ const MAR_LATE_COMMENTS = [
 ] as const;
 
 export class RestorationEngine {
+  generateBatch(
+    day: DayContext,
+    options?: { seed?: number; link?: Record<string, unknown> }
+  ): Record<string, unknown>[] {
+    // Phase B scaffold: modules will be registered incrementally.
+    const activeModules: ChartModule[] = [];
+    const rng = new Mulberry32(options?.seed ?? 20260227);
+    const generatedRecords: Record<string, unknown>[] = [];
+
+    for (const module of activeModules) {
+      const scheduledTasks = module.buildSchedule(day);
+
+      for (const task of scheduledTasks) {
+        const ctx: GenerationContext = {
+          rng,
+          day,
+          link: {
+            ...(options?.link ?? {}),
+            moduleType: module.type,
+            task,
+          },
+        };
+
+        generatedRecords.push(...module.realizeTask(task, ctx));
+      }
+    }
+
+    return generatedRecords;
+  }
+
   restoreMealCandidate(
     plan: ParticipantPlanSnapshot,
     input: MealRestoreInput,
