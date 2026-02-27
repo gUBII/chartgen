@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession, getSessionTokenFromRequest } from "../../../../lib/session";
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const debugMode = searchParams.get("debug") === "1";
   const rawCookieHeader = request.headers.get("cookie");
   const sessionToken = getSessionTokenFromRequest(request);
   const cookieParserToken = request.cookies.get("gwc_session")?.value ?? null;
@@ -30,6 +32,19 @@ export async function GET(request: NextRequest) {
     tokenLength: sessionToken?.length ?? 0,
     unverifiedRole,
   });
+
+  if (debugMode) {
+    return NextResponse.json({
+      role: null,
+      debug: {
+        hasRawCookieHeader: Boolean(rawCookieHeader),
+        hasParserCookie: Boolean(cookieParserToken),
+        hasSessionToken: Boolean(sessionToken),
+        tokenLength: sessionToken?.length ?? 0,
+        unverifiedRole,
+      },
+    });
+  }
 
   if (!sessionToken) {
     return NextResponse.json({ role: null }, { status: 401 });
