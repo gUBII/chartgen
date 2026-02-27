@@ -9,6 +9,19 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "v3.4",
+    title: "KPI Engine & Gemini Flash AI Gap-Report",
+    date: "February 27, 2026",
+    highlights: [
+      "Implemented KPI Engine with Gemini Flash AI integration for gap-report analysis.",
+      "Added `/audit-engine` for KPI trends, recommendations, and AI gap-report generation.",
+      "Added `/audit-explorer` with data table browser (meal/mar/audit/batch entities with filter/pagination).",
+      "Protected `/api/audit/gap-report` endpoint for AI-powered analysis with date-range KPI computation.",
+      "Enhanced meal and MAR generators with optional `seed` and `profile` for deterministic stochastic modifiers.",
+      "Implemented configurable session TTL via `SESSION_TTL_SEC` environment variable.",
+    ],
+  },
+  {
     version: "v3.2",
     title: "Mobile Navigation + Header Compaction",
     date: "February 27, 2026",
@@ -158,7 +171,7 @@ export default function WhatsNewPage() {
     <main className="mx-auto max-w-7xl px-6 pt-10 pb-16 space-y-6">
       <section className="futuristic-panel p-8 sm:p-10">
         <p className="landing-mono text-xs text-blue-200">Release Timeline</p>
-        <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.2</h2>
+        <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.4</h2>
         <p className="text-muted mt-4 max-w-3xl text-sm sm:text-base">
           Full staged feature ledger of everything delivered so far, organized by release milestone.
         </p>

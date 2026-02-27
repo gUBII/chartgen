@@ -15,6 +15,8 @@ type MARPreviewRequestBody = {
   startDate?: string;
   endDate?: string;
   generatedByStaffId?: string;
+  seed?: number;
+  profile?: "balanced" | "strict";
   medications?: Array<{
     name?: string;
     dosage?: string;

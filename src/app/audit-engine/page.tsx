@@ -98,13 +98,13 @@ export default function AuditEnginePage() {
         {reportId && (
           <div className="mt-4 p-4 bg-emerald-900/20 border border-emerald-500/50 rounded">
             <p className="text-emerald-100 text-sm">
-              Report generated: <code className="text-emerald-300">{reportId}</code>
+              ✅ Report generated: <code className="text-emerald-300">{reportId}</code>
             </p>
             <Link
               href={`/audit-reports/${reportId}`}
-              className="inline-block mt-2 text-emerald-300 hover:text-emerald-100 text-xs underline"
+              className="inline-block mt-2 text-emerald-300 hover:text-emerald-100 text-xs font-semibold underline"
             >
-              View Report →
+              View AI Report →
             </Link>
           </div>
         )}

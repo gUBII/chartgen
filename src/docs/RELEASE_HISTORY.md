@@ -2,9 +2,18 @@
 
 Last updated: 2026-02-27
 
-This document stages all delivered features so far from `v1.0` through `v3.2`.
+This document stages all delivered features so far from `v1.0` through `v3.4`.
 
-## v3.2 (Current)
+## v3.4 (Current)
+
+- Implemented KPI Engine with Gemini Flash AI gap-report analysis.
+- Added primary navigation overhaul: `/audit-engine` (KPI trends) and `/audit-explorer` (data browser).
+- Integrated protected `/api/audit/gap-report` with date-range KPI computation and AI summaries.
+- Enhanced generator APIs with optional `seed` and `profile` (balanced|strict) for deterministic stochastic modifiers.
+- Added session TTL configurability via `SESSION_TTL_SEC` environment variable.
+- Hardened auth with cookie parity: read `gwc_session`, fallback to legacy `session`.
+
+## v3.2
 
 - Added homepage `What's New` feature cards.
 - Reduced first-paint auth/nav flicker by gating restricted UI labels until role resolution.

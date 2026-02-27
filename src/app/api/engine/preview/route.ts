@@ -14,6 +14,8 @@ type PreviewRequestBody = {
   startDate?: string;
   endDate?: string;
   generatedByStaffId?: string;
+  seed?: number;
+  profile?: "balanced" | "strict";
 };
 
 type MealTemplate = {

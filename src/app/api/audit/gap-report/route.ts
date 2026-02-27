@@ -168,37 +168,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id?: string }> }
-) {
-  try {
-    await requireFullSession(request);
-
-    const { id } = await params;
-    if (!id) {
-      return NextResponse.json({ error: "Missing report ID" }, { status: 400 });
-    }
-
-    await ensureReportsDir();
-    const reportPath = path.join(REPORTS_DIR, `${id}.json`);
-
-    try {
-      const content = await fs.readFile(reportPath, "utf-8");
-      const report = JSON.parse(content) as GapReportResult;
-      return NextResponse.json(report);
-    } catch {
-      return NextResponse.json({ error: "Report not found" }, { status: 404 });
-    }
-  } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    console.error("Report fetch error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
