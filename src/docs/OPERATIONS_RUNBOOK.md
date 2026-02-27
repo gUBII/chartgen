@@ -94,7 +94,39 @@ Expected:
 - approve returns `approvedCount > 0`
 - commit returns `marCommitted >= 0` (MAR-only batch is valid)
 
-## 5) Online UAT Ops APIs
+## 5) Authentication Troubleshooting
+
+### "Still redirected to /login after successful login"
+
+1. Check `/api/auth/check` endpoint:
+   ```bash
+   curl -X GET http://localhost:3000/api/auth/check \
+     -H "Cookie: gwc_session=<your-token>"
+   ```
+   Expected response: `{ "authenticated": true, "role": "full" }` or `{ "authenticated": true, "role": "guest" }`
+
+2. Verify SITE_PASSWORD is set and matches login attempt:
+   ```bash
+   echo $SITE_PASSWORD  # Should not be empty
+   ```
+
+3. Check browser/curl cookie format:
+   - **Correct:** `gwc_session=<token-only>`
+   - **Incorrect:** `gwc_session=gwc_session=<token>` (double-prefix)
+
+4. Session TTL: Re-login if token is older than `SESSION_TTL_SEC` (default 7 days):
+   ```bash
+   echo $SESSION_TTL_SEC  # Check configured value
+   ```
+
+### Restricted Routes Return 307 Redirect
+
+Pages like `/restoration`, `/audit-engine`, `/audit-explorer` redirect unauthenticated users to `/login`. This is expected behavior. Ensure:
+- Valid session cookie is set (`gwc_session` or fallback `session`)
+- Role is `full` (not `guest`) for full-access routes
+- Session has not expired (check `SESSION_TTL_SEC`)
+
+## 6) Online UAT Ops APIs
 
 Protected endpoints (full-login required):
 

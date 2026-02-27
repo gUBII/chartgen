@@ -14,8 +14,9 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 
 ## Current Release
 
-- `v3.2.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
-- Latest `v3.2` patch includes optional mobile dropdown nav and compact mobile header spacing.
+- `v3.5.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
+- Phase E complete: grouped commit payload, tabbed restoration dashboard with defect highlighting, strict source/type normalization.
+- Post-release hardening: Prisma Netlify binary target (`rhel-openssl-3.0.x`), auth/session stabilization, cookie-header fallback logic.
 - Auth hydration now reads `gwc_session` (with `session` fallback) to reduce first-paint role mismatch.
 
 ## Current Truth
@@ -48,12 +49,18 @@ For `approveAll` in both meal and MAR routes:
 
 ### Commit semantics now enforced
 
-`POST /api/engine/commit`:
+`POST /api/engine/commit` supports two payload modes:
 
+**Legacy (batch-based):**
+- `batchId` + `actorStaffId` → commits pre-approved meal/MAR candidates
 - requires elevated role (`SUPERVISOR` or `CLINICAL_LEAD`)
+
+**Phase E (grouped):**
+- Supports 8 log types: `marLogs`, `mealLogs`, `sleepLogs`, `bglLogs`, `bowelLogs`, `hygieneLogs`, `communityLogs`, `repositionLogs`
+- each array processed in transaction; all succeed or all fail
+- strict source/type validation (422 rejection of invalid sources/types)
 - verifies candidate provenance hashes before any ledger write
 - blocks duplicate commit of the same batch
-- commits approved **meal**, approved **MAR**, or both
 - writes `AuditEvent` (`LEDGER_WRITTEN`) with previous-hash linkage
 
 ### MAR status model
@@ -81,13 +88,15 @@ Migration applied:
 ### Pages
 
 - `GET /` - landing page
-- `GET /whats-new` - full version timeline from `v1.0` to `v3.2`
+- `GET /whats-new` - full version timeline from `v1.0` to `v3.5`
 - `GET /login` - access-control login page
 - `GET /deployment-notes` - deployment and hosting boundary notes
 - `GET /audit-readiness` - audit-modelling and readiness framing
 - `GET /mealtime-chartgen` - mealtime chart module
-- `GET /restoration` - meal chart control center
+- `GET /restoration` - meal chart control center with grouped commit support and defect highlighting (full-access)
 - `GET /mar` - medication chart (MAR) control center
+- `GET /audit-engine` - KPI trends and AI gap-report generation (full-access only)
+- `GET /audit-explorer` - audit data browser with filtering and pagination (full-access only)
 - `GET /uat` - online UAT control center (health check + stress + cleanup runners)
 
 ### API
@@ -146,6 +155,34 @@ From `prisma/seed.cjs`:
 
 - Supervisor Staff ID: `32213`
 - Participant ID: `112334`
+
+## Auth Troubleshooting
+
+### "Login appears successful but still redirected to /login"
+
+This usually indicates the full session did not resolve. Try these checks:
+
+1. **Check session validity:**
+   ```bash
+   curl -X GET https://chartgen-gubii.netlify.app/api/auth/check \
+     -H "Cookie: gwc_session=<your-token-here>"
+   ```
+   Expected: `{ "authenticated": true, "role": "full" }` or `{ "authenticated": true, "role": "guest" }`
+
+2. **Ensure full-access login:**
+   - Use `role: "full"` in login payload, not `role: "guest"`
+   - Verify `SITE_PASSWORD` environment variable is set and correct
+
+3. **Cookie handling in browser/curl:**
+   - Browser: Cookies are set automatically; check DevTools → Application → Cookies
+   - cURL: Pass cookie as `gwc_session=<token-only>` (do NOT include `gwc_session=` prefix twice)
+     ```bash
+     curl -H "Cookie: gwc_session=<token>" https://chartgen-gubii.netlify.app/restoration
+     ```
+
+4. **Session TTL:**
+   - Check if token has expired: `SESSION_TTL_SEC` (default 7 days)
+   - Re-login if session is older than TTL
 
 ## Verification Commands
 
@@ -221,6 +258,19 @@ SESSION_TTL_SEC=604800
 
 Database migrations are intentionally run outside the build step so production deploys do not fail when DB credentials are missing or invalid at build time.
 
+### Prisma Binary Targets
+
+**Critical for Netlify:** The `prisma/schema.prisma` includes `rhel-openssl-3.0.x` in `binaryTargets`:
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+```
+
+This is required because Netlify's Edge functions runtime uses RHEL-based Linux with OpenSSL 3.0.x. Without this, Prisma client initialization fails with engine mismatch errors on production.
+
 ### Online Database Plan (Neon)
 
 1. Create/confirm Neon project + database in region closest to Netlify runtime.
@@ -291,6 +341,32 @@ If deployment fails:
 - Re-run `netlify deploy --prod` with corrected DATABASE_URL
 - Check PostgreSQL connectivity and permissions
 - Verify migrations ran successfully via `DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status`
+
+### UAT Seeding (Production)
+
+To seed test staff and participants in production (e.g., for UAT on Netlify):
+
+1. Create `.env.production.local` with production database credentials:
+   ```bash
+   cat > .env.production.local << 'EOF'
+   DATABASE_URL="postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require"
+   DIRECT_URL="postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require"
+   EOF
+   ```
+
+2. Run seed scripts against production DB:
+   ```bash
+   set -a; source .env.production.local; set +a
+   node scripts/seed-uat-staff.mjs
+   node scripts/seed-uat-participant.mjs
+   ```
+
+3. **IMPORTANT:** Never commit `.env.production.local` to version control. Add to `.gitignore` if not already present.
+
+**Staff roles created:** SUPPORT_WORKER, SUPERVISOR, CLINICAL_LEAD
+**Participants created:** Two test participants ready for preview generation
+
+This enables UAT teams to generate preview batches without the "STAFF_REQUIRED" error.
 
 ## API Smoke Examples
 

@@ -10,14 +10,17 @@ type Release = {
 const RELEASES: Release[] = [
   {
     version: "v3.5",
-    title: "Database-Backed Gap Report Storage",
+    title: "Phase E + Post-Release Hardening",
     date: "February 27, 2026",
     highlights: [
-      "Migrated gap-report storage from `/tmp` disk artifacts to PostgreSQL database.",
-      "Added `GapReport` Prisma model with JSONB columns for metrics and recommendations.",
-      "Implemented database-first read strategy with optional `/tmp` fallback for compatibility.",
-      "Added `GET /api/audit/gap-report?limit=N` endpoint for paginated report listing.",
-      "Enhanced report persistence with optional `expiresAt` field for retention policy support.",
+      "Implemented grouped commit payload: single `/api/engine/commit` endpoint handles 8 log types (MAR, Meal, Sleep, BGL, Bowel, Hygiene, Community, Repositioning) transactionally.",
+      "Refactored restoration dashboard with tabbed UI (Medication | Nutrition & Bowel | Night Routine | Health & Vitals) and defect highlighting (amber backgrounds for flagged rows).",
+      "Tightened validation: source/type normalization now rejects invalid values (422) instead of silent coercion; ambiguous bowel types throw AMBIGUOUS_BOWEL_TYPE error.",
+      "Fixed grouped model validation to check all 8 models upfront with explicit error messages naming missing models.",
+      "Added Prisma `rhel-openssl-3.0.x` binary target for Netlify Edge runtime (fixes 502 engine mismatch errors).",
+      "Hardened auth session loop with cookie-header fallback logic for improved resolution reliability.",
+      "Created UAT seed scripts (`seed-uat-staff.mjs`, `seed-uat-participant.mjs`) for production testing setup.",
+      "Migrated gap-report storage from `/tmp` to PostgreSQL with database-first read strategy and optional fallback.",
     ],
   },
   {

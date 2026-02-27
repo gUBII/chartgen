@@ -6,6 +6,19 @@ This document stages all delivered features so far from `v1.0` through `v3.5`.
 
 ## v3.5 (Current)
 
+**Phase E: Grouped Commit & Restoration Refactor**
+- Implemented grouped commit payload supporting 8 log types (MAR, Meal, Sleep, BGL, Bowel, Hygiene, Community, Repositioning) in single transaction.
+- Refactored `/restoration` dashboard with tabbed UI (Medication | Nutrition & Bowel | Night Routine | Health & Vitals).
+- Added defect highlighting: rows with `qaAnomalyFlag=true` or `qaMeta.defect` displayed with amber background for easy auditing.
+- Tightened validation: source/type normalization now rejects invalid values (422) instead of silent coercion.
+- Fixed grouped model validation to check all 8 models upfront with clear error messages.
+
+**Post-Release Hardening**
+- Added Prisma `rhel-openssl-3.0.x` binary target for Netlify Edge runtime compatibility (fixes 502 engine mismatch).
+- Hardened auth session loop: cookie-header fallback logic ensures gwc_session resolution even with header quirks.
+- Created UAT seed scripts (`seed-uat-staff.mjs`, `seed-uat-participant.mjs`) for production testing without STAFF_REQUIRED errors.
+
+**Database Enhancements**
 - Migrated gap-report storage from `/tmp` disk artifacts to PostgreSQL database.
 - Added `GapReport` Prisma model with JSONB columns for KPI metrics and recommendations.
 - Implemented database-first read strategy with optional `/tmp` fallback for gap-report retrieval.

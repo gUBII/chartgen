@@ -1,7 +1,7 @@
 # Latest Links and Instructions
 
-**Last Updated:** 2026-02-27  
-**Version:** 3.4.0
+**Last Updated:** 2026-02-27
+**Version:** 3.5.0
 
 ## Production Links
 
@@ -9,6 +9,39 @@
 - **Deploy Preview:** https://main--chartgen-gubii.netlify.app
 - **Netlify Admin:** https://app.netlify.com/projects/chartgen-gubii
 - **GitHub:** https://github.com/gUBII/chartgen
+
+---
+
+## Phase E: Grouped Commit & Restoration Refactor
+
+### Grouped Commit Payload (`POST /api/engine/commit`)
+
+Single endpoint now handles 8 log types transactionally:
+
+```json
+{
+  "marLogs": [...],
+  "mealLogs": [...],
+  "sleepLogs": [...],
+  "bglLogs": [...],
+  "bowelLogs": [...],
+  "hygieneLogs": [...],
+  "communityLogs": [...],
+  "repositionLogs": [...]
+}
+```
+
+**Validation Hardening:**
+- Unknown `source` values rejected with 422 INVALID_SOURCE
+- Unknown `dataSource` values rejected with 422 INVALID_SOURCE
+- Ambiguous bowel type (zero intake + zero output) rejected with 422 AMBIGUOUS_BOWEL_TYPE
+- All 8 models validated upfront; missing models return 500 SCHEMA_NOT_READY
+
+### Restoration Dashboard Enhancements
+
+- **Tabbed UI:** Medication | Nutrition & Bowel | Night Routine | Health & Vitals
+- **Defect Highlighting:** Rows with `qaAnomalyFlag=true` or `qaMeta.defect` shown with amber background
+- **Smart Classification:** `splitMixedEntries()` classifies mixed log entries by explicit `kind` field, then characteristic fields
 
 ---
 
@@ -153,6 +186,58 @@ curl https://chartgen-gubii.netlify.app/api/ops/db-health \
    - AI Summary (from Gemini Flash)
    - Recommendations (generated)
 4. **Audit Trail:** JSON saved to `/tmp/chartgen-ai-reports/{id}.json`
+
+---
+
+## API Testing with Cookies
+
+When testing protected endpoints via curl/Postman, ensure cookie format is correct:
+
+```bash
+# ✅ CORRECT: token only (gwc_session= prefix handled by browser/client)
+curl https://chartgen-gubii.netlify.app/api/auth/check \
+  -H "Cookie: gwc_session=<your-token-here>"
+
+# ❌ WRONG: do NOT double-prefix
+curl https://chartgen-gubii.netlify.app/api/auth/check \
+  -H "Cookie: gwc_session=gwc_session=<your-token>"
+
+# ✅ Multiple cookies
+curl https://chartgen-gubii.netlify.app/api/auth/check \
+  -H "Cookie: gwc_session=<token>; other=value"
+```
+
+Response codes:
+- **200:** Authenticated successfully
+- **307:** Redirect to /login (missing/invalid session)
+- **401:** Session exists but full-access check failed
+
+---
+
+## Production Seeding (UAT Setup)
+
+Create `.env.production.local` with production database URLs:
+
+```bash
+cat > .env.production.local << 'EOF'
+DATABASE_URL="postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require"
+DIRECT_URL="postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require"
+EOF
+```
+
+Run seeds against production:
+
+```bash
+set -a; source .env.production.local; set +a
+node scripts/seed-uat-staff.mjs
+node scripts/seed-uat-participant.mjs
+```
+
+This creates:
+- **Staff:** UAT Support Worker, UAT Supervisor, UAT Clinical Lead (for commits)
+- **Participants:** UAT Test Participant 1, UAT Test Participant 2
+
+**⚠️ IMPORTANT:** Do NOT commit `.env.production.local` to version control.
 
 ---
 
