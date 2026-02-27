@@ -1,8 +1,17 @@
 import { createHash, randomInt } from "node:crypto";
 import { AmountEaten, MARStatus, MealType, SwallowObservation } from "@prisma/client";
 import { generateTemporalRealism, type TemporalRealismOptions } from "./temporalRealism";
-import { Mulberry32 } from "./stochasticEngine";
-import type { ChartModule, DayContext, GenerationContext, RealizedTask } from "./modules/types";
+import {
+  Mulberry32,
+  SYNTHETIC_SOURCE,
+  realizeTimelineWithCascade,
+  type ScheduledTask as EngineScheduledTask,
+} from "./stochasticEngine";
+import { prisma } from "../../lib/prisma";
+import { SleepChartModule } from "./modules/SleepChartModule";
+import { BglChartModule } from "./modules/BglChartModule";
+import { BowelFluidChartModule } from "./modules/BowelFluidChartModule";
+import type { AnyRecord, ChartModule, DayContext, GenerationContext, RealizedTask, ScheduledTask } from "./modules/types";
 
 const RNG_SCALE = 1_000_000;
 const BASE_SUCCESS_RATE = 0.9;
@@ -311,39 +320,188 @@ const MAR_LATE_COMMENTS = [
 ] as const;
 
 export class RestorationEngine {
-  generateBatch(
+  async generateBatch(
     day: DayContext,
     options?: { seed?: number; link?: Record<string, unknown> }
-  ): Record<string, unknown>[] {
-    // Phase B scaffold: modules will be registered incrementally.
-    const activeModules: ChartModule[] = [];
+  ): Promise<Record<string, unknown>[]> {
+    const activeModules: ChartModule[] = [
+      new SleepChartModule(),
+      new BglChartModule(),
+      new BowelFluidChartModule(),
+    ];
     const rng = new Mulberry32(options?.seed ?? 20260227);
     const generatedRecords: Record<string, unknown>[] = [];
+    const scheduledByModule = new Map<string, ScheduledTask[]>();
+    const moduleByType = new Map(activeModules.map((module) => [module.type, module]));
+    const masterSchedule: ScheduledTask[] = [];
 
     for (const module of activeModules) {
       const scheduledTasks = module.buildSchedule(day);
+      scheduledByModule.set(module.type, scheduledTasks);
+      masterSchedule.push(...scheduledTasks);
+    }
 
-      for (const task of scheduledTasks) {
-        const realizedTask: RealizedTask = {
-          ...task,
-          actualAt: task.scheduledAt,
-          cascadeOffsetMin: 0,
-        };
+    const masterEngineTasks: EngineScheduledTask[] = masterSchedule.map((task) => ({
+      id: task.id,
+      source: SYNTHETIC_SOURCE,
+      workerId: task.staffId,
+      participantId: task.participantId,
+      kind: task.kind as EngineScheduledTask["kind"],
+      scheduledAt: task.scheduledAt,
+      durationMin: task.durationMin,
+      payload: {
+        ...(task.payload ?? {}),
+        moduleType: [...moduleByType.entries()].find(([, mod]) =>
+          (scheduledByModule.get(mod.type) ?? []).some((t) => t.id === task.id)
+        )?.[0],
+      },
+    }));
 
-        const ctx: GenerationContext = {
-          rng,
-          day,
-          link: {
-            ...(options?.link ?? {}),
-            moduleType: module.type,
-            task: realizedTask,
-          },
-        };
+    const realizedTimeline = realizeTimelineWithCascade({
+      tasks: masterEngineTasks,
+      rng,
+    });
 
-        const realizedRows = module.realizeTask(realizedTask, ctx);
-        const defectedRows = module.injectDefects ? module.injectDefects(realizedRows, ctx) : realizedRows;
-        generatedRecords.push(...defectedRows);
-      }
+    const realizedByModule = new Map<string, RealizedTask[]>();
+    for (const task of realizedTimeline) {
+      const moduleType = typeof task.payload?.moduleType === "string"
+        ? task.payload.moduleType
+        : task.kind === "SLEEP"
+          ? "SLEEP_SETTLING"
+          : task.kind === "BGL"
+            ? "BGL"
+            : task.kind === "BOWEL"
+              ? "BOWEL_FLUID"
+              : undefined;
+      if (!moduleType) continue;
+
+      const moduleTask: RealizedTask = {
+        id: task.id,
+        source: task.source,
+        participantId: task.participantId,
+        staffId: task.workerId,
+        kind: task.kind,
+        scheduledAt: task.scheduledAt,
+        actualAt: task.actualAt,
+        cascadeOffsetMin: task.cascadeOffsetMin,
+        payload: task.payload,
+      };
+
+      const list = realizedByModule.get(moduleType) ?? [];
+      list.push(moduleTask);
+      realizedByModule.set(moduleType, list);
+    }
+
+    for (const [moduleType, realizedTasks] of realizedByModule.entries()) {
+      const module = moduleByType.get(moduleType);
+      if (!module) continue;
+
+      const ctx: GenerationContext = {
+        rng,
+        day,
+        link: {
+          ...(options?.link ?? {}),
+          moduleType,
+        },
+      };
+
+      const moduleRows = realizedTasks.flatMap((task) => module.realizeTask(task, ctx));
+      const defectedRows = module.injectDefects ? module.injectDefects(moduleRows, ctx) : moduleRows;
+      generatedRecords.push(...defectedRows);
+    }
+
+    const sleepRows = generatedRecords
+      .filter((row) => "checkedAt" in row)
+      .map((row) => row as AnyRecord);
+    const bglRows = generatedRecords
+      .filter((row) => "bglReadingMmolL" in row)
+      .map((row) => row as AnyRecord);
+    const bowelRows = generatedRecords
+      .filter((row) => "hadBowelMotion" in row)
+      .map((row) => row as AnyRecord);
+
+    const transactionOps = [];
+    if (sleepRows.length > 0) {
+      transactionOps.push(
+        prisma.sleepSettlingQaLog.createMany({
+          data: sleepRows.map((row) => ({
+            source: String(row.source) as "SYNTHETIC_QA" | "PRODUCTION",
+            participantId: String(row.participantId),
+            staffId: String(row.staffId),
+            localDate: String(row.localDate),
+            checkedAt: new Date(String(row.checkedAt)),
+            status: String(row.status) as
+              | "ASLEEP"
+              | "AWAKE"
+              | "AGITATED"
+              | "OUT_OF_BED",
+            intervention: String(row.intervention) as
+              | "NONE"
+              | "VERBAL_PROMPT"
+              | "REDIRECTION"
+              | "CPAP_CHECK"
+              | "CONTINENCE_AID_CHANGE"
+              | "COMFORT_MEASURES"
+              | "OTHER",
+            notes: (row.notes as string | null) ?? null,
+            qaMeta: (row.qaMeta as object | null) ?? null,
+          })),
+        })
+      );
+    }
+    if (bglRows.length > 0) {
+      transactionOps.push(
+        prisma.bglDiabetesLog.createMany({
+          data: bglRows.map((row) => ({
+            source: String(row.source) as "SYNTHETIC_QA" | "PRODUCTION",
+            participantId: String(row.participantId),
+            staffId: String(row.staffId),
+            localDate: String(row.localDate),
+            loggedAt: new Date(String(row.loggedAt)),
+            bglReadingMmolL: Number(row.bglReadingMmolL),
+            fastingStatus: String(row.fastingStatus) as
+              | "FASTING"
+              | "NON_FASTING"
+              | "UNKNOWN",
+            insulinAdministered: Boolean(row.insulinAdministered),
+            insulinMarRefId: (row.insulinMarRefId as string | null) ?? null,
+            actionTaken: (row.actionTaken as string | null) ?? null,
+            qaMeta: (row.qaMeta as object | null) ?? null,
+          })),
+        })
+      );
+    }
+    if (bowelRows.length > 0) {
+      transactionOps.push(
+        prisma.bowelFluidQaLog.createMany({
+          data: bowelRows.map((row) => ({
+            source: String(row.source) as "SYNTHETIC_QA" | "PRODUCTION",
+            participantId: String(row.participantId),
+            staffId: String(row.staffId),
+            localDate: String(row.localDate),
+            loggedAt: new Date(String(row.loggedAt)),
+            hadBowelMotion: Boolean(row.hadBowelMotion),
+            bristolScale: (row.bristolScale as
+              | "S1"
+              | "S2"
+              | "S3"
+              | "S4"
+              | "S5"
+              | "S6"
+              | "S7"
+              | null) ?? null,
+            fluidIntakeDeltaMl: Number(row.fluidIntakeDeltaMl ?? 0),
+            fluidOutputDeltaMl: Number(row.fluidOutputDeltaMl ?? 0),
+            cumulativeIntakeMl: Number(row.cumulativeIntakeMl ?? 0),
+            cumulativeOutputMl: Number(row.cumulativeOutputMl ?? 0),
+            netBalanceMl: Number(row.netBalanceMl ?? 0),
+            qaMeta: (row.qaMeta as object | null) ?? null,
+          })),
+        })
+      );
+    }
+    if (transactionOps.length > 0) {
+      await prisma.$transaction(transactionOps);
     }
 
     return generatedRecords;
