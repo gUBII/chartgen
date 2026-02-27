@@ -2,24 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAuth } from "./AuthProvider";
 
 export function TabNav() {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState<"full" | "guest" | null>(null);
+  const { role: userRole } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  useEffect(() => {
-    // Check user role from cookie
-    const checkRole = async () => {
-      const response = await fetch("/api/auth/check", { method: "GET" });
-      if (response.ok) {
-        const data = await response.json();
-        setUserRole(data.role);
-      }
-    };
-    checkRole();
-  }, []);
 
   const isMarActive = pathname.startsWith("/mar");
   const isMealtimeActive =

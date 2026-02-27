@@ -3,9 +3,11 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../components/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshRole } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +25,7 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
+        await refreshRole();
         router.push("/");
         return;
       }
@@ -48,6 +51,7 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
+        await refreshRole();
         router.push("/");
         return;
       }
