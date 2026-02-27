@@ -25,7 +25,7 @@ The original Phase 1 audit captured pre-integration risks. The table below maps 
 ## Remaining Open Items (Post-Phase-1)
 
 1. Automated API tests are not yet wired into runnable `npm test`.
-2. Centralized auth middleware is not implemented.
+2. Auth is implemented, but still based on shared-password login instead of per-user identity.
 3. Personalization loop from participant historical baselines is not implemented.
 
 ## Current Safety Boundary

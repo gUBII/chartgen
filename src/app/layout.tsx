@@ -17,7 +17,7 @@ const bodyFont = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "GoodwillCare",
+  title: "Chartgen by gUBII",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -29,10 +29,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="mx-auto max-w-7xl px-6 pt-6 pb-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="brand-kicker">GoodwillCare Database</p>
+                  <p className="brand-kicker">Chartgen by gUBII</p>
                   <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">
                     <Link href="/" className="brand-link">
-                      GoodwillCare
+                      Chartgen
                     </Link>
                   </h1>
                 </div>
@@ -51,6 +51,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </a>
                 </div>
               </div>
+              <p className="mt-3 text-[11px] leading-5 text-cyan-100/75 max-w-4xl">
+                Independently authored product. Deployed in Nexis365-hosted environments supporting GoodwillCare and COHS.
+              </p>
             </div>
             <TabNav />
           </header>

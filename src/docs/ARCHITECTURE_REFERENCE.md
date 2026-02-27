@@ -1,10 +1,10 @@
-# ChartGen Architecture Reference
+# Chartgen by gUBII Architecture Reference
 
 Last updated: 2026-02-27
 
 ## 1) System Purpose
 
-ChartGen reconstructs historical meal and medication charts as reviewed candidates before promotion into production ledger tables.
+Chartgen reconstructs historical meal and medication charts as reviewed candidates before promotion into production ledger tables.
 
 Design goals:
 
@@ -16,6 +16,10 @@ Design goals:
 
 ### UI
 
+- `/` - enterprise landing page and product positioning
+- `/login` - role-gated access control entrypoint
+- `/deployment-notes` - deployment/ownership boundary notes
+- `/audit-readiness` - audit-modelling framing page
 - `/restoration` - meal preview, editing, approval, commit
 - `/mar` - medication preview, editing, approval, commit
 - shared tab navigation in `src/components/TabNav.tsx`
@@ -141,5 +145,5 @@ sequenceDiagram
 ## 7) Known Architectural Gaps
 
 - API testing is not yet wired to a runnable test framework.
-- Authentication middleware is not centralized; endpoints rely on request-provided staff IDs plus DB role checks.
+- Authentication is currently password + signed session cookie; it is not yet identity-backed per user account.
 - Personalization of generation priors from historical participant data is not implemented yet.

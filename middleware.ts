@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "./src/lib/session";
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/_next", "/api/auth"];
+const publicExactRoutes = ["/", "/login", "/deployment-notes", "/audit-readiness"];
+const publicPrefixRoutes = ["/_next", "/api/auth"];
 const staticRoutes = ["/favicon.ico", "/gubii-profile.png"];
 
 // Routes that only allow guests to preview (read-only)
@@ -19,7 +20,8 @@ export async function middleware(request: NextRequest) {
 
   // Allow public routes and static files
   if (
-    publicRoutes.some((route) => pathname.startsWith(route)) ||
+    publicExactRoutes.includes(pathname) ||
+    publicPrefixRoutes.some((route) => pathname.startsWith(route)) ||
     staticRoutes.some((route) => pathname === route) ||
     staticExtensionRegex.test(pathname)
   ) {

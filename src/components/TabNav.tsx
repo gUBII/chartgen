@@ -48,7 +48,7 @@ export function TabNav() {
               className={`tab-link ${isMarActive ? "tab-link-active" : ""}`}
             >
               <span className="tab-dot" aria-hidden />
-              MAR
+              MAR Chart Module
               {userRole === "guest" && (
                 <span className="ml-2 text-xs text-slate-400 font-normal">(preview)</span>
               )}
@@ -58,7 +58,7 @@ export function TabNav() {
               className={`tab-link ${isMealtimeActive ? "tab-link-active" : ""}`}
             >
               <span className="tab-dot" aria-hidden />
-              Mealtime Chartgen
+              Mealtime Chart Module
               {userRole === "guest" && (
                 <span className="ml-2 text-xs text-slate-400 font-normal">(preview)</span>
               )}
@@ -75,7 +75,7 @@ export function TabNav() {
               }}
             >
               <span className="tab-dot" aria-hidden />
-              KPIgen
+              Audit Traceability Layer
               {userRole === "guest" && (
                 <span className="ml-2 text-xs text-orange-400 font-normal">(login required)</span>
               )}
@@ -92,7 +92,7 @@ export function TabNav() {
               }}
             >
               <span className="tab-dot" aria-hidden />
-              UAT
+              Integrity Checks Engine
               {userRole === "guest" && (
                 <span className="ml-2 text-xs text-orange-400 font-normal">(login required)</span>
               )}

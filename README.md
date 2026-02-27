@@ -1,8 +1,8 @@
-# ChartGen
+# Chartgen by gUBII
 
 Last updated: 2026-02-27
 
-Clinical mealtime and medication restoration + audit-ledger control center built with Next.js, Prisma, and PostgreSQL.
+Governance-first clinical documentation audit modelling platform for NDIS-aligned environments, built with Next.js, Prisma, and PostgreSQL.
 
 ## Live Links (Verified 2026-02-27)
 
@@ -11,11 +11,10 @@ Clinical mealtime and medication restoration + audit-ledger control center built
 - Netlify admin: https://app.netlify.com/projects/chartgen-gubii
 - GitHub repo: https://github.com/gUBII/chartgen
 - Creator GitHub: https://github.com/gUBII
-- WhatsApp support/contact: https://wa.me/61423016859?text=Hi%20gUBII%2C%20I%27d%20like%20to%20support%20Chartgen
 
 ## Current Truth
 
-ChartGen currently implements:
+Chartgen currently implements:
 
 - Meal preview generation (`POST /api/engine/preview`)
 - MAR preview generation (`POST /api/engine/mar-preview`)
@@ -23,6 +22,13 @@ ChartGen currently implements:
 - Batch approval (`approveAll`) with governance controls
 - Transactional commit into official ledger (`POST /api/engine/commit`)
 - Provenance hash verification and audit-event chaining
+- Signed cookie session auth with role-aware access (`full` and `guest`)
+
+### Brand and deployment clarity
+
+- Product ownership: Chartgen is independently authored by Farhan Rashid (gUBII)
+- Deployment environments: GoodwillCare and COHS instances run in Nexis365-hosted infrastructure
+- Platform boundary: Nexis365 provides hosting/platform capabilities; product governance remains independent
 
 ### Approval governance now enforced
 
@@ -67,6 +73,10 @@ Migration applied:
 ### Pages
 
 - `GET /` - landing page
+- `GET /login` - access-control login page
+- `GET /deployment-notes` - deployment and hosting boundary notes
+- `GET /audit-readiness` - audit-modelling and readiness framing
+- `GET /mealtime-chartgen` - mealtime chart module
 - `GET /restoration` - meal chart control center
 - `GET /mar` - medication chart (MAR) control center
 - `GET /uat` - UAT command center (stress test + cleanup command composer)
@@ -95,6 +105,8 @@ Set `.env`:
 ```bash
 DATABASE_URL="postgresql://admin:password123@localhost:5432/chartgen_audit?schema=public"
 DIRECT_URL="postgresql://admin:password123@localhost:5432/chartgen_audit?schema=public"
+SITE_PASSWORD="set-a-strong-password-for-full-access"
+SESSION_SECRET="replace-with-long-random-secret"
 ```
 
 ### 3) Migrate + generate + seed

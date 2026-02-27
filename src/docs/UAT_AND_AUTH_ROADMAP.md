@@ -88,41 +88,47 @@ Safety controls:
 2. UAT command generation buttons copy expected commands
 3. table sorting behavior works on UAT page
 
-## 4) New Login and Authentication Plan
+## 4) Authentication Status and Next Phases
 
-### Recommendation
+### Current implementation (live)
 
-Use Auth.js (NextAuth) with Prisma adapter.
+1. Session model:
+   - signed cookie (`gwc_session`) using HMAC + Web Crypto
+   - roles supported: `full`, `guest`
+   - token expiry enforced (`exp`)
+2. Login routes:
+   - `POST /api/auth/login` issues session cookie
+   - `GET /api/auth/check` returns active role
+   - `POST /api/auth/logout` clears session
+3. Route protection:
+   - `middleware.ts` blocks protected routes for anonymous traffic
+   - guest users are restricted to read-only preview pages/APIs
+   - full users can access all modules
 
-Reason:
+### Environment requirements
 
-- native fit for Next.js App Router
-- mature session strategies
-- easy role-based gate extension using existing `StaffRole`
+- `SITE_PASSWORD` for full-access login gate
+- `SESSION_SECRET` for production-grade session signing
 
-### Proposed implementation phases
+### Next auth phases
 
-1. Foundation:
-   - install `next-auth` and Prisma adapter
-   - create auth tables/migrations
-   - add sign-in page and session provider
-2. Route protection:
-   - middleware for protected API/page routes
-   - unauthenticated users redirected to login
-3. Role authorization:
-   - map authenticated user to `Staff`
-   - enforce `SUPERVISOR`/`CLINICAL_LEAD` role checks server-side
-4. Hardening:
-   - audit auth events
-   - brute-force/rate-limit strategy
-   - session timeout/rotation policy
+1. Identity upgrade:
+   - replace shared password with per-user identities
+   - map sessions directly to `Staff` records
+2. Security hardening:
+   - login attempt throttling/rate limiting
+   - failed login event logging
+   - session rotation + forced expiry policy
+3. Governance traceability:
+   - auth event audit stream (`LOGIN_SUCCESS`, `LOGIN_FAILURE`, `LOGOUT`)
+   - role elevation/change review hooks
 
-### Minimal auth MVP acceptance criteria
+### Current auth acceptance criteria
 
 - login works with persistent session
 - protected routes reject anonymous traffic
-- commit + approval actions require authorized roles
-- logout fully clears session
+- guest vs full access boundaries are enforced by middleware
+- logout clears session cookie
 
 ## 5) UI Library Direction
 

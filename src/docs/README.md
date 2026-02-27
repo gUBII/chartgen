@@ -14,5 +14,5 @@ Last updated: 2026-02-27
 - `QUALITY_AND_TESTING.md` - current test reality, verification strategy, and recommended next test steps
 - `TECHNOLOGY_CONTEXT.md` - stack rationale and compliance-oriented design constraints
 - `PHASE1_AUDIT.md` - historical phase-1 audit findings with closure status against current codebase
-- `UAT_AND_AUTH_ROADMAP.md` - online UAT execution and login/authentication implementation plan
+- `UAT_AND_AUTH_ROADMAP.md` - online UAT execution, current auth status, and next hardening phases
 - `../../LATEST_LINKS_AND_INSTRUCTIONS.txt` - latest live links and command checklist

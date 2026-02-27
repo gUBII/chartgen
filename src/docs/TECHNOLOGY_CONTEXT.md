@@ -50,8 +50,9 @@ Next.js App Router keeps UI and API routes in one codebase, reducing integration
 
 ### Auth architecture
 
-- endpoint authorization is implemented via DB role checks on provided staff IDs
-- centralized auth middleware is not yet in place
+- signed-session auth is active via middleware (`full` and `guest` roles)
+- login uses `SITE_PASSWORD`; production hardening depends on strong `SESSION_SECRET`
+- commit and approval routes still apply DB role checks for governance-critical actions
 
 ### Generation model maturity
 
@@ -61,5 +62,5 @@ Next.js App Router keeps UI and API routes in one codebase, reducing integration
 ## 5) Near-Term Technical Priorities
 
 1. Wire a real API test harness (Vitest or Jest) with DB fixtures.
-2. Add centralized auth and request identity propagation.
+2. Upgrade auth from shared password to per-user identity mapping with `Staff`.
 3. Introduce personalization loop for participant baseline behavior.

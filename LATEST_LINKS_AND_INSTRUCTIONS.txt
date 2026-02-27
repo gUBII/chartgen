@@ -1,4 +1,4 @@
-ChartGen - Latest Links and Instructions
+Chartgen by gUBII - Latest Links and Instructions
 Last verified: 2026-02-27
 
 Production Links
@@ -9,16 +9,20 @@ Production Links
 
 Creator Links
 - GitHub: https://github.com/gUBII
-- WhatsApp contact: https://wa.me/61423016859?text=Hi%20gUBII%2C%20I%27d%20like%20to%20support%20Chartgen
-- WhatsApp donation: https://wa.me/61423016859?text=I%27d%20like%20to%20donate%20to%20support%20Chartgen%20development
 
 Current Deployment Truth
 - Branch: main
 - Latest verified commit deployed: check Netlify latest main build (should be state "ready")
 - Netlify deploy state: ready
+- Product boundary truth:
+  - Chartgen is independently authored by Farhan Rashid (gUBII)
+  - Deployed in Nexis365-hosted environments for GoodwillCare and COHS
+  - Nexis365 is hosting/platform, not product owner
 - Netlify production environment keys required:
   - DATABASE_URL (Neon pooled URL, host includes "-pooler")
   - DIRECT_URL (Neon direct URL, no "-pooler")
+  - SITE_PASSWORD
+  - SESSION_SECRET
   - NODE_VERSION
 
 Operational Commands
