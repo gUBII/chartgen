@@ -29,7 +29,7 @@ if [[ -z "$result_block" ]]; then
   exit 2
 fi
 
-if printf '%s\n' "$result_block" | rg -q '<[^>]+>|PASS\\|FAIL\\|BLOCKED|Status:[[:space:]]*PASS\\|FAIL|yes\\|no|<n>|<code>'; then
+if printf '%s\n' "$result_block" | rg -q '<[^>]+>|PASS\|FAIL\|BLOCKED|Status:[[:space:]]*PASS\|FAIL|yes\|no|<n>|<code>'; then
   echo "NON_COMPLIANT uuid=$uuid line=$start_line"
   echo "$result_block"
   exit 1
