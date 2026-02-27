@@ -138,11 +138,37 @@ DATABASE_URL=postgresql://user:password@host:port/dbname?schema=public
 
 ### Build Context
 
-**Preview/branch deploys:** Run `npm run build` only (no database migrations)
+`netlify.toml` runs `npm run build` for production and preview contexts.
 
-**Production deploy:** Run `npm run build && npm run db:migrate:deploy` (build + migrate)
+Database migrations are intentionally run outside the build step so production deploys do not fail when DB credentials are missing or invalid at build time.
 
-Migrations run only on production deploys to avoid breaking preview environments. See `netlify.toml` for context config.
+### Online Database Plan (Neon)
+
+1. Create/confirm Neon project + database in region closest to Netlify runtime.
+2. Reset the database user password in Neon.
+3. Build a fresh connection string:
+
+```bash
+postgresql://<user>:<url-encoded-password>@<host>/<db>?sslmode=require
+```
+
+4. Validate credentials from this repo:
+
+```bash
+DATABASE_URL="postgresql://..." npx prisma migrate status
+```
+
+5. Apply migrations:
+
+```bash
+DATABASE_URL="postgresql://..." npx prisma migrate deploy
+```
+
+6. Optional: seed baseline data:
+
+```bash
+DATABASE_URL="postgresql://..." npx prisma db seed
+```
 
 ### Deployment Steps
 
@@ -156,22 +182,23 @@ Migrations run only on production deploys to avoid breaking preview environments
 6. After deploy, go Settings > Build & Deploy > Environment
 7. Add `DATABASE_URL` environment variable
 8. Trigger production redeploy via Deploys tab
-9. Check logs for "prisma migrate deploy" in production build
+9. Run migrations from a terminal using the same `DATABASE_URL`
 
 **Via Netlify CLI:**
 
 ```bash
 npm install -g netlify-cli
 netlify login
-netlify env:set DATABASE_URL "postgresql://user:password@host:port/dbname?schema=public"
-netlify deploy --prod
+netlify env:set DATABASE_URL "postgresql://user:password@host:port/dbname?sslmode=require" --context production
+DATABASE_URL="postgresql://user:password@host:port/dbname?sslmode=require" npx prisma migrate deploy
+netlify deploy --prod --trigger
 ```
 
 ### Verification
 
 After successful production deploy:
 
-1. Check Netlify deploy logs for "prisma migrate deploy" completion in production context
+1. `npx netlify status` shows the correct linked project and production URL
 2. Visit deployed site (e.g., `https://chartgen.netlify.app`)
 3. Test `/mar` endpoint: Generate and download PDF
 4. Test `/restoration` endpoint: Verify database writes
@@ -182,7 +209,7 @@ After successful production deploy:
 If deployment fails:
 - Re-run `netlify deploy --prod` with corrected DATABASE_URL
 - Check PostgreSQL connectivity and permissions
-- Verify migrations ran successfully via `npx prisma migrate status`
+- Verify migrations ran successfully via `DATABASE_URL="postgresql://..." npx prisma migrate status`
 
 ## API Smoke Examples
 
