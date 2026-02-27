@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ role: null }, { status: 401 });
   }
 
-  const session = verifySession(sessionCookie.value);
+  const session = await verifySession(sessionCookie.value);
 
   if (!session) {
     return NextResponse.json({ role: null }, { status: 401 });

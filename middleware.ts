@@ -1,20 +1,9 @@
-'use node';
-
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "./src/lib/session";
 
 // Routes that don't require authentication
 const publicRoutes = ["/login", "/_next", "/api/auth"];
-const staticRoutes = [
-  "/favicon.ico",
-  "/gubii-profile.png",
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".svg",
-  ".webp",
-];
+const staticRoutes = ["/favicon.ico", "/gubii-profile.png"];
 
 // Routes that only allow guests to preview (read-only)
 const guestPreviewRoutes = ["/mar", "/mealtime-chartgen"];
@@ -22,21 +11,17 @@ const guestPreviewRoutes = ["/mar", "/mealtime-chartgen"];
 // Routes that require authentication
 const protectedRoutes = ["/restoration", "/kpigen", "/uat"];
 
-// API routes that require authentication for write operations
-const apiWriteRoutes = [
-  "PATCH /api/engine/preview",
-  "PATCH /api/engine/mar-preview",
-  "POST /api/engine/commit",
-];
+const staticExtensionRegex = /\.(png|jpg|jpeg|gif|svg|webp)$/i;
 
-export function middleware(request: NextRequest) {
-  const { pathname, searchParams } = request.nextUrl;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   const method = request.method;
 
   // Allow public routes and static files
   if (
     publicRoutes.some((route) => pathname.startsWith(route)) ||
-    staticRoutes.some((route) => pathname.includes(route))
+    staticRoutes.some((route) => pathname === route) ||
+    staticExtensionRegex.test(pathname)
   ) {
     return NextResponse.next();
   }
@@ -46,7 +31,7 @@ export function middleware(request: NextRequest) {
   let sessionRole: "full" | "guest" | null = null;
 
   if (sessionCookie) {
-    const session = verifySession(sessionCookie.value);
+    const session = await verifySession(sessionCookie.value);
     if (session) {
       sessionRole = session.role;
     }

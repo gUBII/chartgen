@@ -17,6 +17,12 @@ export async function POST(request: NextRequest) {
     // For "full" role, verify password
     if (role === "full") {
       const sitePassword = process.env.SITE_PASSWORD;
+      if (!sitePassword) {
+        return NextResponse.json(
+          { error: "SITE_PASSWORD is not configured" },
+          { status: 503 }
+        );
+      }
 
       if (!password || password !== sitePassword) {
         return NextResponse.json(
@@ -27,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Sign the session token
-    const token = signSession(role);
+    const token = await signSession(role);
 
     // Create response with redirect
     const response = NextResponse.json({ success: true });
