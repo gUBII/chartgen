@@ -118,38 +118,72 @@ const splitMixedEntries = (entries: ChartLog[]) => {
   const repositionLogs: ChartLog[] = [];
 
   for (const entry of entries) {
-    const kind = String(entry.kind ?? entry.type ?? "").toUpperCase();
+    const kind = String(entry.kind ?? "").toUpperCase();
 
     if (kind === "MAR" || kind === "PRN") {
       marLogs.push(entry);
       continue;
     }
-    if (kind === "MEAL" || "mealType" in entry || "amountEaten" in entry) {
+    if (kind === "MEAL") {
       mealLogs.push(entry);
       continue;
     }
-    if (kind === "SLEEP" || "checkedAt" in entry || "checkTime" in entry) {
+    if (kind === "SLEEP") {
       sleepLogs.push(entry);
       continue;
     }
-    if (kind === "BGL" || "bglReadingMmolL" in entry || "reading" in entry) {
+    if (kind === "BGL") {
       bglLogs.push(entry);
       continue;
     }
-    if (kind === "BOWEL" || "hadBowelMotion" in entry || "fluidIntakeDeltaMl" in entry || "type" in entry) {
+    if (kind === "BOWEL") {
       bowelLogs.push(entry);
       continue;
     }
-    if (kind === "HYGIENE" || "showerStatus" in entry || "oralCareStatus" in entry) {
+    if (kind === "HYGIENE") {
       hygieneLogs.push(entry);
       continue;
     }
-    if (kind === "COMMUNITY" || "destination" in entry || "departedAt" in entry) {
+    if (kind === "COMMUNITY") {
       communityLogs.push(entry);
       continue;
     }
-    if (kind === "REPOSITION" || "position" in entry || "turnedAt" in entry) {
+    if (kind === "REPOSITION") {
       repositionLogs.push(entry);
+      continue;
+    }
+
+    // Fallback classification when explicit kind is absent.
+    if ("scheduledAdminTime" in entry || "actualAdminTime" in entry || "medicationName" in entry) {
+      marLogs.push(entry);
+      continue;
+    }
+    if ("bglReadingMmolL" in entry || "reading" in entry || "fastingStatus" in entry || "insulinAdministered" in entry) {
+      bglLogs.push(entry);
+      continue;
+    }
+    if ("hadBowelMotion" in entry || "fluidIntakeDeltaMl" in entry || "fluidOutputDeltaMl" in entry || "bristolScale" in entry) {
+      bowelLogs.push(entry);
+      continue;
+    }
+    if ("showerStatus" in entry || "oralCareStatus" in entry || "groomingStatus" in entry || "continenceCareStatus" in entry) {
+      hygieneLogs.push(entry);
+      continue;
+    }
+    if ("departedAt" in entry || "returnedAt" in entry || "destination" in entry || "transportMethod" in entry) {
+      communityLogs.push(entry);
+      continue;
+    }
+    if ("turnedAt" in entry || ("position" in entry && "skinCheckOutcome" in entry)) {
+      repositionLogs.push(entry);
+      continue;
+    }
+    if ("checkTime" in entry || "checkedAt" in entry || ("intervention" in entry && "status" in entry)) {
+      sleepLogs.push(entry);
+      continue;
+    }
+    if ("mealType" in entry || "amountEaten" in entry || "foodTexture" in entry || "fluidThickness" in entry) {
+      mealLogs.push(entry);
     }
   }
 

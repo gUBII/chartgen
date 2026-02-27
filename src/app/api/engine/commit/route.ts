@@ -199,16 +199,27 @@ const toDate = (value: unknown, field: string): Date => {
 };
 
 const normalizeEntrySource = (value: unknown): "LIVE" | "RESTORED_APPROVED" | "AUDIT_RECOVERY" | "SYNTHETIC_QA" => {
-  const source = String(value ?? "").toUpperCase();
-  if (source === "RESTORED_APPROVED" || source === "AUDIT_RECOVERY" || source === "SYNTHETIC_QA") {
+  if (value === undefined || value === null || value === "") {
+    return "LIVE";
+  }
+
+  const source = String(value).toUpperCase();
+  if (source === "LIVE" || source === "RESTORED_APPROVED" || source === "AUDIT_RECOVERY" || source === "SYNTHETIC_QA") {
     return source;
   }
-  return "LIVE";
+
+  throw new CommitApiError(422, "INVALID_SOURCE", `Unknown entry source: ${String(value)}`);
 };
 
 const normalizeDataSource = (value: unknown): "SYNTHETIC_QA" | "PRODUCTION" => {
-  const source = String(value ?? "").toUpperCase();
-  return source === "PRODUCTION" ? "PRODUCTION" : "SYNTHETIC_QA";
+  if (value === undefined || value === null || value === "") {
+    return "SYNTHETIC_QA";
+  }
+  const source = String(value).toUpperCase();
+  if (source === "SYNTHETIC_QA" || source === "PRODUCTION") {
+    return source;
+  }
+  throw new CommitApiError(422, "INVALID_SOURCE", `Unknown data source: ${String(value)}`);
 };
 
 const normalizeBowelType = (row: any): "BOWEL" | "FLUID_IN" | "FLUID_OUT" => {
@@ -220,6 +231,13 @@ const normalizeBowelType = (row: any): "BOWEL" | "FLUID_IN" | "FLUID_OUT" => {
   if (row?.hadBowelMotion) return "BOWEL";
   const intake = Number(row?.fluidIntakeDeltaMl ?? 0);
   const output = Number(row?.fluidOutputDeltaMl ?? 0);
+  if (intake === 0 && output === 0) {
+    throw new CommitApiError(
+      422,
+      "AMBIGUOUS_BOWEL_TYPE",
+      "Cannot infer bowel/fluid type when both intake and output are zero."
+    );
+  }
   return intake >= output ? "FLUID_IN" : "FLUID_OUT";
 };
 
@@ -247,12 +265,35 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
   return prisma.$transaction(async (tx) => {
     const txAny = tx as unknown as DynamicTx;
     const marModel = txAny.mARLog ?? txAny.marLog;
+    const mealModel = txAny.mealLog;
+    const sleepModel = txAny.sleepSettlingLog;
+    const bglModel = txAny.bglDiabetesLog;
+    const bowelModel = txAny.bowelFluidLog;
+    const hygieneModel = txAny.hygieneLog;
+    const communityModel = txAny.communityAccessLog ?? txAny.communityAccessQaLog;
+    const repositionModel = txAny.repositioningLog ?? txAny.repositioningQaLog;
 
-    if (!marModel?.createMany || !txAny.mealLog?.createMany) {
-      throw new CommitApiError(500, "SCHEMA_NOT_READY", "Core MAR/Meal models are not available.");
-    }
-    if (!txAny.bglDiabetesLog?.createMany || !txAny.hygieneLog?.createMany) {
-      throw new CommitApiError(500, "SCHEMA_NOT_READY", "Phase A strict models are not available.");
+    const groupedModelChecks: Array<{ name: string; model: any }> = [
+      { name: "MARLog", model: marModel },
+      { name: "MealLog", model: mealModel },
+      { name: "SleepSettlingLog", model: sleepModel },
+      { name: "BglDiabetesLog", model: bglModel },
+      { name: "BowelFluidLog", model: bowelModel },
+      { name: "HygieneLog", model: hygieneModel },
+      { name: "CommunityAccessQaLog", model: communityModel },
+      { name: "RepositioningQaLog", model: repositionModel },
+    ];
+    const missingGroupedModels = groupedModelChecks
+      .filter((item) => typeof item.model?.createMany !== "function")
+      .map((item) => item.name);
+
+    if (missingGroupedModels.length > 0) {
+      throw new CommitApiError(
+        500,
+        "SCHEMA_NOT_READY",
+        `Missing grouped commit models: ${missingGroupedModels.join(", ")}`,
+        { missingModels: missingGroupedModels }
+      );
     }
 
     const writes = [];
@@ -281,7 +322,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
 
     if (mealLogs.length > 0) {
       writes.push(
-        txAny.mealLog.createMany({
+        mealModel.createMany({
           data: mealLogs.map((row: any) => ({
             participantId: String(row.participantId),
             createdByStaffId: String(row.createdByStaffId ?? row.staffId),
@@ -303,9 +344,9 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
       );
     }
 
-    if (sleepLogs.length > 0 && txAny.sleepSettlingLog?.createMany) {
+    if (sleepLogs.length > 0) {
       writes.push(
-        txAny.sleepSettlingLog.createMany({
+        sleepModel.createMany({
           data: sleepLogs.map((row: any) => {
             const status = String(row.status ?? "").toUpperCase();
             return {
@@ -323,7 +364,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
 
     if (bglLogs.length > 0) {
       writes.push(
-        txAny.bglDiabetesLog.createMany({
+        bglModel.createMany({
           data: bglLogs.map((row: any) => ({
             source: normalizeDataSource(row.source),
             participantId: String(row.participantId),
@@ -341,9 +382,9 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
       );
     }
 
-    if (bowelLogs.length > 0 && txAny.bowelFluidLog?.createMany) {
+    if (bowelLogs.length > 0) {
       writes.push(
-        txAny.bowelFluidLog.createMany({
+        bowelModel.createMany({
           data: bowelLogs.map((row: any) => {
             const type = normalizeBowelType(row);
             const volumeMl =
@@ -371,7 +412,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
 
     if (hygieneLogs.length > 0) {
       writes.push(
-        txAny.hygieneLog.createMany({
+        hygieneModel.createMany({
           data: hygieneLogs.map((row: any) => ({
             source: normalizeDataSource(row.source),
             participantId: String(row.participantId),
@@ -392,8 +433,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
       );
     }
 
-    const communityModel = txAny.communityAccessLog ?? txAny.communityAccessQaLog;
-    if (communityLogs.length > 0 && communityModel?.createMany) {
+    if (communityLogs.length > 0) {
       writes.push(
         communityModel.createMany({
           data: communityLogs.map((row: any) => ({
@@ -415,8 +455,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
       );
     }
 
-    const repositionModel = txAny.repositioningLog ?? txAny.repositioningQaLog;
-    if (repositionLogs.length > 0 && repositionModel?.createMany) {
+    if (repositionLogs.length > 0) {
       writes.push(
         repositionModel.createMany({
           data: repositionLogs.map((row: any) => ({
@@ -504,9 +543,10 @@ export async function POST(request: NextRequest) {
           source: "RESTORED_APPROVED",
         },
       });
+      const legacyMarModel = txAny.mARLog ?? txAny.marLog;
       const existingMarCommittedCount =
-        typeof txAny.marLog?.count === "function"
-          ? await txAny.marLog.count({
+        typeof legacyMarModel?.count === "function"
+          ? await legacyMarModel.count({
               where: {
                 restorationBatchId: batchId,
                 source: "RESTORED_APPROVED",
@@ -599,9 +639,9 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      if (typeof txAny.marLog?.create === "function") {
+      if (typeof legacyMarModel?.create === "function") {
         for (const candidate of approvedMarCandidates) {
-          await txAny.marLog.create({
+          await legacyMarModel.create({
             data: {
               participantId: candidate.participantId,
               createdByStaffId: candidate.generatedByStaffId,
