@@ -151,6 +151,9 @@ From `prisma/seed.cjs`:
 
 ```bash
 npm run build
+npm run lint
+npm run lint:report
+npm run lint:strict
 npm run db:health
 npm run agent:check:result -- /tmp/codex_claude_handshake.log <UUID>
 npm run agent:check:result -- /tmp/codex_gemini_handshake.log <UUID>
@@ -159,6 +162,15 @@ npx prisma migrate status
 npm run db:stress -- --concurrency 20 --duration-sec 45 --mode simple
 npm run db:cleanup:uat -- --participant-key 112334
 ```
+
+## Lint Modes
+
+- `npm run lint`
+  - Existing local policy (`--max-warnings=15`), useful for day-to-day work.
+- `npm run lint:report`
+  - Non-blocking lint report; always exits `0`.
+- `npm run lint:strict`
+  - Strict gate for CI/release checks (`--max-warnings=0`).
 
 ## Online UAT Automation
 

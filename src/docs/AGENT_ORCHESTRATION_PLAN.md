@@ -309,3 +309,19 @@ Policy:
 
 - non-compliant results are rejected and reissued with strict one-line schema
 - missing results are treated as pending, not pass
+
+## 16) Lint Policy Split
+
+To separate developer feedback from CI gating:
+
+- `npm run lint`
+  - existing local threshold (`--max-warnings=15`)
+- `npm run lint:report`
+  - non-blocking reporting lane (always exits `0`)
+- `npm run lint:strict`
+  - strict release/CI lane (`--max-warnings=0`)
+
+Operational rule:
+
+- implementation can proceed with `lint:report` visibility
+- release decisions should use `lint:strict` status explicitly
