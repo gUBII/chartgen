@@ -1,6 +1,6 @@
 # Latest Links and Instructions
 
-**Last Updated:** 2026-02-28
+**Last Updated:** 2026-03-01
 **Version:** 3.9.0
 **Timeline Window:** October 2025 -> February 2026 (staged release ledger)
 
@@ -43,6 +43,7 @@ Single endpoint now handles 8 log types transactionally:
 - **Tabbed UI:** Medication | Nutrition & Bowel | Night Routine | Health & Vitals
 - **Defect Highlighting:** Rows with `qaAnomalyFlag=true` or `qaMeta.defect` shown with amber background
 - **Smart Classification:** `splitMixedEntries()` classifies mixed log entries by explicit `kind` field, then characteristic fields
+- **Module Coverage:** restoration preview now includes `mealLogs`, `marLogs`, `sleepLogs`, `bglLogs`, `bowelLogs`, `hygieneLogs`, `communityLogs`, and `repositionLogs`
 
 ---
 
@@ -186,7 +187,7 @@ curl https://chartgen-gubii.netlify.app/api/ops/db-health \
    - KPI Metrics (completion rate, error rate, processing time)
    - AI Summary (from Gemini Flash)
    - Recommendations (generated)
-4. **Audit Trail:** JSON saved to `/tmp/chartgen-ai-reports/{id}.json`
+4. **Audit Trail:** report is persisted in PostgreSQL (`GapReport`) and fetched via `GET /api/audit/gap-report/[id]`
 
 ---
 

@@ -1,6 +1,6 @@
 # Chartgen by gUBII
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 Governance-first clinical documentation audit modelling platform for NDIS-aligned environments, built with Next.js, Prisma, and PostgreSQL.
 
@@ -16,16 +16,16 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 
 - `v3.9.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
 - Timeline window: `October 2025 -> February 2026` (staged release ledger for historical commits).
-- Added UI kit primitives + shell standardization, admin dashboard CRUD, and unified preview API behavior across 5 chart families.
+- Added UI kit primitives + shell standardization, admin dashboard CRUD, and restoration module wiring for Meal, Sleep, BGL, Bowel, Hygiene, Community, and Repositioning.
 - Includes prior Phase E grouped commit pipeline, post-release hardening, and Netlify build reliability gates.
 
 ## Current Truth
 
 Chartgen currently implements:
 
-- Meal preview generation (`POST /api/engine/preview`)
+- Restoration preview generation (`POST /api/engine/preview`) returning meal candidates plus MAR/Sleep/BGL/Bowel/Hygiene/Community/Reposition logs
 - MAR preview generation (`POST /api/engine/mar-preview`)
-- Unified preview behavior across Meal, MAR, Sleep, BGL, and Bowel generation families
+- Unified preview/commit behavior across 8 chart families
 - Candidate editing (`PATCH` on both preview routes)
 - Batch approval (`approveAll`) with governance controls
 - Transactional commit into official ledger (`POST /api/engine/commit`)
@@ -90,64 +90,83 @@ Migration applied:
 ## Runtime Architecture
 
 ```mermaid
-flowchart LR
-  Browser["Next.js App Router UI"] --> Auth["/api/auth/* session endpoints"]
-  Browser --> Engine["/api/engine/* preview/commit"]
-  Browser --> Audit["/api/audit/* gap reports"]
-  Browser --> Ops["/api/ops/* db-health + uat"]
-  Browser --> Admin["/admin dashboard (list/edit)"]
-  Engine --> Prisma["Prisma Client"]
-  Audit --> Prisma
-  Ops --> Prisma
-  Admin --> Prisma
-  Prisma --> Postgres["PostgreSQL / Neon"]
-  Prisma --> Tmp["/tmp artifacts (fallback/reporting)"]
+flowchart TD
+    subgraph Client ["Client Layer (Next.js)"]
+        UI["Web Browser"]
+        AuthCtx["AuthContext / gwc_session"]
+    end
+
+    subgraph API ["API Layer (App Router)"]
+        Engine["/api/engine/* (Preview/Commit)"]
+        Audit["/api/audit/* (KPI/Gap Reports)"]
+        Ops["/api/ops/* (DB-Health/UAT)"]
+        QA["/api/qa/* (Anomaly Detection)"]
+        AdminAPI["/api/admin/* (CRUD)"]
+    end
+
+    subgraph Service ["Domain Services"]
+        RestoEng["Restoration Engine"]
+        Realism["Temporal Realism"]
+        Detector["Anomaly Detectors"]
+    end
+
+    subgraph Persistence ["Data Layer"]
+        Prisma["Prisma Client"]
+        Neon["PostgreSQL (Neon)"]
+    end
+
+    UI --> AuthCtx
+    AuthCtx --> API
+    API --> Service
+    Service --> Prisma
+    Prisma --> Neon
 ```
 
 ## Data Flow (Preview to Ledger)
 
 ```mermaid
 sequenceDiagram
-  participant UI as Restoration UI
-  participant Preview as /api/engine/preview
-  participant Review as Candidate Review
-  participant Commit as /api/engine/commit
-  participant DB as PostgreSQL
-  participant Audit as AuditEvent
+    participant UI as Restoration UI
+    participant API as /api/engine/preview
+    participant Review as Review/Edit UI
+    participant Commit as /api/engine/commit
+    participant DB as PostgreSQL (Neon)
+    participant Audit as AuditEvent Ledger
 
-  UI->>Preview: POST generate payload
-  Preview->>DB: create RestorationBatch + candidates
-  UI->>Review: PATCH edits / approveAll
-  UI->>Commit: POST grouped payload (8 log arrays) or batch commit
-  Commit->>DB: transaction createMany (ledger tables)
-  Commit->>Audit: append LEDGER_WRITTEN event + hash chain
+    UI->>API: POST generation payload
+    API->>DB: create RestorationBatch + candidates (PENDING)
+    UI->>Review: PATCH edits / approveAll
+    Review->>DB: update candidates (APPROVED)
+    UI->>Commit: POST grouped payload (8 log arrays)
+    Commit->>DB: transaction insertMany (ledger tables)
+    Commit->>Audit: append LEDGER_WRITTEN + hash linkage
 ```
 
 ## Auth Session Flow
 
 ```mermaid
 flowchart TD
-  Login["/login"] --> AuthPost["POST /api/auth/login"]
-  AuthPost --> Cookie["Set-Cookie: gwc_session"]
-  Cookie --> Guard{"Protected route?"}
-  Guard -- Yes --> Check["getSessionFromRequest()"]
-  Check --> Role{"role=full?"}
-  Role -- Yes --> Full["Allow /restoration /audit-engine /audit-explorer /uat /admin"]
-  Role -- No --> Guest["Restrict + route to /login or guest-safe pages"]
+    Login["/login"] --> AuthPost["POST /api/auth/login"]
+    AuthPost --> Cookie["Set-Cookie: gwc_session"]
+    Cookie --> Middleware{"Middleware Gate"}
+    Middleware -- Restricted --> Check["Check Session + Role"]
+    Check -- "role=full" --> Full["Allow: /admin, /uat, /audit-*"]
+    Check -- "role=guest" --> Guest["Allow: /restoration (read), /mar (read)"]
+    Check -- "no-role" --> Redirect["Redirect to /login"]
 ```
 
 ## QA and Anomaly Detection Flow
 
 ```mermaid
 flowchart LR
-  Synthetic["SYNTHETIC_QA logs"] --> Tables["SleepSettlingLog / BowelFluidLog / RestrictivePracticeEvent"]
-  Tables --> Detector["GET /api/qa/detect-anomalies"]
-  Detector --> Ghost["Ghost Shift detector"]
-  Detector --> Bowel["Constipation Gap detector"]
-  Detector --> Restraint["Unauthorised Restraint detector"]
-  Ghost --> Summary["Breach summary output"]
-  Bowel --> Summary
-  Restraint --> Summary
+    Source["Synthetic/Live Logs"] --> DB[("PostgreSQL")]
+    DB --> Detector["GET /api/qa/detect-anomalies"]
+    Detector --> Ghost["Ghost Shift Engine"]
+    Detector --> Bowel["Constipation Gap Engine"]
+    Detector --> Restraint["Restraint Engine"]
+    Ghost --> Report["Anomalous Breach Report"]
+    Bowel --> Report
+    Restraint --> Report
 ```
 
 ## Routes
@@ -168,7 +187,7 @@ flowchart LR
 
 ### API
 
-- `POST /api/engine/preview` - generate meal candidates
+- `POST /api/engine/preview` - generate restoration bundle (meal candidates + MAR rows + multi-chart module logs)
 - `PATCH /api/engine/preview` - edit meal candidate or `approveAll`
 - `POST /api/engine/mar-preview` - generate MAR candidates
 - `PATCH /api/engine/mar-preview` - edit MAR candidate or `approveAll`

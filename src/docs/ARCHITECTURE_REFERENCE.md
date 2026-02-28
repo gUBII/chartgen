@@ -1,10 +1,10 @@
 # Chartgen by gUBII Architecture Reference
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 ## 1) System Purpose
 
-Chartgen reconstructs historical meal and medication charts as reviewed candidates before promotion into production ledger tables.
+Chartgen reconstructs historical meal and medication charts as reviewed candidates, and generates synthetic QA logs across restoration modules before promotion into production ledger tables.
 
 Design goals:
 
@@ -30,7 +30,7 @@ Design goals:
 
 ### API
 
-- `POST /api/engine/preview` - generate meal candidates
+- `POST /api/engine/preview` - generate restoration bundle (meal candidates + MAR rows + Sleep/BGL/Bowel/Hygiene/Community/Reposition logs)
 - `PATCH /api/engine/preview` - edit meal candidate or `approveAll`
 - `POST /api/engine/mar-preview` - generate MAR candidates
 - `PATCH /api/engine/mar-preview` - edit MAR candidate or `approveAll`
@@ -47,7 +47,9 @@ Design goals:
 
 ### Domain Services
 
-- `src/services/restoration/restorationEngine.ts` - generation logic for meal and MAR candidates
+- `src/services/restoration/restorationEngine.ts` - orchestration logic for candidate generation and modular chart synthesis
+- `src/services/restoration/modules/*` - chart module implementations (Meal, Sleep, BGL, Bowel, Hygiene, Community, Repositioning)
+- `src/services/restoration/stochasticEngine.ts` - seeded RNG, timeline cascade, and clinical domino logic
 - `src/services/restoration/temporalRealism.ts` - timing variance generation
 - `src/services/restoration/reviewWorkflow.ts` - review policy helpers (not currently wired into API routes)
 
@@ -118,8 +120,7 @@ Error codes used:
 - transaction wraps all writes
 
 **Phase E (grouped):**
-- `actorStaffId` required and role-gated
-- No `batchId`; instead payload contains arrays of log objects
+- No `batchId`; payload contains arrays of log objects
 - Supports 8 log types: `marLogs`, `mealLogs`, `sleepLogs`, `bglLogs`, `bowelLogs`, `hygieneLogs`, `communityLogs`, `repositionLogs`
 - Each array processed in transaction; all succeed or all fail
 - Strict source/type validation (422 rejection of invalid sources/types)
@@ -150,8 +151,8 @@ sequenceDiagram
     participant API as /api/engine/commit
     participant DB as PostgreSQL (Prisma TX)
 
-    UI->>API: POST {actorStaffId, marLogs, mealLogs, ...}
-    API->>DB: Validate actor + elevated role
+    UI->>API: POST {marLogs, mealLogs, sleepLogs, ...}
+    API->>API: Validate payload arrays + source/type normalization
     API->>API: Validate all 8 log models upfront
     API->>DB: $transaction([ ...prisma.create()... ])
     DB-->>API: Commit transaction

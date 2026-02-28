@@ -1,17 +1,39 @@
 # Restoration Engine Notes
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 ## Objective
 
-Generate clinically plausible reconstruction candidates for meal and medication charts while preserving strong provenance and review controls.
+Generate clinically plausible reconstruction candidates and synthetic QA chart logs while preserving strong provenance and review controls.
 
 Primary implementation:
 
 - `src/services/restoration/restorationEngine.ts`
 - `src/services/restoration/temporalRealism.ts`
+- `src/services/restoration/stochasticEngine.ts`
+- `src/services/restoration/modules/*`
 
-## 1) Realism Model (Current)
+## 1) Modular chart generation (v3.9)
+
+`generateBatch()` now orchestrates dedicated `ChartModule` implementations:
+
+- `MealChartModule`
+- `SleepChartModule`
+- `BglChartModule`
+- `BowelFluidChartModule`
+- `HygieneChartModule`
+- `CommunityAccessChartModule`
+- `RepositioningChartModule`
+
+Each module contributes:
+
+- `buildSchedule(day)` for deterministic per-day task scaffolding
+- `realizeTask(task, ctx)` for realized row materialization
+- optional `injectDefects(rows, ctx)` for QA anomaly injection
+
+The engine merges module schedules into one timeline, runs cascade realization, then persists module rows transactionally.
+
+## 2) Realism Model (Current)
 
 ### Day-level coherence
 
@@ -71,7 +93,7 @@ Deviation/omission/comment text uses phrase pools to reduce repetitive synthetic
 
 The engine can now inject `qaAnomalyFlag: true` and `qaMeta: { defect: '...' }` into generated candidates to simulate data defects. The UI uses this to render rows with an amber background for easy auditing.
 
-## 2) Temporal Realism
+## 3) Temporal Realism
 
 `generateTemporalRealism` uses triangular sampling with configurable:
 
@@ -81,7 +103,7 @@ The engine can now inject `qaAnomalyFlag: true` and `qaMeta: { defect: '...' }` 
 
 Engine behavior now mixes rounding to 1-minute and 5-minute buckets to avoid over-regular patterns.
 
-## 3) Deterministic Generation (v3.4+)
+## 4) Deterministic Generation (v3.4+)
 
 The preview generation routes (`/api/engine/preview`, `/api/engine/mar-preview`) now accept optional `seed` and `profile` parameters for deterministic stochastic modifiers.
 
@@ -90,7 +112,7 @@ The preview generation routes (`/api/engine/preview`, `/api/engine/mar-preview`)
 
 This allows for reproducible test snapshots.
 
-## 4) Provenance Fields on Generated Candidates
+## 5) Provenance Fields on Generated Candidates
 
 Each generated candidate includes:
 
@@ -100,7 +122,7 @@ Each generated candidate includes:
 - `provenanceHash`
 - `source`: `SYNTHETIC_QA` or `AUDIT_RECOVERY` based on context.
 
-## 5) Review and Promotion Constraints
+## 6) Review and Promotion Constraints
 
 Engine output is staging data only.
 
@@ -111,7 +133,7 @@ Promotion to production ledger requires:
 3. commit-time provenance hash verification
 4. transactional write of logs + audit event
 
-## 6) Current Limitations
+## 7) Current Limitations
 
 - Personalization loop from participant historical baselines is not implemented yet.
 - `reviewWorkflow.ts` exists but API routes currently enforce governance inline.

@@ -32,27 +32,27 @@ Completed work is explicitly deprecated from future planning.
 
 | Area | Status | Evidence |
 |---|---|---|
-| App Shell (`SiteHeader`, `PrimaryNav`, `SiteFooter`, `AppLayout`) | `LOCAL_DONE_PENDING_REVIEW` | `src/components/shell/*`, `src/app/layout.tsx` |
-| UI Kit primitives (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, forms) | `LOCAL_DONE_PENDING_REVIEW` | `src/components/ui/*` |
-| IACP v2 protocol docs and role matrix | `LOCAL_DONE_PENDING_REVIEW` | `src/docs/iacp/*`, `claude.md`, `gemini.md` |
+| App Shell (`SiteHeader`, `PrimaryNav`, `SiteFooter`, `AppLayout`) | `DEPRECATED_MAIN` | `src/components/shell/*`, `src/app/layout.tsx` |
+| UI Kit primitives (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, forms) | `DEPRECATED_MAIN` | `src/components/ui/*` |
+| IACP v2 protocol docs and role matrix | `DEPRECATED_MAIN` | `src/docs/iacp/*`, `claude.md`, `gemini.md` |
 
 ### Step 3 — Items still open (active backlog)
 
 | ID | Work | Status | Owner |
 |---|---|---|---|
-| AD-01 | Create `/admin` dashboard route + list UI | `LOCAL_DONE` | Claude |
-| AD-02 | Admin create/edit forms + save path per chart family | `LOCAL_DONE` | Claude |
-| UP-01 | Unified preview API (5 families: Meal + MAR + Sleep + BGL + Bowel) | `LOCAL_DONE` | Claude |
-| UP-02 | Restoration page wiring for all 5 families | `LOCAL_DONE` | Claude |
-| CL-01 | Remove `/mealtime-chartgen` alias + update all references | `LOCAL_DONE` | Claude |
-| AC-01 | Admin participant/staff CRUD (API + UI) | `LOCAL_DONE` | Claude |
+| AD-01 | Create `/admin` dashboard route + list UI | `DEPRECATED_MAIN` | Claude |
+| AD-02 | Admin create/edit forms + save path per chart family | `DEPRECATED_MAIN` | Claude |
+| UP-01 | Unified preview API (8 families: Meal + MAR + Sleep + BGL + Bowel + Hygiene + Community + Reposition) | `DEPRECATED_MAIN` | Claude |
+| UP-02 | Restoration page wiring for all 8 families | `DEPRECATED_MAIN` | Claude |
+| CL-01 | Remove `/mealtime-chartgen` alias + update all references | `DEPRECATED_MAIN` | Claude |
+| AC-01 | Admin participant/staff CRUD (API + UI) | `DEPRECATED_MAIN` | Claude |
 | FH-01 | Self-host Orbitron + Space Grotesk (remove next/font/google network dep) | `DEPRECATED_PROD` | Claude |
 | LP-01/02/03 | Landing decomposition from 414-line page | `ACTIVE` | Codex + Claude |
-| RS-01/02 | Restoration decomposition into hooks/components | `ACTIVE` | Codex |
+| RS-01/02 | Restoration decomposition into hooks/components | `DEPRECATED_MAIN` | Codex |
 | MC-01 | `/chartgen-core` route + catalog components | `ACTIVE` | Claude |
 | PF-01 | `/entry` preflight wizard | `ACTIVE` | Claude |
-| CM-01 | Hygiene/Community/Repositioning chart modules (wired in restoration engine and preview API) | `LOCAL_DONE_PENDING_REVIEW` | Codex |
-| CM-02 | Extract `MealChartModule` from engine and include in module timeline orchestration | `LOCAL_DONE_PENDING_REVIEW` | Codex |
+| CM-01 | Hygiene/Community/Repositioning chart modules (wired in restoration engine and preview API) | `DEPRECATED_MAIN` | Codex |
+| CM-02 | Extract `MealChartModule` from engine and include in module timeline orchestration | `DEPRECATED_MAIN` | Codex |
 | EX-01/02 | Audit explorer table/filter drill-down upgrade | `ACTIVE` | Claude |
 | AE-01/02/03 | Audit engine UI composition upgrades | `ACTIVE` | Claude |
 
@@ -95,8 +95,7 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 
 ## 5) Immediate Next Actions
 
-1. Wait for Claude/Gemini result payloads for the two active UUID lanes.
-2. Integrate approved code/docs.
-3. Run build + lint delta.
-4. Stage atomic commits (shell/ui, docs, admin, diagnostics).
-5. Deploy and verify live UAT.
+1. Verify production deploy status for commit `737f18a4`.
+2. Run live UAT smoke for restoration preview/commit and audit routes.
+3. Promote eligible `DEPRECATED_MAIN` items to `DEPRECATED_PROD` with evidence.
+4. Continue active feature lanes (`LP-*`, `MC-*`, `PF-*`, `EX-*`, `AE-*`).

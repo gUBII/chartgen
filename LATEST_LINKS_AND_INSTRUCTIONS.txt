@@ -1,5 +1,5 @@
 Chartgen by gUBII - Latest Links and Instructions
-Last verified: 2026-02-27
+Last verified: 2026-03-01
 
 Production Links
 - App URL: https://chartgen-gubii.netlify.app
@@ -10,58 +10,45 @@ Production Links
 Creator Links
 - GitHub: https://github.com/gUBII
 
-Current Deployment Truth
-- Branch: main
-- Latest verified commit deployed: 81232b0fb1c3c9b41f78417903af9fc2db90aa22
-- Previous verified commit deployed: 620a86bceea9efc6b5121b30c7accb1787278912
-- Latest deploy id: 69a144d7bbd5cc0008549b29
-- Netlify deploy state: ready (published 2026-02-27T07:17:38.128Z)
-- Current release: v3.2.0
-- Version timeline route: /whats-new
-- Latest mobile patch truth:
-  - mobile nav is collapsible via `Menu` toggle on small screens
-  - mobile header spacing is compacted to reduce above-the-fold obstruction
-- Product boundary truth:
-  - Chartgen is independently authored by Farhan Rashid (gUBII)
-  - Deployed in Nexis365-hosted environments for GoodwillCare and COHS
-  - Nexis365 is hosting/platform, not product owner
-- Netlify production environment keys required:
-  - DATABASE_URL (Neon pooled URL, host includes "-pooler")
-  - DIRECT_URL (Neon direct URL, no "-pooler")
-  - SITE_PASSWORD
-  - SESSION_SECRET
-  - NODE_VERSION
+Current Release Truth
+- Version line: v3.9.0
+- Timeline route: /whats-new (v1.0 -> v3.9)
+- Restoration preview families: Meal, MAR, Sleep, BGL, Bowel, Hygiene, Community, Repositioning
+- Grouped commit payload supports all 8 families transactionally at POST /api/engine/commit
+- Gap reports are database-backed via GapReport model (not /tmp-only storage)
 
 Operational Commands
-1) Check project/link status
+1) Check Netlify project/link status
    npx netlify status
 
-2) Set production environment variables
-   npx netlify env:set DATABASE_URL "postgresql://user:password@endpoint-pooler.region.aws.neon.tech/dbname?sslmode=require" --context production
-   npx netlify env:set DIRECT_URL "postgresql://user:password@endpoint.region.aws.neon.tech/dbname?sslmode=require" --context production
+2) Check latest deploy/build status
+   npx netlify api listSiteDeploys --data '{"site_id":"288b3602-09cb-4368-877f-535974603584","page":1,"per_page":3}'
+   npx netlify api listSiteBuilds --data '{"site_id":"288b3602-09cb-4368-877f-535974603584","page":1,"per_page":3}'
 
-3) Validate Prisma schema and migration status
-   npm run db:health
-   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma validate
-   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate status
-
-4) Apply migrations and seed
-   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma migrate deploy
-   DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..." npx prisma db seed
-
-5) Trigger production redeploy
+3) Trigger production redeploy (if needed)
    npx netlify deploy --prod --trigger
 
-6) Check latest deploy state quickly
-   npx netlify api listSiteDeploys --data '{"site_id":"288b3602-09cb-4368-877f-535974603584","page":1,"per_page":3}'
+4) Validate schema + build gates locally
+   npx prisma validate
+   npm run lint:report
+   npm run build -- --webpack
 
-Claude Workflow Handshake
-- Handshake file: /tmp/codex_claude_handshake.log
-- Write instruction:
-  INSTRUCTION [UUID]
-  <task description>
-- Expect response:
-  RESULT [UUID]
-  <status/output>
-- Tail messages:
-  tail -n 80 /tmp/codex_claude_handshake.log
+5) UAT seed and ops commands
+   node scripts/seed-uat-staff.mjs
+   node scripts/seed-uat-participant.mjs
+   npm run db:health
+   npm run db:stress
+
+Required Netlify Environment Keys
+- DATABASE_URL (Neon pooled URL)
+- DIRECT_URL (Neon direct URL)
+- SITE_PASSWORD
+- SESSION_SECRET
+- GEMINI_API_KEY
+- NODE_VERSION
+
+Claude Handshake Channel
+- /tmp/codex_claude_handshake.log
+
+Gemini Handshake Channel
+- handoff/gemini_handshake.log

@@ -1,6 +1,6 @@
 # Quality and Testing
 
-Last updated: 2026-02-27
+Last updated: 2026-03-01
 
 ## 1) Current Truth
 
@@ -33,6 +33,12 @@ Current verification relies on:
 - Generate meal preview
 - Approve batch with elevated non-generator reviewer
 - Commit batch
+
+### Restoration module workflow
+
+- Generate restoration preview and confirm non-empty `sleepLogs`, `bglLogs`, `bowelLogs`
+- Confirm `hygieneLogs`, `communityLogs`, and `repositionLogs` are present in preview payload
+- Commit grouped payload and verify row counts match API response
 
 ### MAR workflow
 

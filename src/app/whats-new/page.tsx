@@ -15,7 +15,8 @@ const RELEASES: Release[] = [
     highlights: [
       "Added reusable UI kit primitives and app shell components for consistent rendering across routes.",
       "Added `/admin` dashboard with participant/staff CRUD and chart-entry management workflows.",
-      "Unified preview API behavior across Meal, MAR, Sleep, BGL, and Bowel families.",
+      "Unified preview API behavior across Meal, MAR, Sleep, BGL, Bowel, Hygiene, Community, and Repositioning families.",
+      "Completed CM-01/CM-02: extracted `MealChartModule` and wired modular timeline generation/persistence for Hygiene, Community, and Repositioning logs.",
       "Removed legacy `/mealtime-chartgen` alias and updated navigation references to canonical routes.",
       "Synced release/docs/protocol truth to current production behavior.",
     ],

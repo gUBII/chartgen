@@ -1,6 +1,6 @@
 # Operations Runbook
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 ## 0) Current Live Links (Verified 2026-02-28)
 
@@ -71,7 +71,7 @@ npx prisma db seed
 
 ## 4) Smoke Test Checklist
 
-### Meal workflow
+### Restoration workflow
 
 1. `POST /api/engine/preview`
 2. `PATCH /api/engine/preview` with `approveAll=true`
@@ -79,9 +79,9 @@ npx prisma db seed
 
 Expected:
 
-- preview returns `ok: true` + `batchId`
+- preview returns `ok: true` + `batchId` + module log arrays (`sleepLogs`, `bglLogs`, `bowelLogs`, `hygieneLogs`, `communityLogs`, `repositionLogs`)
 - approve returns `approvedCount > 0`
-- commit returns `mealCommitted >= 0`
+- commit returns grouped counts across all included families
 
 ### MAR workflow
 

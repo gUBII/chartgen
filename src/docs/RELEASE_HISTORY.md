@@ -1,6 +1,6 @@
 # Release History
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 This document stages all delivered features so far from `v1.0` through `v3.9`.
 Timeline window (staged): October 2025 to February 2026.
@@ -10,7 +10,8 @@ Timeline window (staged): October 2025 to February 2026.
 **UI Kit + Admin + Unified Preview APIs**
 - Added reusable UI primitives and shell components (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, form controls) for consistent module UX.
 - Added `/admin` dashboard for chart record operations and participant/staff CRUD support.
-- Unified preview API behavior across 5 chart families (Meal, MAR, Sleep, BGL, Bowel) and removed `/mealtime-chartgen` alias.
+- Unified preview API behavior across 8 chart families (Meal, MAR, Sleep, BGL, Bowel, Hygiene, Community, Repositioning) and removed `/mealtime-chartgen` alias.
+- Completed CM-01/CM-02 by extracting `MealChartModule` and wiring Hygiene/Community/Reposition modules through timeline realization and persistence.
 - Synced nextphase ledger, protocol docs, and runtime README truth to match shipped behavior.
 
 ## v3.8
