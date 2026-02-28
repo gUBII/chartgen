@@ -16,6 +16,13 @@
 - Instruction: `INSTRUCTION [UUID]`
 - Result: `RESULT [UUID]`
 
+## Deploy Budget Semantics
+
+- Default assumption for all UUID scopes: `NO_DEPLOY`.
+- Deploy is only allowed when dispatch explicitly states `DEPLOY_APPROVED`.
+- If `DEPLOY_APPROVED` is absent, agents must stop at local validation + commit readiness.
+- Codex owns final deploy trigger decision.
+
 ## Mandatory Result Fields (edit tasks)
 
 - `Status: PASS|FAIL|BLOCKED`
@@ -24,6 +31,12 @@
 - `Commit: <hash|no commit>`
 - `Blockers: <none|single concrete blocker>`
 - `Next: <single next action>`
+
+## Environment Truth Rule
+
+- Local dev runs against local env files (`.env`).
+- Production parity checks run with `.env.production.local` and Netlify env references.
+- Any result that references production with `localhost` values is invalid and must return `FAIL` or `BLOCKED`.
 
 ## Status Integrity
 
@@ -39,3 +52,4 @@
 - No placeholder tokens in final results.
 - No interactive command flows in agent tasks.
 - One UUID = one bounded objective.
+- No autonomous production deploy calls by Claude/Gemini.

@@ -17,6 +17,7 @@ Validation:
 Constraints:
 - no unrelated edits
 - non-interactive commands only
+- no deploy unless `DEPLOY_APPROVED` is explicitly present
 Reply:
 RESULT [UUID]
 Status: PASS|FAIL|BLOCKED
@@ -37,6 +38,19 @@ No edits. Verify:
 2) <assertion>
 Reply one line:
 RESULT [UUID] PASS|FAIL <k1>=<yes|no> <k2>=<yes|no> risk=<short>
+```
+
+## Deploy Verification Task (Codex -> Gemini)
+
+```text
+INSTRUCTION [UUID]
+No edits. Deployment verification only.
+Scope:
+1) Confirm latest deploy commit matches expected commit.
+2) Confirm deploy state is ready.
+3) Confirm production env DB host is remote (not localhost).
+Reply:
+RESULT [UUID] PASS|FAIL commit_match=<yes|no> ready=<yes|no> remote_db=<yes|no> risk=<short>
 ```
 
 ## Schema Safety Task

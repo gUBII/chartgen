@@ -1,6 +1,6 @@
 # Agent Orchestration Plan
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 Owner: Codex (Primary Orchestrator)
 
 ## Canonical Source
@@ -18,6 +18,7 @@ This file is now a high-level pointer. Canonical IACP details live in:
 - Claude is standby implementation architect, activated by Codex dispatch.
 - Gemini is active independent verifier.
 - Status integrity is strict: contradictions invalidate PASS.
+- Frugal release mode is active: local-first, batched deploys, explicit deploy approval only.
 
 ## Execution Model
 

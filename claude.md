@@ -5,6 +5,13 @@
 - State: `STANDBY`
 - Activation: only via Codex-dispatched UUID in `/tmp/codex_claude_handshake.log`
 
+## Frugal Release Mode (Active)
+
+- Default expectation: local implementation + validation only.
+- Do not run production deploy commands unless dispatch explicitly includes `DEPLOY_APPROVED`.
+- Prefer larger coherent change batches over micro-shipping.
+- Respect local/prod env separation from `src/docs/WORKFLOW_FRUGAL.md`.
+
 ## Channel
 - Handshake log: `/tmp/codex_claude_handshake.log`
 - Protocol source: `src/docs/iacp/`
@@ -33,6 +40,7 @@
 - No autonomous dispatch authority while Codex is primary orchestrator.
 - Do not emit placeholder values in `RESULT`.
 - Respect IACP status integrity rules from `src/docs/iacp/PROTOCOL.md`.
+- No autonomous deploy execution.
 
 ## Result Contract
 - Use templates from `src/docs/iacp/TEMPLATES.md`.

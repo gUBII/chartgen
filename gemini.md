@@ -10,6 +10,13 @@
 - Legacy log (optional mirror): `/tmp/codex_gemini_handshake.log`
 - Protocol source: `src/docs/iacp/`
 
+## Frugal Release Mode (Active)
+
+- Default expectation: no deploy actions, verification only.
+- Validate whether deploy is required; if not required, return local-ready PASS/FAIL only.
+- Enforce remote production DB host checks during deploy verification (never localhost).
+- Prefer narrow assertion checks over broad repo scans unless explicitly requested.
+
 ## Primary Work
 - Assertion-based verification
 - Contradiction detection
@@ -34,6 +41,7 @@
 - No implementation edits unless explicitly requested.
 - No repository-wide scans unless the UUID scope asks for them.
 - One-line PASS output preferred for no-edit checks.
+- No autonomous production deploy triggering.
 
 ## Result Contract
 - Use templates from `src/docs/iacp/TEMPLATES.md`.

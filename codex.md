@@ -15,6 +15,17 @@
   - Accept/reject agent results
   - Merge readiness decisions based on quality gates
   - Final instruction shaping for next phase execution
+  - Deploy budget control and batched-release approval
+
+## Frugal Release Mode (Active)
+
+- Default pipeline: local-first, deploy-last.
+- Production deploys only after:
+  - batched scope is complete
+  - required IACP gates pass
+  - explicit `DEPLOY_APPROVED` decision
+- Avoid deploying docs-only deltas unless operationally required.
+- Ensure production env truth is remote DB values (no localhost) before deployment.
 
 ## Operating Rules
 - Every task uses a UUID and explicit scope.

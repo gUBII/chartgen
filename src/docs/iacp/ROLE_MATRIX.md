@@ -1,6 +1,6 @@
 # IACP Role Matrix
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 
 ## Active Roles
 
@@ -8,16 +8,19 @@ Last updated: 2026-02-28
   - Role: `PRIMARY ORCHESTRATOR`
   - State: `ACTIVE`
   - Owns: sequencing, dispatch, acceptance, merge/deploy readiness
+  - Owns: deploy budget enforcement and release batching decisions
 
 - Claude
   - Role: `IMPLEMENTATION ARCHITECT`
   - State: `STANDBY` (reactivates when dispatched)
   - Owns when active: complex implementation, architecture refactors, deep root-cause lanes
+  - Constraint: no deploy execution unless Codex dispatch includes `DEPLOY_APPROVED`
 
 - Gemini
   - Role: `INDEPENDENT VERIFIER`
   - State: `ACTIVE`
   - Owns: verification checks, contradiction detection, independent PASS/FAIL evidence
+  - Constraint: verify deploy necessity/truth; do not trigger deploys autonomously
 
 ## Dispatch Direction
 
