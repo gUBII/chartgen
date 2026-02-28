@@ -125,7 +125,9 @@ export default function MARPage() {
   const [participantId, setParticipantId] = useState("");
   const [actorStaffId, setActorStaffId] = useState("");
   const [startDate, setStartDate] = useState(toDateInput(today));
+  const [startTime, setStartTime] = useState("00:00");
   const [endDate, setEndDate] = useState(toDateInput(nextWeek));
+  const [endTime, setEndTime] = useState("23:59");
   const [medications, setMedications] = useState<MedicationInput[]>([emptyMedication()]);
   const [batchId, setBatchId] = useState("");
   const [rows, setRows] = useState<CandidateRow[]>([]);
@@ -163,7 +165,9 @@ export default function MARPage() {
         body: JSON.stringify({
           participantId,
           startDate,
+          startTime,
           endDate,
+          endTime,
           generatedByStaffId: actorStaffId || undefined,
           medications,
         }),
@@ -369,7 +373,7 @@ export default function MARPage() {
 
       <section className="mt-6 rounded-lg border border-gray-200 p-4">
         <h2 className="text-lg font-medium mb-4">Participant & Date Range</h2>
-        <div className="grid grid-cols-1 gap-4 min-[430px]:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 min-[430px]:grid-cols-2 lg:grid-cols-7">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Participant ID</span>
             <input
@@ -401,12 +405,32 @@ export default function MARPage() {
           </label>
 
           <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">Start Time</span>
+            <input
+              className="rounded-md border border-gray-300 px-3 py-2"
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">End Date</span>
             <input
               className="rounded-md border border-gray-300 px-3 py-2"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">End Time</span>
+            <input
+              className="rounded-md border border-gray-300 px-3 py-2"
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
             />
           </label>
 

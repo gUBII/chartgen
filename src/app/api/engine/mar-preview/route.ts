@@ -9,11 +9,14 @@ export const runtime = "nodejs";
 
 const MAX_PREVIEW_DAYS = 31;
 const MAX_MEDICATIONS = 20;
+const TIME_24H_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 type MARPreviewRequestBody = {
   participantId?: string;
   startDate?: string;
+  startTime?: string;
   endDate?: string;
+  endTime?: string;
   generatedByStaffId?: string;
   seed?: number;
   profile?: "balanced" | "strict";
@@ -30,6 +33,11 @@ type MedicationTemplate = {
   name: string;
   dosage: string;
   route: string;
+  hour: number;
+  minute: number;
+};
+
+type TimeParts = {
   hour: number;
   minute: number;
 };
@@ -120,6 +128,44 @@ const endOfDay = (date: Date): Date => {
   return copy;
 };
 
+const withTime = (
+  date: Date,
+  hour: number,
+  minute: number,
+  second = 0,
+  millisecond = 0
+): Date => {
+  const copy = new Date(date);
+  copy.setHours(hour, minute, second, millisecond);
+  return copy;
+};
+
+const parseTimeOrDefault = (
+  value: string | undefined,
+  fieldName: string,
+  fallback: TimeParts
+): TimeParts => {
+  if (!value || !value.trim()) {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  const match = trimmed.match(TIME_24H_PATTERN);
+  if (!match) {
+    throw new MARPreviewApiError(400, "INVALID_TIME", `${fieldName} must use HH:mm 24-hour format.`);
+  }
+
+  return {
+    hour: Number(match[1]),
+    minute: Number(match[2]),
+  };
+};
+
+const isWithinWindow = (value: Date, start: Date, end: Date): boolean => {
+  const t = value.getTime();
+  return t >= start.getTime() && t <= end.getTime();
+};
+
 const differenceInDaysInclusive = (start: Date, end: Date): number => {
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
@@ -155,13 +201,20 @@ export async function POST(request: NextRequest) {
       throw new MARPreviewApiError(400, "MISSING_FIELD", "participantId is required.");
     }
 
-    const recoveryStart = startOfDay(parseRequiredDate(body.startDate, "startDate"));
-    const recoveryEnd = endOfDay(parseRequiredDate(body.endDate, "endDate"));
+    const startDate = parseRequiredDate(body.startDate, "startDate");
+    const endDate = parseRequiredDate(body.endDate, "endDate");
+    const startTime = parseTimeOrDefault(body.startTime, "startTime", { hour: 0, minute: 0 });
+    const endTime = parseTimeOrDefault(body.endTime, "endTime", { hour: 23, minute: 59 });
+
+    const recoveryStart = withTime(startDate, startTime.hour, startTime.minute, 0, 0);
+    const recoveryEnd = withTime(endDate, endTime.hour, endTime.minute, 59, 999);
     if (recoveryEnd.getTime() < recoveryStart.getTime()) {
       throw new MARPreviewApiError(400, "INVALID_RANGE", "endDate must be on or after startDate.");
     }
 
-    const requestedDays = differenceInDaysInclusive(recoveryStart, recoveryEnd);
+    const rangeStart = startOfDay(startDate);
+    const rangeEnd = endOfDay(endDate);
+    const requestedDays = differenceInDaysInclusive(rangeStart, rangeEnd);
     if (requestedDays > MAX_PREVIEW_DAYS) {
       throw new MARPreviewApiError(
         400,
@@ -263,8 +316,13 @@ export async function POST(request: NextRequest) {
       // Derive personalization baselines from participant's historical logs
       const baselines = await deriveParticipantBaselines(participant.id);
 
-      for (const day of dayIterator(recoveryStart, recoveryEnd)) {
+      for (const day of dayIterator(rangeStart, rangeEnd)) {
         for (const template of medicationTemplates) {
+          const scheduledAdminTime = makeScheduledAdminTime(day, template.hour, template.minute);
+          if (!isWithinWindow(scheduledAdminTime, recoveryStart, recoveryEnd)) {
+            continue;
+          }
+
           const generatedAt = new Date();
           const generated = engine.restoreMedicationCandidate(
             {
@@ -274,7 +332,7 @@ export async function POST(request: NextRequest) {
               personalizationBaselines: baselines,
             },
             {
-              scheduledAdminTime: makeScheduledAdminTime(day, template.hour, template.minute),
+              scheduledAdminTime,
               medicationName: template.name,
               dosage: template.dosage,
               route: template.route,

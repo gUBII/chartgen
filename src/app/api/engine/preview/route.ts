@@ -8,6 +8,7 @@ import { deriveParticipantBaselines } from "../../../../services/restoration/per
 export const runtime = "nodejs";
 
 const MAX_PREVIEW_DAYS = 31;
+const TIME_24H_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 type MedicationTemplate = {
   name: string;
@@ -20,7 +21,9 @@ type MedicationTemplate = {
 type PreviewRequestBody = {
   participantId?: string;
   startDate?: string;
+  startTime?: string;
   endDate?: string;
+  endTime?: string;
   generatedByStaffId?: string;
   seed?: number;
   profile?: "balanced" | "strict";
@@ -38,6 +41,11 @@ type MealTemplate = {
   hour: number;
   minute: number;
   targetVolumeMl: number;
+};
+
+type TimeParts = {
+  hour: number;
+  minute: number;
 };
 
 class PreviewApiError extends Error {
@@ -173,6 +181,70 @@ const endOfDay = (date: Date): Date => {
   return copy;
 };
 
+const withTime = (
+  date: Date,
+  hour: number,
+  minute: number,
+  second = 0,
+  millisecond = 0
+): Date => {
+  const copy = new Date(date);
+  copy.setHours(hour, minute, second, millisecond);
+  return copy;
+};
+
+const parseTimeOrDefault = (
+  value: string | undefined,
+  fieldName: string,
+  fallback: TimeParts
+): TimeParts => {
+  if (!value || !value.trim()) {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  const match = trimmed.match(TIME_24H_PATTERN);
+  if (!match) {
+    throw new PreviewApiError(400, "INVALID_TIME", `${fieldName} must use HH:mm 24-hour format.`);
+  }
+
+  return {
+    hour: Number(match[1]),
+    minute: Number(match[2]),
+  };
+};
+
+const isWithinWindow = (value: Date, start: Date, end: Date): boolean => {
+  const t = value.getTime();
+  return t >= start.getTime() && t <= end.getTime();
+};
+
+const RECORD_TIME_KEYS = [
+  "timestamp",
+  "loggedAt",
+  "checkedAt",
+  "scheduledAdminTime",
+  "actualAdminTime",
+  "turnedAt",
+  "departedAt",
+  "returnedAt",
+  "startedAt",
+] as const;
+
+const extractRecordDate = (record: Record<string, unknown>): Date | null => {
+  for (const key of RECORD_TIME_KEYS) {
+    const raw = record[key];
+    if (raw === undefined || raw === null) {
+      continue;
+    }
+    const parsed = new Date(String(raw));
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
 const differenceInDaysInclusive = (start: Date, end: Date): number => {
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
@@ -208,13 +280,20 @@ export async function POST(request: NextRequest) {
       throw new PreviewApiError(400, "MISSING_FIELD", "participantId is required.");
     }
 
-    const recoveryStart = startOfDay(parseRequiredDate(body.startDate, "startDate"));
-    const recoveryEnd = endOfDay(parseRequiredDate(body.endDate, "endDate"));
+    const startDate = parseRequiredDate(body.startDate, "startDate");
+    const endDate = parseRequiredDate(body.endDate, "endDate");
+    const startTime = parseTimeOrDefault(body.startTime, "startTime", { hour: 0, minute: 0 });
+    const endTime = parseTimeOrDefault(body.endTime, "endTime", { hour: 23, minute: 59 });
+
+    const recoveryStart = withTime(startDate, startTime.hour, startTime.minute, 0, 0);
+    const recoveryEnd = withTime(endDate, endTime.hour, endTime.minute, 59, 999);
     if (recoveryEnd.getTime() < recoveryStart.getTime()) {
       throw new PreviewApiError(400, "INVALID_RANGE", "endDate must be on or after startDate.");
     }
 
-    const requestedDays = differenceInDaysInclusive(recoveryStart, recoveryEnd);
+    const rangeStart = startOfDay(startDate);
+    const rangeEnd = endOfDay(endDate);
+    const requestedDays = differenceInDaysInclusive(rangeStart, rangeEnd);
     if (requestedDays > MAX_PREVIEW_DAYS) {
       throw new PreviewApiError(
         400,
@@ -268,7 +347,7 @@ export async function POST(request: NextRequest) {
         : DEFAULT_MEDICATION_TEMPLATES;
 
     const engine = new RestorationEngine();
-    const days = dayIterator(recoveryStart, recoveryEnd);
+    const days = dayIterator(rangeStart, rangeEnd);
 
     // Phase 1: Transaction for Meal + MAR candidates
     const txResult = await prisma.$transaction(async (tx) => {
@@ -292,6 +371,11 @@ export async function POST(request: NextRequest) {
       // Meal candidates
       for (const day of days) {
         for (const template of DEFAULT_MEAL_TEMPLATES) {
+          const scheduledTime = makeScheduledTime(day, template.hour, template.minute);
+          if (!isWithinWindow(scheduledTime, recoveryStart, recoveryEnd)) {
+            continue;
+          }
+
           const generatedAt = new Date();
           const generated = engine.restoreMealCandidate(
             {
@@ -301,7 +385,7 @@ export async function POST(request: NextRequest) {
               personalizationBaselines: baselines,
             },
             {
-              scheduledTime: makeScheduledTime(day, template.hour, template.minute),
+              scheduledTime,
               mealType: template.mealType,
               targetVolumeMl: template.targetVolumeMl,
             },
@@ -364,6 +448,11 @@ export async function POST(request: NextRequest) {
 
         // MAR candidates for this day
         for (const medTemplate of medicationTemplates) {
+          const scheduledAdminTime = makeScheduledTime(day, medTemplate.hour, medTemplate.minute);
+          if (!isWithinWindow(scheduledAdminTime, recoveryStart, recoveryEnd)) {
+            continue;
+          }
+
           const generatedAt = new Date();
           const generated = engine.restoreMedicationCandidate(
             {
@@ -373,7 +462,7 @@ export async function POST(request: NextRequest) {
               personalizationBaselines: baselines,
             },
             {
-              scheduledAdminTime: makeScheduledTime(day, medTemplate.hour, medTemplate.minute),
+              scheduledAdminTime,
               medicationName: medTemplate.name,
               dosage: medTemplate.dosage,
               route: medTemplate.route,
@@ -458,7 +547,14 @@ export async function POST(request: NextRequest) {
         },
         { seed: body.seed }
       );
-      moduleLogs.push(...dayRecords);
+      const filteredDayRecords = dayRecords.filter((record) => {
+        if (!record || typeof record !== "object") {
+          return true;
+        }
+        const recordDate = extractRecordDate(record as Record<string, unknown>);
+        return recordDate ? isWithinWindow(recordDate, recoveryStart, recoveryEnd) : true;
+      });
+      moduleLogs.push(...filteredDayRecords);
     }
 
     const sleepLogs = moduleLogs.filter((r) => "checkedAt" in r);
