@@ -19,4 +19,6 @@ neon.json
 .DS_Store
 
 # Local agent handshake transport files
+handoff/*.log
+geminitoclaude.md
 handoff/gemini_handshake.md
