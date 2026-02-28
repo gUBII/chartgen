@@ -35,6 +35,23 @@ Chartgen currently implements:
 - UAT JSON artifact persistence for stress/cleanup runs
 - Admin dashboard for direct chart/staff/participant data operations (`/admin`)
 
+## Development Policies
+
+### Fast Coding Policy (for Rapid Iteration / Agent-Assisted Development)
+
+This policy applies specifically during periods of rapid iteration, especially when working with AI agents or performing focused, isolated tasks. It aims to maximize velocity while maintaining core quality.
+
+1.  **Conventions First:** Always adhere to existing project conventions (formatting, naming, structure) from surrounding code and configuration.
+2.  **Verify & Justify Libraries/Frameworks:** Never assume external libraries/frameworks. Verify existing usage or explicitly justify new additions.
+3.  **Idiomatic Changes:** Ensure changes integrate naturally and idiomatically with the local context.
+4.  **Minimal High-Value Comments:** Add comments sparingly, focusing on *why* something is done, especially for complex logic. Avoid stating *what* is done.
+5.  **Proactive Testing (Unit/Integration):** When adding features or fixing bugs, include unit/integration tests to verify quality.
+6.  **Ecosystem Tool Preference:** Utilize ecosystem tools (e.g., linters, formatters) before manual code changes.
+7.  **Iterative Verification:** Employ output logs or debug statements during development to ensure correctness.
+8.  **Strict Error Handling:** Implement robust error handling, especially for API interactions, to prevent cascading failures.
+9.  **No Direct Modification of `gemini.md`:** All task results and status updates must be written to `handoff/gemini_handshake.md`.
+10. **Prioritize Explicit Instructions:** Address direct, UUID-tagged instructions in the handshake log before speculative work.
+
 ### Brand and deployment clarity
 
 - Product ownership: Chartgen is independently authored by Farhan Rashid (gUBII)

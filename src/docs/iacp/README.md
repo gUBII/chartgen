@@ -32,6 +32,10 @@ Single source of truth for agent coordination in this repository.
 
 Gemini uses a workspace-local handshake channel (`handoff/gemini_handshake.md`) as canonical to avoid sandbox visibility issues with `/tmp`.
 
+## Related Documentation & Policies
+
+- **Main README.md (`/README.md`):** Contains detailed system architecture diagrams (Mermaid flowcharts for Runtime Architecture, Data Flow, Auth Session, QA Flow) and the project's "Fast Coding Policy". These are essential references for all agents and contributors.
+
 ## Hard Rule
 
 `PASS` is only valid when scope is ship-safe. Any contradictory safety signal forces `FAIL` or `BLOCKED`.
