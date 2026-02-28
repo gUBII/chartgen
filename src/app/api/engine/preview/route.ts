@@ -7,7 +7,8 @@ import { deriveParticipantBaselines } from "../../../../services/restoration/per
 
 export const runtime = "nodejs";
 
-const MAX_PREVIEW_DAYS = 31;
+const MAX_PREVIEW_DAYS = 365;
+const MAX_MEDICATION_TEMPLATES = 24;
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 type MedicationTemplate = {
@@ -404,6 +405,23 @@ export async function POST(request: NextRequest) {
             minute: m.minute ?? 0,
           }))
         : DEFAULT_MEDICATION_TEMPLATES;
+    if (medicationTemplates.length > MAX_MEDICATION_TEMPLATES) {
+      throw new PreviewApiError(
+        400,
+        "TOO_MANY_MEDICATIONS",
+        `Maximum ${MAX_MEDICATION_TEMPLATES} medications are supported per day.`
+      );
+    }
+    for (let i = 0; i < medicationTemplates.length; i++) {
+      const template = medicationTemplates[i];
+      if (template.hour < 0 || template.hour > 23 || template.minute < 0 || template.minute > 59) {
+        throw new PreviewApiError(
+          400,
+          "INVALID_TIME",
+          `Medication ${i + 1} has invalid time (hour: ${template.hour}, minute: ${template.minute}).`
+        );
+      }
+    }
 
     const engine = new RestorationEngine();
     const days = dayIterator(rangeStart, rangeEnd);

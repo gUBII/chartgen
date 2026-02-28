@@ -8,9 +8,10 @@ import {
   getErrorMessage,
   getFilenameFromDisposition,
   asArray,
-  splitMixedEntries,
   mapRowsToMealLogs,
 } from "./utils";
+
+const GROUPED_COMMIT_ROW_LIMIT = 5_000;
 
 export function useRestoration() {
   const today = useMemo(() => new Date(), []);
@@ -209,60 +210,45 @@ export function useRestoration() {
       }));
       setRows(candidateRows);
 
-      const mixedEntries = asArray(data.records).length
-        ? asArray(data.records)
-        : asArray(data.entries).length
-          ? asArray(data.entries)
-          : asArray(data.timeline).length
-            ? asArray(data.timeline)
-            : asArray(data.generatedRecords);
-      const mixedSplit = splitMixedEntries(mixedEntries);
+      const marLogs = asArray(data.marLogs);
+      const sleepLogs = asArray(data.sleepLogs);
+      const bglLogs = asArray(data.bglLogs);
+      const bowelLogs = asArray(data.bowelLogs);
+      const hygieneLogs = asArray(data.hygieneLogs);
+      const communityLogs = asArray(data.communityLogs);
+      const repositionLogs = asArray(data.repositionLogs);
+      const mealLogs = candidateRows.map((row) => ({
+        participantId,
+        createdByStaffId: defaultWorkerStaffId || reviewerStaffId,
+        timestamp: toIsoFromLocalDateTime(row.timestamp),
+        mealType: row.mealType,
+        foodTexture: row.foodTexture,
+        fluidThickness: row.fluidThickness,
+        volumeMl: row.volumeMl,
+        amountEaten: row.amountEaten,
+        deviationReason: row.deviationReason,
+        status: row.status,
+        provenanceHash: row.provenanceHash,
+      }));
 
-      const explicitMarLogs = asArray(data.marLogs).length ? asArray(data.marLogs) : asArray(data.marCandidates);
-      const explicitMealLogs = asArray(data.mealLogs);
-      const explicitSleepLogs = asArray(data.sleepLogs);
-      const explicitBglLogs = asArray(data.bglLogs);
-      const explicitBowelLogs = asArray(data.bowelLogs);
-      const explicitHygieneLogs = asArray(data.hygieneLogs);
-      const explicitCommunityLogs = asArray(data.communityLogs);
-      const explicitRepositionLogs = asArray(data.repositionLogs);
-
-      setMarLogs(explicitMarLogs.length ? explicitMarLogs : mixedSplit.marLogs);
-      setMealLogs(
-        explicitMealLogs.length
-          ? explicitMealLogs
-          : mixedSplit.mealLogs.length
-            ? mixedSplit.mealLogs
-            : candidateRows.map((row) => ({
-                participantId,
-                createdByStaffId: defaultWorkerStaffId || reviewerStaffId,
-                timestamp: toIsoFromLocalDateTime(row.timestamp),
-                mealType: row.mealType,
-                foodTexture: row.foodTexture,
-                fluidThickness: row.fluidThickness,
-                volumeMl: row.volumeMl,
-                amountEaten: row.amountEaten,
-                deviationReason: row.deviationReason,
-                status: row.status,
-                provenanceHash: row.provenanceHash,
-              }))
-      );
-      setSleepLogs(explicitSleepLogs.length ? explicitSleepLogs : mixedSplit.sleepLogs);
-      setBglLogs(explicitBglLogs.length ? explicitBglLogs : mixedSplit.bglLogs);
-      setBowelLogs(explicitBowelLogs.length ? explicitBowelLogs : mixedSplit.bowelLogs);
-      setHygieneLogs(explicitHygieneLogs.length ? explicitHygieneLogs : mixedSplit.hygieneLogs);
-      setCommunityLogs(explicitCommunityLogs.length ? explicitCommunityLogs : mixedSplit.communityLogs);
-      setRepositionLogs(explicitRepositionLogs.length ? explicitRepositionLogs : mixedSplit.repositionLogs);
+      setMarLogs(marLogs);
+      setMealLogs(mealLogs);
+      setSleepLogs(sleepLogs);
+      setBglLogs(bglLogs);
+      setBowelLogs(bowelLogs);
+      setHygieneLogs(hygieneLogs);
+      setCommunityLogs(communityLogs);
+      setRepositionLogs(repositionLogs);
 
       const totalLogs =
-        (explicitMarLogs.length || mixedSplit.marLogs.length) +
-        (explicitMealLogs.length || mixedSplit.mealLogs.length || candidateRows.length) +
-        (explicitSleepLogs.length || mixedSplit.sleepLogs.length) +
-        (explicitBglLogs.length || mixedSplit.bglLogs.length) +
-        (explicitBowelLogs.length || mixedSplit.bowelLogs.length) +
-        (explicitHygieneLogs.length || mixedSplit.hygieneLogs.length) +
-        (explicitCommunityLogs.length || mixedSplit.communityLogs.length) +
-        (explicitRepositionLogs.length || mixedSplit.repositionLogs.length);
+        marLogs.length +
+        (mealLogs.length || candidateRows.length) +
+        sleepLogs.length +
+        bglLogs.length +
+        bowelLogs.length +
+        hygieneLogs.length +
+        communityLogs.length +
+        repositionLogs.length;
 
       setStatusText(`Preview generated. Batch ${data.batchId ?? "N/A"}. Parsed ${totalLogs} records.`);
     } catch (error) {
@@ -358,12 +344,57 @@ export function useRestoration() {
       setErrorText("No generated logs to commit. Generate preview first.");
       return;
     }
+    if (totalPayloadRows > GROUPED_COMMIT_ROW_LIMIT && (!batchId || !reviewerStaffId.trim())) {
+      setErrorText("Large commits require a valid batch and Requesting Staff (SUPERVISOR/CLINICAL_LEAD).");
+      return;
+    }
 
     setErrorText("");
-    setStatusText("Committing grouped chart payload...");
+    const shouldUseBatchCommitFallback =
+      totalPayloadRows > GROUPED_COMMIT_ROW_LIMIT && Boolean(batchId) && Boolean(reviewerStaffId.trim());
+    setStatusText(
+      shouldUseBatchCommitFallback
+        ? "Large payload detected. Committing server-side by batch..."
+        : "Committing grouped chart payload..."
+    );
     setLoadingCommit(true);
 
     try {
+      if (shouldUseBatchCommitFallback) {
+        const approveResponse = await fetch("/api/engine/preview", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            batchId,
+            approveAll: true,
+            actorStaffId: reviewerStaffId,
+          }),
+        });
+        const approvePayload = await parseApiPayload(approveResponse);
+        if (!approveResponse.ok || !approvePayload?.ok) {
+          throw new Error(getErrorMessage(approvePayload?.error));
+        }
+
+        const commitResponse = await fetch("/api/engine/commit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            batchId,
+            actorStaffId: reviewerStaffId,
+          }),
+        });
+        const commitPayload = await parseApiPayload(commitResponse);
+        if (!commitResponse.ok || !commitPayload?.ok) {
+          throw new Error(getErrorMessage(commitPayload?.error));
+        }
+
+        setStatusText(
+          `Batch commit complete (server-side). Meal: ${commitPayload.data?.mealCommitted ?? 0}, MAR: ${commitPayload.data?.marCommitted ?? 0}.`
+        );
+        setRows((current) => current.map((row) => ({ ...row, status: "APPROVED", dirty: false })));
+        return;
+      }
+
       const commitResponse = await fetch("/api/engine/commit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

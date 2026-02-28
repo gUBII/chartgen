@@ -7,8 +7,8 @@ import { deriveParticipantBaselines } from "../../../../services/restoration/per
 
 export const runtime = "nodejs";
 
-const MAX_PREVIEW_DAYS = 31;
-const MAX_MEDICATIONS = 20;
+const MAX_PREVIEW_DAYS = 365;
+const MAX_MEDICATIONS = 24;
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 type MARPreviewRequestBody = {

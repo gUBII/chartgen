@@ -7,6 +7,9 @@ export const runtime = "nodejs";
 
 const ALLOWED_COMMIT_ROLES = new Set(["SUPERVISOR", "CLINICAL_LEAD"]);
 const COMMITTED_STATUS = "APPROVED";
+const CREATE_MANY_CHUNK_SIZE = 500;
+const TX_MAX_WAIT_MS = 20_000;
+const TX_TIMEOUT_MS = 180_000;
 
 type LegacyCommitRequestBody = {
   batchId?: string;
@@ -190,6 +193,23 @@ const parseGroupedBody = (
   };
 };
 
+const createManyMappedInChunks = async <TRow>(
+  model: any,
+  rows: TRow[],
+  mapper: (row: TRow) => Record<string, unknown>
+): Promise<void> => {
+  if (rows.length === 0) {
+    return;
+  }
+
+  for (let offset = 0; offset < rows.length; offset += CREATE_MANY_CHUNK_SIZE) {
+    const chunk = rows.slice(offset, offset + CREATE_MANY_CHUNK_SIZE);
+    await model.createMany({
+      data: chunk.map(mapper),
+    });
+  }
+};
+
 const toDate = (value: unknown, field: string): Date => {
   const date = new Date(String(value));
   if (Number.isNaN(date.getTime())) {
@@ -296,189 +316,147 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
       );
     }
 
-    const writes = [];
-
-    if (marLogs.length > 0) {
-      writes.push(
-        marModel.createMany({
-          data: marLogs.map((row: any) => ({
-            participantId: String(row.participantId),
-            createdByStaffId: String(row.createdByStaffId ?? row.staffId ?? row.generatedByStaffId),
-            approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
-            restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
-            source: normalizeEntrySource(row.source),
-            scheduledAdminTime: toDate(row.scheduledAdminTime ?? row.loggedAt ?? row.actualAdminTime, "scheduledAdminTime"),
-            actualAdminTime: toDate(row.actualAdminTime ?? row.loggedAt ?? row.scheduledAdminTime, "actualAdminTime"),
-            medicationName: String(row.medicationName ?? "Unknown"),
-            dosage: String(row.dosage ?? "Unknown"),
-            route: String(row.route ?? "Unknown"),
-            status: String(row.status ?? "ADMINISTERED"),
-            omissionReason: row.omissionReason ? String(row.omissionReason) : null,
-            provenanceHash: String(row.provenanceHash ?? sha256(row)),
-          })),
-        })
-      );
-    }
-
-    if (mealLogs.length > 0) {
-      writes.push(
-        mealModel.createMany({
-          data: mealLogs.map((row: any) => ({
-            participantId: String(row.participantId),
-            createdByStaffId: String(row.createdByStaffId ?? row.staffId ?? row.generatedByStaffId),
-            approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
-            restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
-            source: normalizeEntrySource(row.source),
-            timestamp: toDate(row.timestamp ?? row.loggedAt ?? row.checkedAt, "timestamp"),
-            mealType: String(row.mealType ?? "SNACK"),
-            foodTexture: Number(row.foodTexture ?? 1),
-            fluidThickness: Number(row.fluidThickness ?? 1),
-            volumeMl: Number(row.volumeMl ?? 0),
-            amountEaten: String(row.amountEaten ?? "ZERO"),
-            swallowingObservations: Array.isArray(row.swallowingObservations) ? row.swallowingObservations : [],
-            deviationReason: row.deviationReason ? String(row.deviationReason) : null,
-            incidentReference: row.incidentReference ? String(row.incidentReference) : null,
-            provenanceHash: String(row.provenanceHash ?? sha256(row)),
-          })),
-        })
-      );
-    }
-
-    if (sleepLogs.length > 0) {
-      writes.push(
-        sleepModel.createMany({
-          data: sleepLogs.map((row: any) => {
-            const status = String(row.status ?? "").toUpperCase();
-            return {
-              participantId: String(row.participantId),
-              loggedByStaffId: String(row.loggedByStaffId ?? row.staffId),
-              checkTime: toDate(row.checkTime ?? row.checkedAt ?? row.loggedAt, "checkTime"),
-              status: status === "ASLEEP" || status === "AWAKE" || status === "AGITATED" ? status : null,
-              intervention: row.intervention ? String(row.intervention) : null,
-              source: normalizeEntrySource(row.source),
-            };
-          }),
-        })
-      );
-    }
-
-    if (bglLogs.length > 0) {
-      writes.push(
-        bglModel.createMany({
-          data: bglLogs.map((row: any) => ({
-            source: normalizeDataSource(row.source),
-            participantId: String(row.participantId),
-            staffId: String(row.staffId ?? row.loggedByStaffId),
-            localDate: String(row.localDate ?? toDate(row.loggedAt, "loggedAt").toISOString().slice(0, 10)),
-            loggedAt: toDate(row.loggedAt, "loggedAt"),
-            bglReadingMmolL: row.bglReadingMmolL == null ? null : Number(row.bglReadingMmolL),
-            fastingStatus: String(row.fastingStatus ?? "UNKNOWN"),
-            insulinAdministered: Boolean(row.insulinAdministered),
-            insulinMarRefId: row.insulinMarRefId ? String(row.insulinMarRefId) : null,
-            actionTaken: row.actionTaken ? String(row.actionTaken) : null,
-            qaMeta: row.qaMeta ?? null,
-          })),
-        })
-      );
-    }
-
-    if (bowelLogs.length > 0) {
-      writes.push(
-        bowelModel.createMany({
-          data: bowelLogs.map((row: any) => {
-            const type = normalizeBowelType(row);
-            const volumeMl =
-              row.volumeMl != null
-                ? Number(row.volumeMl)
-                : type === "FLUID_IN"
-                  ? Number(row.fluidIntakeDeltaMl ?? 0)
-                  : type === "FLUID_OUT"
-                    ? Number(row.fluidOutputDeltaMl ?? 0)
-                    : null;
-            return {
-              participantId: String(row.participantId),
-              loggedByStaffId: String(row.loggedByStaffId ?? row.staffId),
-              timestamp: toDate(row.timestamp ?? row.loggedAt, "timestamp"),
-              type,
-              volumeMl,
-              bristolScale: normalizeBristolScore(row.bristolScale),
-              notes: row.notes ? String(row.notes) : null,
-              source: normalizeEntrySource(row.source),
-            };
-          }),
-        })
-      );
-    }
-
-    if (hygieneLogs.length > 0) {
-      writes.push(
-        hygieneModel.createMany({
-          data: hygieneLogs.map((row: any) => ({
-            source: normalizeDataSource(row.source),
-            participantId: String(row.participantId),
-            staffId: String(row.staffId ?? row.loggedByStaffId),
-            localDate: String(row.localDate ?? toDate(row.loggedAt, "loggedAt").toISOString().slice(0, 10)),
-            loggedAt: toDate(row.loggedAt, "loggedAt"),
-            showerStatus: String(row.showerStatus ?? "UNKNOWN"),
-            oralCareStatus: String(row.oralCareStatus ?? "UNKNOWN"),
-            groomingStatus: String(row.groomingStatus ?? "UNKNOWN"),
-            continenceCareStatus: String(row.continenceCareStatus ?? "UNKNOWN"),
-            skinIntegrityChecked: String(row.skinIntegrityChecked ?? "UNKNOWN"),
-            refusalReason: row.refusalReason ? String(row.refusalReason) : null,
-            alternativeMethod: row.alternativeMethod ? String(row.alternativeMethod) : null,
-            notes: row.notes ? String(row.notes) : null,
-            qaMeta: row.qaMeta ?? null,
-          })),
-        })
-      );
-    }
-
-    if (communityLogs.length > 0) {
-      writes.push(
-        communityModel.createMany({
-          data: communityLogs.map((row: any) => ({
-            source: normalizeDataSource(row.source),
-            participantId: String(row.participantId),
-            staffId: String(row.staffId ?? row.loggedByStaffId),
-            localDate: String(row.localDate ?? toDate(row.departedAt, "departedAt").toISOString().slice(0, 10)),
-            departedAt: toDate(row.departedAt ?? row.loggedAt, "departedAt"),
-            returnedAt: row.returnedAt ? toDate(row.returnedAt, "returnedAt") : null,
-            destination: String(row.destination ?? "Unknown"),
-            purpose: String(row.purpose ?? "OTHER"),
-            transportMethod: String(row.transportMethod ?? "OTHER"),
-            odometerStart: row.odometerStart == null ? null : Number(row.odometerStart),
-            odometerEnd: row.odometerEnd == null ? null : Number(row.odometerEnd),
-            notes: row.notes ? String(row.notes) : null,
-            qaMeta: row.qaMeta ?? null,
-          })),
-        })
-      );
-    }
-
-    if (repositionLogs.length > 0) {
-      writes.push(
-        repositionModel.createMany({
-          data: repositionLogs.map((row: any) => ({
-            source: normalizeDataSource(row.source),
-            participantId: String(row.participantId),
-            staffId: String(row.staffId ?? row.loggedByStaffId),
-            localDate: String(row.localDate ?? toDate(row.turnedAt, "turnedAt").toISOString().slice(0, 10)),
-            turnedAt: toDate(row.turnedAt ?? row.loggedAt, "turnedAt"),
-            position: String(row.position ?? "OTHER"),
-            skinCheckOutcome: String(row.skinCheckOutcome ?? "UNKNOWN"),
-            notes: row.notes ? String(row.notes) : null,
-            planIntervalMin: row.planIntervalMin == null ? null : Number(row.planIntervalMin),
-            qaMeta: row.qaMeta ?? null,
-          })),
-        })
-      );
-    }
-
-    if (writes.length === 0) {
+    if (
+      marLogs.length +
+        mealLogs.length +
+        sleepLogs.length +
+        bglLogs.length +
+        bowelLogs.length +
+        hygieneLogs.length +
+        communityLogs.length +
+        repositionLogs.length ===
+      0
+    ) {
       throw new CommitApiError(400, "EMPTY_PAYLOAD", "No log arrays were provided for commit.");
     }
 
-    await Promise.all(writes);
+    await createManyMappedInChunks(marModel, marLogs, (row: any) => ({
+      participantId: String(row.participantId),
+      createdByStaffId: String(row.createdByStaffId ?? row.staffId ?? row.generatedByStaffId),
+      approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
+      restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
+      source: normalizeEntrySource(row.source),
+      scheduledAdminTime: toDate(row.scheduledAdminTime ?? row.loggedAt ?? row.actualAdminTime, "scheduledAdminTime"),
+      actualAdminTime: toDate(row.actualAdminTime ?? row.loggedAt ?? row.scheduledAdminTime, "actualAdminTime"),
+      medicationName: String(row.medicationName ?? "Unknown"),
+      dosage: String(row.dosage ?? "Unknown"),
+      route: String(row.route ?? "Unknown"),
+      status: String(row.status ?? "ADMINISTERED"),
+      omissionReason: row.omissionReason ? String(row.omissionReason) : null,
+      provenanceHash: String(row.provenanceHash ?? sha256(row)),
+    }));
+
+    await createManyMappedInChunks(mealModel, mealLogs, (row: any) => ({
+      participantId: String(row.participantId),
+      createdByStaffId: String(row.createdByStaffId ?? row.staffId ?? row.generatedByStaffId),
+      approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
+      restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
+      source: normalizeEntrySource(row.source),
+      timestamp: toDate(row.timestamp ?? row.loggedAt ?? row.checkedAt, "timestamp"),
+      mealType: String(row.mealType ?? "SNACK"),
+      foodTexture: Number(row.foodTexture ?? 1),
+      fluidThickness: Number(row.fluidThickness ?? 1),
+      volumeMl: Number(row.volumeMl ?? 0),
+      amountEaten: String(row.amountEaten ?? "ZERO"),
+      swallowingObservations: Array.isArray(row.swallowingObservations) ? row.swallowingObservations : [],
+      deviationReason: row.deviationReason ? String(row.deviationReason) : null,
+      incidentReference: row.incidentReference ? String(row.incidentReference) : null,
+      provenanceHash: String(row.provenanceHash ?? sha256(row)),
+    }));
+
+    await createManyMappedInChunks(sleepModel, sleepLogs, (row: any) => {
+      const status = String(row.status ?? "").toUpperCase();
+      return {
+        participantId: String(row.participantId),
+        loggedByStaffId: String(row.loggedByStaffId ?? row.staffId),
+        checkTime: toDate(row.checkTime ?? row.checkedAt ?? row.loggedAt, "checkTime"),
+        status: status === "ASLEEP" || status === "AWAKE" || status === "AGITATED" ? status : null,
+        intervention: row.intervention ? String(row.intervention) : null,
+        source: normalizeEntrySource(row.source),
+      };
+    });
+
+    await createManyMappedInChunks(bglModel, bglLogs, (row: any) => ({
+      source: normalizeDataSource(row.source),
+      participantId: String(row.participantId),
+      staffId: String(row.staffId ?? row.loggedByStaffId),
+      localDate: String(row.localDate ?? toDate(row.loggedAt, "loggedAt").toISOString().slice(0, 10)),
+      loggedAt: toDate(row.loggedAt, "loggedAt"),
+      bglReadingMmolL: row.bglReadingMmolL == null ? null : Number(row.bglReadingMmolL),
+      fastingStatus: String(row.fastingStatus ?? "UNKNOWN"),
+      insulinAdministered: Boolean(row.insulinAdministered),
+      insulinMarRefId: row.insulinMarRefId ? String(row.insulinMarRefId) : null,
+      actionTaken: row.actionTaken ? String(row.actionTaken) : null,
+      qaMeta: row.qaMeta ?? null,
+    }));
+
+    await createManyMappedInChunks(bowelModel, bowelLogs, (row: any) => {
+      const type = normalizeBowelType(row);
+      const volumeMl =
+        row.volumeMl != null
+          ? Number(row.volumeMl)
+          : type === "FLUID_IN"
+            ? Number(row.fluidIntakeDeltaMl ?? 0)
+            : type === "FLUID_OUT"
+              ? Number(row.fluidOutputDeltaMl ?? 0)
+              : null;
+      return {
+        participantId: String(row.participantId),
+        loggedByStaffId: String(row.loggedByStaffId ?? row.staffId),
+        timestamp: toDate(row.timestamp ?? row.loggedAt, "timestamp"),
+        type,
+        volumeMl,
+        bristolScale: normalizeBristolScore(row.bristolScale),
+        notes: row.notes ? String(row.notes) : null,
+        source: normalizeEntrySource(row.source),
+      };
+    });
+
+    await createManyMappedInChunks(hygieneModel, hygieneLogs, (row: any) => ({
+      source: normalizeDataSource(row.source),
+      participantId: String(row.participantId),
+      staffId: String(row.staffId ?? row.loggedByStaffId),
+      localDate: String(row.localDate ?? toDate(row.loggedAt, "loggedAt").toISOString().slice(0, 10)),
+      loggedAt: toDate(row.loggedAt, "loggedAt"),
+      showerStatus: String(row.showerStatus ?? "UNKNOWN"),
+      oralCareStatus: String(row.oralCareStatus ?? "UNKNOWN"),
+      groomingStatus: String(row.groomingStatus ?? "UNKNOWN"),
+      continenceCareStatus: String(row.continenceCareStatus ?? "UNKNOWN"),
+      skinIntegrityChecked: String(row.skinIntegrityChecked ?? "UNKNOWN"),
+      refusalReason: row.refusalReason ? String(row.refusalReason) : null,
+      alternativeMethod: row.alternativeMethod ? String(row.alternativeMethod) : null,
+      notes: row.notes ? String(row.notes) : null,
+      qaMeta: row.qaMeta ?? null,
+    }));
+
+    await createManyMappedInChunks(communityModel, communityLogs, (row: any) => ({
+      source: normalizeDataSource(row.source),
+      participantId: String(row.participantId),
+      staffId: String(row.staffId ?? row.loggedByStaffId),
+      localDate: String(row.localDate ?? toDate(row.departedAt, "departedAt").toISOString().slice(0, 10)),
+      departedAt: toDate(row.departedAt ?? row.loggedAt, "departedAt"),
+      returnedAt: row.returnedAt ? toDate(row.returnedAt, "returnedAt") : null,
+      destination: String(row.destination ?? "Unknown"),
+      purpose: String(row.purpose ?? "OTHER"),
+      transportMethod: String(row.transportMethod ?? "OTHER"),
+      odometerStart: row.odometerStart == null ? null : Number(row.odometerStart),
+      odometerEnd: row.odometerEnd == null ? null : Number(row.odometerEnd),
+      notes: row.notes ? String(row.notes) : null,
+      qaMeta: row.qaMeta ?? null,
+    }));
+
+    await createManyMappedInChunks(repositionModel, repositionLogs, (row: any) => ({
+      source: normalizeDataSource(row.source),
+      participantId: String(row.participantId),
+      staffId: String(row.staffId ?? row.loggedByStaffId),
+      localDate: String(row.localDate ?? toDate(row.turnedAt, "turnedAt").toISOString().slice(0, 10)),
+      turnedAt: toDate(row.turnedAt ?? row.loggedAt, "turnedAt"),
+      position: String(row.position ?? "OTHER"),
+      skinCheckOutcome: String(row.skinCheckOutcome ?? "UNKNOWN"),
+      notes: row.notes ? String(row.notes) : null,
+      planIntervalMin: row.planIntervalMin == null ? null : Number(row.planIntervalMin),
+      qaMeta: row.qaMeta ?? null,
+    }));
 
     return {
       mode: "grouped",
@@ -500,7 +478,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
         communityLogs.length +
         repositionLogs.length,
     };
-  });
+  }, { maxWait: TX_MAX_WAIT_MS, timeout: TX_TIMEOUT_MS });
 };
 
 export async function POST(request: NextRequest) {
