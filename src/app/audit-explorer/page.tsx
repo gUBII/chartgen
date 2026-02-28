@@ -196,7 +196,7 @@ export default function AuditExplorerPage() {
                 setPage(1);
                 setSelectedRowId("");
               }}
-              className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+              className="form-control"
             >
               <option value="meal">Meals</option>
               <option value="mar">Medications (MAR)</option>
@@ -214,7 +214,7 @@ export default function AuditExplorerPage() {
                 setPage(1);
               }}
               placeholder="Filter by participant"
-              className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+              className="form-control"
             />
           </div>
           <div>
@@ -226,7 +226,7 @@ export default function AuditExplorerPage() {
                 setFromDate(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+              className="form-control"
             />
           </div>
           <div>
@@ -238,7 +238,7 @@ export default function AuditExplorerPage() {
                 setToDate(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+              className="form-control"
             />
           </div>
           <div>
@@ -248,7 +248,7 @@ export default function AuditExplorerPage() {
               placeholder="ID, status, name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+              className="form-control"
             />
           </div>
         </div>

@@ -59,7 +59,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Client</span>
         <select
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           disabled={loadingOptions}
           value={participantId}
           onChange={(e) => setParticipantId(e.target.value)}
@@ -76,7 +76,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Requesting Staff</span>
         <select
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           disabled={loadingOptions}
           value={reviewerStaffId}
           onChange={(e) => setReviewerStaffId(e.target.value)}
@@ -89,7 +89,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Default Worker</span>
         <select
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           disabled={loadingOptions}
           value={defaultWorkerStaffId}
           onChange={(e) => setDefaultWorkerStaffId(e.target.value)}
@@ -102,7 +102,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Start Date</span>
         <input
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
@@ -112,7 +112,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Start Time</span>
         <input
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           type="time"
           value={startTime}
           onChange={(e) => setStartTime(e.target.value)}
@@ -122,7 +122,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">End Date</span>
         <input
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
@@ -132,7 +132,7 @@ export function GenerateForm({
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">End Time</span>
         <input
-          className="rounded-md border border-gray-300 px-3 py-2"
+          className="form-control"
           type="time"
           value={endTime}
           onChange={(e) => setEndTime(e.target.value)}
@@ -162,7 +162,7 @@ export function GenerateForm({
             <label key={day.key} className="flex flex-col gap-1">
               <span className="text-xs font-medium text-gray-700">{day.label}</span>
               <select
-                className="rounded-md border border-gray-300 px-2 py-2 text-sm"
+                className="form-control"
                 disabled={loadingOptions}
                 value={workerScheduleByDow[day.key] ?? ""}
                 onChange={(e) => setWorkerForDow(day.key, e.target.value)}

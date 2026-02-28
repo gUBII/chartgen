@@ -381,7 +381,7 @@ export default function MARPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Participant ID</span>
             <input
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="form-control"
               value={participantId}
               onChange={(e) => setParticipantId(e.target.value)}
               placeholder="participant uuid"
@@ -391,7 +391,7 @@ export default function MARPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Supervisor Staff ID</span>
             <input
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="form-control"
               value={actorStaffId}
               onChange={(e) => setActorStaffId(e.target.value)}
               placeholder="staff uuid"
@@ -401,7 +401,7 @@ export default function MARPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Start Date</span>
             <input
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="form-control"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -411,7 +411,7 @@ export default function MARPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">Start Time</span>
             <input
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="form-control"
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
@@ -421,7 +421,7 @@ export default function MARPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">End Date</span>
             <input
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="form-control"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -431,7 +431,7 @@ export default function MARPage() {
           <label className="flex flex-col gap-1">
             <span className="text-sm font-medium">End Time</span>
             <input
-              className="rounded-md border border-gray-300 px-3 py-2"
+              className="form-control"
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
@@ -494,7 +494,7 @@ export default function MARPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Name</span>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="form-control"
                   value={med.name}
                   onChange={(e) => updateMedication(idx, { name: e.target.value })}
                   placeholder="e.g., Aspirin"
@@ -503,7 +503,7 @@ export default function MARPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Dosage</span>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="form-control"
                   value={med.dosage}
                   onChange={(e) => updateMedication(idx, { dosage: e.target.value })}
                   placeholder="e.g., 100mg"
@@ -512,7 +512,7 @@ export default function MARPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Route</span>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="form-control"
                   value={med.route}
                   onChange={(e) => updateMedication(idx, { route: e.target.value })}
                   placeholder="e.g., PO"
@@ -521,7 +521,7 @@ export default function MARPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Hour</span>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="form-control"
                   type="number"
                   min="0"
                   max="23"
@@ -532,7 +532,7 @@ export default function MARPage() {
               <label className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Minute</span>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="form-control"
                   type="number"
                   min="0"
                   max="59"
@@ -649,7 +649,7 @@ export default function MARPage() {
                   <td className="border-b px-3 py-2">{row.route}</td>
                   <td className="border-b px-3 py-2">
                     <input
-                      className="w-44 rounded-md border border-gray-300 px-2 py-1 text-xs"
+                      className="form-control w-44 text-xs"
                       type="datetime-local"
                       value={row.actualAdminTime}
                       onChange={(e) => updateRow(row.id, { actualAdminTime: e.target.value })}
@@ -657,7 +657,7 @@ export default function MARPage() {
                   </td>
                   <td className="border-b px-3 py-2">
                     <select
-                      className="rounded-md border border-gray-300 px-2 py-1 text-xs"
+                      className="form-control text-xs"
                       value={row.status}
                       onChange={(e) => updateRow(row.id, { status: e.target.value as MARStatus })}
                     >

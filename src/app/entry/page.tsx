@@ -121,7 +121,7 @@ export default function EntryPage() {
                   setParticipantId(e.target.value);
                   setErrors((prev) => ({ ...prev, participantId: "" }));
                 }}
-                className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+                className="form-control"
               >
                 <option value="">— select participant —</option>
                 {participants.map((p) => (
@@ -145,7 +145,7 @@ export default function EntryPage() {
                   setStaffId(e.target.value);
                   setErrors((prev) => ({ ...prev, staffId: "" }));
                 }}
-                className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+                className="form-control"
               >
                 <option value="">— select staff —</option>
                 {staff.map((s) => (
@@ -169,7 +169,7 @@ export default function EntryPage() {
                   setDate(e.target.value);
                   setErrors((prev) => ({ ...prev, date: "" }));
                 }}
-                className="w-full px-3 py-2 rounded border border-slate-600 bg-slate-900 text-slate-100 text-sm"
+                className="form-control"
               />
               {errors.date && (
                 <p className="mt-1 text-xs text-red-400">{errors.date}</p>

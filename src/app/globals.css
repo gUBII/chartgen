@@ -312,11 +312,42 @@ option,
 optgroup {
   background-color: var(--bg-base);
   color: var(--text-main);
-  border: 1px solid var(--line); /* Add a subtle border for definition */
+  border: 1px solid var(--line);
 }
 
 /* Ensure selected option text is always visible */
 select option:checked {
-  background-color: var(--bg-panel-strong); /* Make selected option slightly different */
+  background-color: var(--bg-panel-strong);
   color: var(--text-main);
+}
+
+/* Reusable dark form control utility */
+.form-control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(131, 240, 255, 0.28);
+  background-color: #040818;
+  color: #eff6ff;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.form-control:focus {
+  outline: 2px solid rgba(131, 240, 255, 0.55);
+  outline-offset: 1px;
+  border-color: rgba(131, 240, 255, 0.55);
+}
+
+.form-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-control option,
+.form-control optgroup {
+  background-color: #040818;
+  color: #eff6ff;
 }
