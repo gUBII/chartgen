@@ -305,3 +305,18 @@ body::before {
 .text-muted {
   color: var(--text-muted);
 }
+
+/* Dropdown contrast fix */
+select,
+option,
+optgroup {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  border: 1px solid var(--line); /* Add a subtle border for definition */
+}
+
+/* Ensure selected option text is always visible */
+select option:checked {
+  background-color: var(--bg-panel-strong); /* Make selected option slightly different */
+  color: var(--text-main);
+}
