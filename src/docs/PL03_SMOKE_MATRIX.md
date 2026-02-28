@@ -49,3 +49,35 @@ All API auth gates: **401/405 PASS**
 All behavior assumptions for commit `49d0cb06`: **PASS**
 
 **Overall PL-03 smoke gate: PASS**
+
+---
+
+## Gate Commands
+
+Run these in order before any promotion or deploy. All must pass.
+
+```bash
+# 1. Lint gate — must exit 0 with 0 errors
+npm run lint:report
+
+# 2. Build gate — must compile successfully
+npm run build
+
+# 3. Route smoke — all must return 200
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/entry
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/restoration
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/audit-engine
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/audit-explorer
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/chartgen-core
+
+# 4. Auth gate — must return 401 (unauthenticated)
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/audit/kpi
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/audit/gap-report
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/admin/participants
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/admin/staff
+
+# 5. Method gate — POST-only endpoints must return 405 on GET
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/engine/preview
+```
+
+**Pass criteria**: lint=0 errors, build=compiled, routes=200, auth=401, method=405.

@@ -1,6 +1,6 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 Owner: Codex
 
 This file replaces the old speculative roadmap with a stateful ledger.
@@ -46,7 +46,7 @@ Completed work is explicitly deprecated from future planning.
 | EX-01/02 | Audit explorer table/filter drill-down upgrade (replace mock table with real source) | `LOCAL_DONE_PENDING_REVIEW` | Codex |
 | AE-01/02/03 | Audit engine UI composition upgrades (replace alert flow + richer KPI composition) | `LOCAL_DONE_PENDING_REVIEW` | Claude |
 | PL-01 | Remove remaining `window.alert` UX from live pages | `LOCAL_DONE_PENDING_REVIEW` | Codex |
-| PL-03 | Full E2E/UAT flow consolidation (single batched release gate) | `ACTIVE` | Codex |
+| PL-03 | Full E2E/UAT flow consolidation (single batched release gate) | `LOCAL_DONE_PENDING_REVIEW` | Codex+Claude |
 
 ## 2) Ticket Mapping (Old Plan -> Current Truth)
 
@@ -57,14 +57,22 @@ Completed work is explicitly deprecated from future planning.
 | RS-03 (tabbed restoration) | `DEPRECATED_PROD` |
 | LP-01/02/03 (landing decomposition) | `DEPRECATED_PROD` (commit `f14552a5`) |
 | PL-01 (`window.alert` replacement) | `LOCAL_DONE_PENDING_REVIEW` |
-| PL-03 (full E2E flow) | `ACTIVE` |
+| PL-03 (full E2E flow) | `LOCAL_DONE_PENDING_REVIEW` |
 
 ## 3) Active Dispatch Snapshot (Current)
 
 ### Claude Dispatches
 
-- BATCH4 complete: `PF-01`, `AE-01`, `AE-02`, `AE-03` — `LOCAL_DONE_PENDING_REVIEW`.
-- RS-04 hardening: weekday map inline validation added — `LOCAL_DONE_PENDING_REVIEW`.
+- BATCH4 complete: `PF-01`, `AE-01`, `AE-02`, `AE-03` — `LOCAL_DONE_PENDING_REVIEW` (commit `49d0cb06`).
+- RS-04 hardening: weekday map inline validation added — `LOCAL_DONE_PENDING_REVIEW` (commit `49d0cb06`).
+- FASTLANE-C: PL-03 smoke matrix doc created — `LOCAL_DONE_PENDING_REVIEW` (commit `ca1272b3`).
+- TASK-D: nextphase truth-sync + PL03 gate commands — in progress.
+
+### Claude Quality Verifier Role (effective 2026-03-01)
+
+- Claude verifies own task outputs before RESULT emission (lint+build+behavior).
+- Claude reviews Gemini results for correctness before acceptance.
+- badkpicodex protocol: +2 per meaningless poll, resets on real dispatch.
 
 ### RS-04 UAT Evidence (2026-03-01)
 
@@ -95,7 +103,6 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 
 ## 5) Immediate Next Actions (Frugal)
 
-1. Review and merge local `RS-04` + `MC-01` + `PL-01` into batched release candidate (no deploy yet).
-2. Implement `PF-01` + `AE-01/02/03` in one coherent batch.
-3. Run local gates (`lint`, `build`) + independent verification.
-4. Perform one deployment only after `DEPLOY_APPROVED`.
+1. Promote all `LOCAL_DONE_PENDING_REVIEW` items to `DEPRECATED_MAIN` after Gemini verification + Codex review.
+2. Perform one batched deployment only after `DEPLOY_APPROVED`.
+3. PL-03 gate: run `src/docs/PL03_SMOKE_MATRIX.md` gate commands before any deploy.
