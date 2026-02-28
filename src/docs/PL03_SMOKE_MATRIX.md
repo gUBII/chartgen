@@ -14,7 +14,7 @@
 | `/restoration` | GET | 200 | 200 | PASS |
 | `/audit-engine` | GET | 200 | 200 | PASS |
 | `/audit-explorer` | GET | 200 | 200 | PASS |
-| `/chartgen-core` | GET | 200 | 200 | PASS |
+| `/chartgen-core` | GET | 200 | 200 | PASS (technical route, not user-navigable) |
 
 ## API Checks (unauthenticated)
 
