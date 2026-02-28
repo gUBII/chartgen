@@ -1,19 +1,27 @@
 import type { ReactNode } from "react";
-import { Orbitron, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "../components/AuthProvider";
 import { AppLayout } from "../components/shell/AppLayout";
 
-const displayFont = Orbitron({
-  subsets: ["latin"],
-  weight: ["500", "700"],
+const displayFont = localFont({
+  src: [
+    { path: "../../public/fonts/orbitron/orbitron-500.woff2", weight: "500" },
+    { path: "../../public/fonts/orbitron/orbitron-700.woff2", weight: "700" },
+  ],
   variable: "--font-display",
+  display: "swap",
 });
 
-const bodyFont = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const bodyFont = localFont({
+  src: [
+    { path: "../../public/fonts/space-grotesk/space-grotesk-400.woff2", weight: "400" },
+    { path: "../../public/fonts/space-grotesk/space-grotesk-500.woff2", weight: "500" },
+    { path: "../../public/fonts/space-grotesk/space-grotesk-600.woff2", weight: "600" },
+    { path: "../../public/fonts/space-grotesk/space-grotesk-700.woff2", weight: "700" },
+  ],
   variable: "--font-body",
+  display: "swap",
 });
 
 export const metadata = {
