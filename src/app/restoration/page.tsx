@@ -304,7 +304,7 @@ export default function RestorationPage() {
             : asArray(data.generatedRecords);
       const mixedSplit = splitMixedEntries(mixedEntries);
 
-      const explicitMarLogs = asArray(data.marLogs);
+      const explicitMarLogs = asArray(data.marLogs).length ? asArray(data.marLogs) : asArray(data.marCandidates);
       const explicitMealLogs = asArray(data.mealLogs);
       const explicitSleepLogs = asArray(data.sleepLogs);
       const explicitBglLogs = asArray(data.bglLogs);

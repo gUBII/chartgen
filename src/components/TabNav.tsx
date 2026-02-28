@@ -14,7 +14,7 @@ export function TabNav() {
 
   const isMarActive = pathname.startsWith("/mar");
   const isMealtimeActive =
-    pathname.startsWith("/mealtime-chartgen") || pathname.startsWith("/restoration");
+    pathname.startsWith("/restoration");
   const isAuditEngineActive = pathname.startsWith("/audit-engine");
   const isAuditExplorerActive = pathname.startsWith("/audit-explorer");
   const isFullUser = userRole === "full";
@@ -86,11 +86,11 @@ export function TabNav() {
                   )}
                 </Link>
                 <Link
-                  href="/mealtime-chartgen"
+                  href="/restoration"
                   className={`tab-link ${isMealtimeActive ? "tab-link-active" : ""}`}
                 >
                   <span className="tab-dot" aria-hidden />
-                  Mealtime Chart Module
+                  Restoration Dashboard
                   {restrictedView && (
                     <span className="ml-2 text-xs text-slate-400 font-normal">(preview)</span>
                   )}

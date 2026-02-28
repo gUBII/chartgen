@@ -60,7 +60,7 @@ export default function AuditReadinessPage() {
             Explore MAR Module
           </Link>
           <Link
-            href="/mealtime-chartgen"
+            href="/restoration"
             className="rounded-full border border-emerald-300/45 bg-emerald-400/20 px-4 py-2 text-xs font-semibold text-emerald-50 hover:bg-emerald-400/30 transition"
           >
             Explore Mealtime Module

@@ -8,7 +8,7 @@ const staticRoutes = ["/favicon.ico", "/gubii-profile.png"];
 const fullAccessApiPrefixes = ["/api/ops", "/api/audit"];
 
 // Routes that only allow guests to preview (read-only)
-const guestPreviewRoutes = ["/mar", "/mealtime-chartgen"];
+const guestPreviewRoutes = ["/mar", "/restoration"];
 
 // Routes that require authentication
 const protectedRoutes = ["/restoration", "/kpigen", "/uat", "/audit-engine", "/audit-explorer"];

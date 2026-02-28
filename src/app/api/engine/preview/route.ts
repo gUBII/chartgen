@@ -9,6 +9,14 @@ export const runtime = "nodejs";
 
 const MAX_PREVIEW_DAYS = 31;
 
+type MedicationTemplate = {
+  name: string;
+  dosage: string;
+  route: string;
+  hour: number;
+  minute: number;
+};
+
 type PreviewRequestBody = {
   participantId?: string;
   startDate?: string;
@@ -16,6 +24,13 @@ type PreviewRequestBody = {
   generatedByStaffId?: string;
   seed?: number;
   profile?: "balanced" | "strict";
+  medications?: Array<{
+    name?: string;
+    dosage?: string;
+    route?: string;
+    hour?: number;
+    minute?: number;
+  }>;
 };
 
 type MealTemplate = {
@@ -43,6 +58,13 @@ const DEFAULT_MEAL_TEMPLATES: MealTemplate[] = [
   { mealType: MealType.LUNCH, hour: 12, minute: 30, targetVolumeMl: 360 },
   { mealType: MealType.SNACK, hour: 15, minute: 30, targetVolumeMl: 180 },
   { mealType: MealType.DINNER, hour: 18, minute: 0, targetVolumeMl: 420 },
+];
+
+const DEFAULT_MEDICATION_TEMPLATES: MedicationTemplate[] = [
+  { name: "Paracetamol", dosage: "500mg", route: "Oral", hour: 8, minute: 0 },
+  { name: "Metformin", dosage: "500mg", route: "Oral", hour: 12, minute: 30 },
+  { name: "Omeprazole", dosage: "20mg", route: "Oral", hour: 7, minute: 30 },
+  { name: "Docusate Sodium", dosage: "100mg", route: "Oral", hour: 20, minute: 0 },
 ];
 
 const ALLOWED_AMOUNT_EATEN = new Set([
@@ -90,6 +112,36 @@ const computeMealCandidateHash = (candidate: {
     amountEaten: candidate.amountEaten,
     swallowingObservations: candidate.swallowingObservations,
     deviationReason: candidate.deviationReason ?? null,
+    restorationBatchId: candidate.restorationBatchId,
+    generatedByStaffId: candidate.generatedByStaffId,
+    generatedAt: toIso(candidate.createdAt),
+  });
+};
+
+const computeMarCandidateHash = (candidate: {
+  participantId: string;
+  scheduledAdminTime: Date;
+  actualAdminTime: Date;
+  medicationName: string;
+  dosage: string;
+  route: string;
+  status: string;
+  omissionReason: string | null;
+  statusComment: string | null;
+  restorationBatchId: string;
+  generatedByStaffId: string;
+  createdAt: Date;
+}): string => {
+  return sha256({
+    participantId: candidate.participantId,
+    scheduledAdminTime: toIso(candidate.scheduledAdminTime),
+    actualAdminTime: toIso(candidate.actualAdminTime),
+    medicationName: candidate.medicationName,
+    dosage: candidate.dosage,
+    route: candidate.route,
+    status: candidate.status,
+    omissionReason: candidate.omissionReason ?? null,
+    statusComment: candidate.statusComment ?? null,
     restorationBatchId: candidate.restorationBatchId,
     generatedByStaffId: candidate.generatedByStaffId,
     generatedAt: toIso(candidate.createdAt),
@@ -203,7 +255,23 @@ export async function POST(request: NextRequest) {
       throw new PreviewApiError(404, "PARTICIPANT_NOT_FOUND", "Participant not found.");
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    // Resolve medication templates: use body override or defaults
+    const medicationTemplates: MedicationTemplate[] =
+      body.medications && body.medications.length > 0
+        ? body.medications.map((m, i) => ({
+            name: m.name?.trim() || `Medication ${i + 1}`,
+            dosage: m.dosage?.trim() || "",
+            route: m.route?.trim() || "Oral",
+            hour: m.hour ?? 8,
+            minute: m.minute ?? 0,
+          }))
+        : DEFAULT_MEDICATION_TEMPLATES;
+
+    const engine = new RestorationEngine();
+    const days = dayIterator(recoveryStart, recoveryEnd);
+
+    // Phase 1: Transaction for Meal + MAR candidates
+    const txResult = await prisma.$transaction(async (tx) => {
       const batch = await tx.restorationBatch.create({
         data: {
           participantId: participant.id,
@@ -216,13 +284,13 @@ export async function POST(request: NextRequest) {
         select: { id: true, participantId: true },
       });
 
-      const engine = new RestorationEngine();
-      const generatedRows: any[] = [];
+      const mealRows: Record<string, unknown>[] = [];
+      const marRows: Record<string, unknown>[] = [];
 
-      // Derive personalization baselines from participant's historical logs
       const baselines = await deriveParticipantBaselines(participant.id);
 
-      for (const day of dayIterator(recoveryStart, recoveryEnd)) {
+      // Meal candidates
+      for (const day of days) {
         for (const template of DEFAULT_MEAL_TEMPLATES) {
           const generatedAt = new Date();
           const generated = engine.restoreMealCandidate(
@@ -291,7 +359,81 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          generatedRows.push(persisted);
+          mealRows.push(persisted);
+        }
+
+        // MAR candidates for this day
+        for (const medTemplate of medicationTemplates) {
+          const generatedAt = new Date();
+          const generated = engine.restoreMedicationCandidate(
+            {
+              participantId: participant.id,
+              defaultFoodTexture: participant.defaultFoodTexture,
+              defaultFluidThickness: participant.defaultFluidThickness,
+              personalizationBaselines: baselines,
+            },
+            {
+              scheduledAdminTime: makeScheduledTime(day, medTemplate.hour, medTemplate.minute),
+              medicationName: medTemplate.name,
+              dosage: medTemplate.dosage,
+              route: medTemplate.route,
+            },
+            {
+              restorationBatchId: batch.id,
+              generatedByStaffId: generatedByStaff.id,
+              generatedAt,
+            }
+          );
+
+          const provenanceHash = computeMarCandidateHash({
+            participantId: generated.participantId,
+            scheduledAdminTime: generated.scheduledAdminTime,
+            actualAdminTime: generated.actualAdminTime,
+            medicationName: generated.medicationName,
+            dosage: generated.dosage,
+            route: generated.route,
+            status: generated.status,
+            omissionReason: generated.omissionReason,
+            statusComment: generated.statusComment,
+            restorationBatchId: batch.id,
+            generatedByStaffId: generatedByStaff.id,
+            createdAt: generatedAt,
+          });
+
+          const persisted = await tx.restoredMARCandidate.create({
+            data: {
+              restorationBatchId: batch.id,
+              participantId: generated.participantId,
+              generatedByStaffId: generatedByStaff.id,
+              scheduledAdminTime: generated.scheduledAdminTime,
+              actualAdminTime: generated.actualAdminTime,
+              medicationName: generated.medicationName,
+              dosage: generated.dosage,
+              route: generated.route,
+              status: generated.status,
+              omissionReason: generated.omissionReason,
+              statusComment: generated.statusComment,
+              statusReview: "PENDING",
+              provenanceHash,
+              createdAt: generatedAt,
+              updatedAt: generatedAt,
+            },
+            select: {
+              id: true,
+              scheduledAdminTime: true,
+              actualAdminTime: true,
+              medicationName: true,
+              dosage: true,
+              route: true,
+              status: true,
+              omissionReason: true,
+              statusComment: true,
+              statusReview: true,
+              provenanceHash: true,
+            },
+          });
+
+          marRows.push(persisted);
         }
       }
 
@@ -299,10 +441,47 @@ export async function POST(request: NextRequest) {
         batchId: batch.id,
         participantId: batch.participantId,
         generatedByStaffId: generatedByStaff.id,
-        candidateCount: generatedRows.length,
-        candidates: generatedRows,
+        mealRows,
+        marRows,
       };
     });
+
+    // Phase 2: Sleep/BGL/Bowel via generateBatch (runs its own transaction)
+    const moduleLogs: Record<string, unknown>[] = [];
+    for (const day of days) {
+      const dayRecords = await engine.generateBatch(
+        {
+          date: day,
+          participantId: participant.id,
+          staffId: generatedByStaff.id,
+          planConfig: {},
+        },
+        { seed: body.seed }
+      );
+      moduleLogs.push(...dayRecords);
+    }
+
+    const sleepLogs = moduleLogs.filter((r) => "checkedAt" in r);
+    const bglLogs = moduleLogs.filter((r) => "bglReadingMmolL" in r);
+    const bowelLogs = moduleLogs.filter((r) => "hadBowelMotion" in r);
+
+    const result = {
+      batchId: txResult.batchId,
+      participantId: txResult.participantId,
+      generatedByStaffId: txResult.generatedByStaffId,
+      candidates: txResult.mealRows,
+      marLogs: txResult.marRows,
+      sleepLogs,
+      bglLogs,
+      bowelLogs,
+      candidateCount: txResult.mealRows.length,
+      marCandidateCount: txResult.marRows.length,
+      moduleCounts: {
+        sleep: sleepLogs.length,
+        bgl: bglLogs.length,
+        bowel: bowelLogs.length,
+      },
+    };
 
     return NextResponse.json({ ok: true, data: result }, { status: 200 });
   } catch (error) {

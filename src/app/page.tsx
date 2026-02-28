@@ -68,7 +68,7 @@ const CAPABILITIES: Capability[] = [
       "Does the record show mealtime management controls clearly?",
       "Can a reviewer explain changes from plan intent quickly?",
     ],
-    href: "/mealtime-chartgen",
+    href: "/restoration",
     tone: "emerald",
   },
   {
@@ -398,7 +398,7 @@ export default function HomePage() {
           <Link href="/mar" className="rounded-xl border border-cyan-300/40 bg-cyan-400/15 px-4 py-3 text-xs font-semibold text-cyan-50 hover:bg-cyan-400/25 transition text-center">
             Explore MAR Module
           </Link>
-          <Link href="/mealtime-chartgen" className="rounded-xl border border-emerald-300/40 bg-emerald-400/15 px-4 py-3 text-xs font-semibold text-emerald-50 hover:bg-emerald-400/25 transition text-center">
+          <Link href="/restoration" className="rounded-xl border border-emerald-300/40 bg-emerald-400/15 px-4 py-3 text-xs font-semibold text-emerald-50 hover:bg-emerald-400/25 transition text-center">
             Explore Mealtime Module
           </Link>
           <Link href="/deployment-notes" className="rounded-xl border border-amber-300/40 bg-amber-400/15 px-4 py-3 text-xs font-semibold text-amber-50 hover:bg-amber-400/25 transition text-center">
