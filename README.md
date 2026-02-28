@@ -1,6 +1,6 @@
 # Chartgen by gUBII
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 Governance-first clinical documentation audit modelling platform for NDIS-aligned environments, built with Next.js, Prisma, and PostgreSQL.
 
@@ -10,7 +10,7 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 - Main deploy alias: https://main--chartgen-gubii.netlify.app
 - Netlify admin: https://app.netlify.com/projects/chartgen-gubii
 - GitHub repo: https://github.com/gUBII/chartgen
-- Creator GitHub: https://github.com/gUBII
+- Creator GitHub: https://github.com/gUBII/
 
 ## Current Release
 
@@ -93,9 +93,11 @@ flowchart LR
   Browser --> Engine["/api/engine/* preview/commit"]
   Browser --> Audit["/api/audit/* gap reports"]
   Browser --> Ops["/api/ops/* db-health + uat"]
+  Browser --> Admin["/admin dashboard (list/edit)"]
   Engine --> Prisma["Prisma Client"]
   Audit --> Prisma
   Ops --> Prisma
+  Admin --> Prisma
   Prisma --> Postgres["PostgreSQL / Neon"]
   Prisma --> Tmp["/tmp artifacts (fallback/reporting)"]
 ```
@@ -128,7 +130,7 @@ flowchart TD
   Cookie --> Guard{"Protected route?"}
   Guard -- Yes --> Check["getSessionFromRequest()"]
   Check --> Role{"role=full?"}
-  Role -- Yes --> Full["Allow /restoration /audit-engine /audit-explorer /uat"]
+  Role -- Yes --> Full["Allow /restoration /audit-engine /audit-explorer /uat /admin"]
   Role -- No --> Guest["Restrict + route to /login or guest-safe pages"]
 ```
 
@@ -161,6 +163,7 @@ flowchart LR
 - `GET /audit-engine` - KPI trends and AI gap-report generation (full-access only)
 - `GET /audit-explorer` - audit data browser with filtering and pagination (full-access only)
 - `GET /uat` - online UAT control center (health check + stress + cleanup runners)
+- `GET /admin` - administration dashboard for chart records (full-access only)
 
 ### API
 
@@ -276,6 +279,21 @@ Use this checklist for independent verifier lane before merge/deploy:
 5. Defect-highlighted rows remain visible in restoration preview.
 6. `/api/qa/detect-anomalies` returns expected breach types for seeded synthetic records.
 
+### Claude Wave-1 Verification Checklist
+
+1. **Admin Dashboard (AD-01/02):**
+   - [ ] `/admin` route loads with list view.
+   - [ ] Create/edit forms persist to DB for each chart family.
+2. **App Shell (SH-01/02/03/04):**
+   - [ ] `SiteHeader` and `PrimaryNav` correctly gate all 9 restricted routes.
+   - [ ] Nav links highlight active route.
+3. **UI Kit (UI-01/02/03/04):**
+   - [ ] primitives render with consistent styling and a11y markers.
+   - [ ] `DataTable` and `Tabs` handle keyboard navigation correctly.
+4. **Decomposition (LP-01, RS-01):**
+   - [ ] Landing page modularized without UI regressions.
+   - [ ] Restoration dashboard decomposed into hooks/components with state integrity.
+
 ## Lint Modes
 
 - `npm run lint`
@@ -354,7 +372,7 @@ This is required because Netlify's Edge functions runtime uses RHEL-based Linux 
 
 ```bash
 DATABASE_URL=postgresql://<user>:<url-encoded-password>@<endpoint>-pooler.<region>.aws.neon.tech/<db>?sslmode=require
-DIRECT_URL=postgresql://<user>:<url-encoded-password>@<endpoint>.<region>.aws.neon.tech/<db>?sslmode=require
+DIRECT_URL=postgresql://<user>:<url-encoded-password>@<endpoint>.region.aws.neon.tech/<db>?sslmode=require
 ```
 
 4. Validate credentials from this repo (use `DIRECT_URL` for Prisma CLI):
@@ -487,8 +505,8 @@ curl -X POST http://localhost:3000/api/engine/commit \
 
 - `npm run test:governance` runs executable governance integration checks against a running API server.
 - `npm test` remains a placeholder and is not wired to a framework suite yet.
-- A standalone `approveAll` test file under `src/app/api/engine/__tests__/` is not present in the current repository.
 - Current verification is build + Prisma validation + `npm run test:governance` + runtime API smoke testing.
+- Note: `src/app/api/engine/__tests__/` directory exists but contains no test files.
 
 See: `src/docs/QUALITY_AND_TESTING.md`.
 
@@ -502,4 +520,5 @@ See: `src/docs/QUALITY_AND_TESTING.md`.
 - `src/docs/TECHNOLOGY_CONTEXT.md` - design principles and constraints
 - `src/docs/PHASE1_AUDIT.md` - historical audit record with closure status
 - `src/docs/UAT_AND_AUTH_ROADMAP.md` - UAT execution plan plus login/auth rollout roadmap
-- `LATEST_LINKS_AND_INSTRUCTIONS.txt` - one-file live links and operational command checklist
+- `LATEST_LINKS_AND_INSTRUCTIONS.txt` - root location for operational commands
+- `src/docs/LATEST_LINKS_AND_INSTRUCTIONS.md` - documentation location for operational commands

@@ -40,13 +40,17 @@ Completed work is explicitly deprecated from future planning.
 
 | ID | Work | Status | Owner |
 |---|---|---|---|
-| AD-01 | Create `/admin` dashboard route + list UI | `ACTIVE` | Claude (implementation) |
-| AD-02 | Admin create/edit forms + save path per chart family | `ACTIVE` | Claude (implementation) |
+| AD-01 | Create `/admin` dashboard route + list UI | `LOCAL_DONE` | Claude |
+| AD-02 | Admin create/edit forms + save path per chart family | `LOCAL_DONE` | Claude |
+| UP-01 | Unified preview API (5 families: Meal + MAR + Sleep + BGL + Bowel) | `LOCAL_DONE` | Claude |
+| UP-02 | Restoration page wiring for all 5 families | `LOCAL_DONE` | Claude |
+| CL-01 | Remove `/mealtime-chartgen` alias + update all references | `LOCAL_DONE` | Claude |
+| AC-01 | Admin participant/staff CRUD (API + UI) | `LOCAL_DONE` | Claude |
 | LP-01/02/03 | Landing decomposition from 414-line page | `ACTIVE` | Codex + Claude |
 | RS-01/02 | Restoration decomposition into hooks/components | `ACTIVE` | Codex |
 | MC-01 | `/chartgen-core` route + catalog components | `ACTIVE` | Claude |
 | PF-01 | `/entry` preflight wizard | `ACTIVE` | Claude |
-| CM-01 | Hygiene/Community/Repositioning chart modules | `ACTIVE` | Codex |
+| CM-01 | Hygiene/Community/Repositioning chart modules (partially addressed — Sleep/BGL/Bowel now wired) | `ACTIVE` | Codex |
 | CM-02 | Extract `MealChartModule` from engine | `ACTIVE` | Codex |
 | EX-01/02 | Audit explorer table/filter drill-down upgrade | `ACTIVE` | Claude |
 | AE-01/02/03 | Audit engine UI composition upgrades | `ACTIVE` | Claude |

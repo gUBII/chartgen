@@ -21,7 +21,7 @@ A modular merge path was applied to both Prisma schemas:
 - `npx prisma validate --schema prisma/schema.audit-ready.prisma` -> PASS
 - `npx prisma generate` -> PASS
 - `npm run build` -> PASS
-- `npm run schema:check:collision` -> FAIL (expected for overwrite path), modular merge required
+- `npm run schema:check:collision` -> FAIL (cp_safe_now=no, collisions=65), modular merge required
 
 ## Why This Path
 `append-as-is` or `cp prisma/schema.audit-ready.prisma prisma/schema.prisma` was high-risk due name/shape collisions and would risk breaking:

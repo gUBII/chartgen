@@ -1,7 +1,7 @@
 # Mobile UAT Execution Plan
 
-Last updated: 2026-02-27
-Owner: Codex
+Last updated: 2026-02-28
+Owner: Claude (Orchestrator)
 
 ## 1) Scope Source
 
@@ -71,7 +71,7 @@ Status: implemented locally, validated with `npm run build`.
 ### Local verification
 
 - `npm run build`: PASS
-- `npm run lint`: FAIL (pre-existing debt outside this patch lane remains)
+- `npm run lint:report`: 32 warnings, 0 errors.
 
 ### Lint debt context (known, pre-existing)
 
@@ -88,16 +88,16 @@ Status: implemented locally, validated with `npm run build`.
 
 ### Roles
 
-1. Codex: implementation + final decision.
-2. Claude: complex review and runtime/mobile validation support.
-3. Gemini: contradiction checks and risk-focused verification.
+1. Claude: Orchestration + final decision.
+2. Codex: Scoped implementation.
+3. Gemini: Contradiction checks and risk-focused verification.
 
 ### Current round status
 
 1. Decision: Set A selected.
-2. Implemented by Codex.
+2. Implemented by Codex/Claude.
 3. Gemini diff verification returned PASS with residual risk notes.
-4. Claude follow-up verification instruction issued and pending.
+4. Final verification and merge handled by Claude.
 
 ## 5) Exit Criteria for This Stage
 
@@ -112,7 +112,5 @@ All required:
 ## 6) Next Stage Queue (after merge)
 
 1. Run live browser UAT on device matrix (375/768/1280) and capture screenshots.
-2. Remove first-paint auth flicker in header/nav by making initial role server-aware from session cookie (avoid guest-style chips before hydration).
-3. Close remaining lint debt lane with explicit policy:
-   - either fix errors, or split `lint:report` vs `lint:strict`.
-4. Implement KPIgen live metrics wiring (replace static signal cards with API data).
+2. Implement KPIgen live metrics wiring (replace static signal cards with API data).
+3. Harden authentication model beyond shared password.

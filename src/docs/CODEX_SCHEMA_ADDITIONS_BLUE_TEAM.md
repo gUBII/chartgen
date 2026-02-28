@@ -1,10 +1,10 @@
 # Schema Additions Required for Blue Team Anomaly Detector
 
-**Target:** Codex must add these models to `prisma/schema.prisma` for the route
-`src/app/api/qa/detect-anomalies/route.ts` to compile and function.
+**Context:** Historical Phase 4 schema-spec reference used during initial detector rollout.
+Current runtime schema already includes the core models used by
+`src/app/api/qa/detect-anomalies/route.ts`.
 
-**Status:** Implementation is complete and waiting for schema. Route will fail to compile until
-all five models and their enums are present.
+**Status:** Archived design reference. Use runtime schema + detector route as current source of truth.
 
 ---
 
@@ -272,7 +272,7 @@ actual relation names differ.
 
 ---
 
-## Verification Checklist (Codex)
+## Verification Checklist (Claude (Orchestrator) or Codex (Implementation))
 
 - [ ] All 3 enums defined in schema
 - [ ] All 5 models defined with all required fields
@@ -288,11 +288,11 @@ actual relation names differ.
 
 ---
 
-## Codex → Claude Handoff
+## Claude (Orchestrator) or Codex (Implementation) → Claude Handoff
 
 Once the schema changes land and migrations apply, the Blue Team Anomaly Detector route will:
 1. Compile successfully
 2. Be ready for integration testing with synthetic QA data
 3. Support dynamic compliance breach detection across NDIS care domains
 
-The implementation at `src/app/api/qa/detect-anomalies/route.ts` is feature-complete and waiting.
+The implementation at `src/app/api/qa/detect-anomalies/route.ts` is active in runtime.

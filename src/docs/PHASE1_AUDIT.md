@@ -17,7 +17,7 @@ The original Phase 1 audit captured pre-integration risks. The table below maps 
 | No review-gating layer | Resolved | `RestoredMealCandidate` and `RestoredMARCandidate` staging models in use. |
 | Missing provenance/tamper controls | Resolved | Candidate hashes are computed and verified again during commit. |
 | Weak commit safety controls | Resolved | Commit uses role checks, duplicate guard, hash verification, and DB transaction. |
-| No MAR pathway | Resolved | MAR preview/edit/approve/commit path exists with `HELD` status support. |
+| No MAR pathway | Resolved | MAR preview/edit/approve/commit path exists with `HELD`, `LATE`, and `NOT_ADMINISTERED` status support. |
 | Missing segregation of duties in approval | Resolved | `approveAll` requires elevated role and rejects self-approval. |
 | Missing indexes/performance risk | Resolved | Candidate and log models include indexes on participant/time and status/time. |
 | Environment bootstrap incomplete | Resolved | App/runtime/migration/seed flow is present and operational. |

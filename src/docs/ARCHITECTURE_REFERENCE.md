@@ -1,6 +1,6 @@
 # Chartgen by gUBII Architecture Reference
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 ## 1) System Purpose
 
@@ -23,6 +23,9 @@ Design goals:
 - `/audit-readiness` - audit-modelling framing page
 - `/restoration` - meal preview, editing, approval, commit
 - `/mar` - medication preview, editing, approval, commit
+- `/audit-engine` - KPI trends and AI gap-report generation
+- `/audit-explorer` - data table browser with filtering and pagination
+- `/uat` - online UAT control center
 - shared tab navigation in `src/components/TabNav.tsx`
 
 ### API
@@ -31,7 +34,16 @@ Design goals:
 - `PATCH /api/engine/preview` - edit meal candidate or `approveAll`
 - `POST /api/engine/mar-preview` - generate MAR candidates
 - `PATCH /api/engine/mar-preview` - edit MAR candidate or `approveAll`
-- `POST /api/engine/commit` - commit approved candidates into ledger
+- `POST /api/engine/commit` - commit approved candidates into ledger (batch or grouped mode)
+- `POST /api/engine/export-pdf` - on-demand PDF export for meal and MAR preview charts
+- `GET /api/audit/kpi` - KPI computation
+- `POST /api/audit/gap-report` - AI gap-report generation
+- `GET /api/audit/gap-report` - List recent gap reports
+- `GET /api/audit/gap-report/[id]` - Fetch a single gap report
+- `GET /api/audit/explorer` - Data table browser for audit entities
+- `GET /api/ops/db-health` - Database health check
+- `POST /api/ops/uat` - UAT operations (stress tests, data cleanup)
+- `GET /api/qa/detect-anomalies` - Blue Team anomaly detection
 
 ### Domain Services
 
@@ -42,11 +54,11 @@ Design goals:
 ### Data Layer
 
 - PostgreSQL + Prisma with audit-aware schema in `prisma/schema.prisma`
-- staged candidates: `RestoredMealCandidate`, `RestoredMARCandidate`
-- production ledger: `MealLog`, `MARLog`
-- audit ledger: `AuditEvent`
+- Staged candidates: `RestoredMealCandidate`, `RestoredMARCandidate`
+- Production ledger: `MealLog`, `MARLog`, `SleepSettlingLog`, `BowelFluidLog`, etc.
+- Audit ledger: `AuditEvent`, `GapReport`
 
-## 3) End-to-End Flow
+## 3) End-to-End Flow (Legacy Batch)
 
 ```mermaid
 flowchart LR
@@ -69,7 +81,7 @@ flowchart LR
     APPROVE_MEAL --> CAND_MEAL_APPROVED["Meal candidates APPROVED"]
     APPROVE_MAR --> CAND_MAR_APPROVED["MAR candidates APPROVED"]
 
-    UI_MEAL --> COMMIT["POST /api/engine/commit"]
+    UI_MEAL --> COMMIT["POST /api/engine/commit (batchId)"]
     UI_MAR --> COMMIT
 
     COMMIT --> VERIFY["Recompute + verify provenance hashes"]
@@ -97,12 +109,20 @@ Error codes used:
 
 ### Commit rules
 
+**Legacy (batch-based):**
 - `actorStaffId` required and role-gated (`SUPERVISOR`/`CLINICAL_LEAD`)
-- batch must exist
-- duplicate commit blocked if batch already has `RESTORED_APPROVED` ledger rows
-- at least one approved candidate required (meal and/or MAR)
+- `batchId` is required
+- batch must exist and not have been previously committed
+- at least one approved candidate required
 - all candidate hashes must match recomputed values
 - transaction wraps all writes
+
+**Phase E (grouped):**
+- `actorStaffId` required and role-gated
+- No `batchId`; instead payload contains arrays of log objects
+- Supports 8 log types: `marLogs`, `mealLogs`, `sleepLogs`, `bglLogs`, `bowelLogs`, `hygieneLogs`, `communityLogs`, `repositionLogs`
+- Each array processed in transaction; all succeed or all fail
+- Strict source/type validation (422 rejection of invalid sources/types)
 
 ## 5) Data Model Notes
 
@@ -119,8 +139,10 @@ Error codes used:
 - `ADMINISTERED`
 - `REFUSED`
 - `HELD`
+- `LATE`
+- `NOT_ADMINISTERED`
 
-## 6) Commit Transaction Sequence
+## 6) Commit Transaction Sequence (Grouped)
 
 ```mermaid
 sequenceDiagram
@@ -128,19 +150,12 @@ sequenceDiagram
     participant API as /api/engine/commit
     participant DB as PostgreSQL (Prisma TX)
 
-    UI->>API: POST {batchId, actorStaffId}
+    UI->>API: POST {actorStaffId, marLogs, mealLogs, ...}
     API->>DB: Validate actor + elevated role
-    API->>DB: Read batch
-    API->>DB: Check duplicate commit guard
-    API->>DB: Read approved meal candidates
-    API->>DB: Read approved MAR candidates
-    API->>API: Recompute/verify candidate hashes
-    API->>DB: Insert MealLog rows (if any)
-    API->>DB: Insert MARLog rows (if any)
-    API->>DB: Update RestorationBatch reviewer/status
-    API->>DB: Insert AuditEvent(previousHash linked)
+    API->>API: Validate all 8 log models upfront
+    API->>DB: $transaction([ ...prisma.create()... ])
     DB-->>API: Commit transaction
-    API-->>UI: {mealCommitted, marCommitted, auditEventId}
+    API-->>UI: {ok: true, counts: { marLogs: 5, mealLogs: 10, ... }}
 ```
 
 ## 7) Known Architectural Gaps

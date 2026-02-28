@@ -1,6 +1,6 @@
 # Restoration Engine Notes
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 ## Objective
 
@@ -49,11 +49,13 @@ Examples:
 
 ### MAR outcomes
 
-MAR generation supports three statuses:
+`MARStatus` enum now includes:
 
 - `ADMINISTERED`
 - `REFUSED`
 - `HELD`
+- `LATE`
+- `NOT_ADMINISTERED`
 
 Variance scenarios include:
 
@@ -65,6 +67,10 @@ Variance scenarios include:
 
 Deviation/omission/comment text uses phrase pools to reduce repetitive synthetic wording.
 
+### Defect Highlighting
+
+The engine can now inject `qaAnomalyFlag: true` and `qaMeta: { defect: '...' }` into generated candidates to simulate data defects. The UI uses this to render rows with an amber background for easy auditing.
+
 ## 2) Temporal Realism
 
 `generateTemporalRealism` uses triangular sampling with configurable:
@@ -75,7 +81,16 @@ Deviation/omission/comment text uses phrase pools to reduce repetitive synthetic
 
 Engine behavior now mixes rounding to 1-minute and 5-minute buckets to avoid over-regular patterns.
 
-## 3) Provenance Fields on Generated Candidates
+## 3) Deterministic Generation (v3.4+)
+
+The preview generation routes (`/api/engine/preview`, `/api/engine/mar-preview`) now accept optional `seed` and `profile` parameters for deterministic stochastic modifiers.
+
+- `seed`: A string or number to seed the random number generator.
+- `profile`: 'balanced' | 'strict' - to influence generation behavior.
+
+This allows for reproducible test snapshots.
+
+## 4) Provenance Fields on Generated Candidates
 
 Each generated candidate includes:
 
@@ -83,9 +98,9 @@ Each generated candidate includes:
 - `generatedByStaffId`
 - `generatedAt`
 - `provenanceHash`
-- source marker (`RESTORED_CANDIDATE` in service-layer model)
+- `source`: `SYNTHETIC_QA` or `AUDIT_RECOVERY` based on context.
 
-## 4) Review and Promotion Constraints
+## 5) Review and Promotion Constraints
 
 Engine output is staging data only.
 
@@ -96,8 +111,7 @@ Promotion to production ledger requires:
 3. commit-time provenance hash verification
 4. transactional write of logs + audit event
 
-## 5) Current Limitations
+## 6) Current Limitations
 
 - Personalization loop from participant historical baselines is not implemented yet.
 - `reviewWorkflow.ts` exists but API routes currently enforce governance inline.
-- No deterministic seed mode exists for reproducible automated test snapshots.

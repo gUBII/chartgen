@@ -14,7 +14,7 @@ Last updated: 2026-02-27
   - coverage for both meal and MAR `approveAll`
 - `npm test` is still a placeholder script in `package.json`.
 - There is still no active Jest/Vitest suite in the project.
-- `src/app/api/engine/__tests__/approveAll.test.ts` remains a draft and is not part of active quality gates.
+- A dedicated `approveAll` test file under `src/app/api/engine/__tests__/` is not present in this repository snapshot.
 
 ### Practical quality gate in use
 

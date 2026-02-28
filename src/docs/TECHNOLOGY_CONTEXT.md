@@ -1,14 +1,14 @@
 # Technology Context
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
 ## 1) Core Stack
 
 ### Runtime and framework
 
-- Next.js 16 (App Router)
-- React 19
-- TypeScript 5.9
+- Next.js 16.1.6
+- React 19.2.14
+- TypeScript 5.9.3
 
 ### Data layer
 
@@ -35,31 +35,38 @@ Next.js App Router keeps UI and API routes in one codebase, reducing integration
 
 ## 3) Compliance-Oriented Design Choices in Current Code
 
-- candidate staging tables separate restoration data from production logs
-- explicit provenance hash generation and commit-time verification
-- role-gated commit path (`SUPERVISOR`/`CLINICAL_LEAD`)
-- approval governance in `approveAll` including segregation of duties
-- append-only style audit events with previous-hash linkage
+- Candidate staging tables separate restoration data from production logs.
+- Explicit provenance hash generation and commit-time verification.
+- Role-gated commit path (`SUPERVISOR`/`CLINICAL_LEAD`).
+- Approval governance in `approveAll` including segregation of duties.
+- Append-only style audit events with previous-hash linkage.
 
-## 4) Current Constraints and Tradeoffs
+## 4) Current Auth Architecture
+
+- **Cookie:** `gwc_session` (primary) with a fallback to `session` for legacy support.
+- **Signing:** HMAC signature using a `SESSION_SECRET` environment variable for tamper-proofing.
+- **TTL:** Session time-to-live is configurable via `SESSION_TTL_SEC` (defaults to 7 days).
+- **Roles:** `full` (staff) and `guest` (site password) are used for access control.
+- **Middleware:** `middleware.ts` and `lib/require-full-session.ts` enforce route protection.
+
+## 5) Current Constraints and Tradeoffs
 
 ### Testing
 
-- automated tests are not yet wired into `npm test`
-- quality gate is currently build + Prisma checks + runtime smoke tests
+- Automated tests are not yet wired into `npm test`.
+- The quality gate is currently build + Prisma checks + runtime smoke tests.
 
 ### Auth architecture
 
-- signed-session auth is active via middleware (`full` and `guest` roles)
-- login uses `SITE_PASSWORD`; production hardening depends on strong `SESSION_SECRET`
-- commit and approval routes still apply DB role checks for governance-critical actions
+- While hardened with signed sessions, auth is not yet per-user identity-backed.
+- Production security relies on a strong, non-default `SESSION_SECRET`.
 
 ### Generation model maturity
 
-- realism model includes day-level coherence and phrase variation
-- participant-specific personalization from historical data is still pending
+- Realism model includes day-level coherence and phrase variation.
+- Participant-specific personalization from historical data is still pending.
 
-## 5) Near-Term Technical Priorities
+## 6) Near-Term Technical Priorities
 
 1. Wire a real API test harness (Vitest or Jest) with DB fixtures.
 2. Upgrade auth from shared password to per-user identity mapping with `Staff`.

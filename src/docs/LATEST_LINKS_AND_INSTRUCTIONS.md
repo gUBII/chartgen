@@ -45,7 +45,7 @@ Single endpoint now handles 8 log types transactionally:
 
 ---
 
-## v3.4 New Routes & Features
+## Audit Routes & Features (active in v3.5, introduced in v3.4)
 
 ### Audit Engine (KPI + AI Gap-Report)
 - **Page:** `/audit-engine` (protected, full-access only)
@@ -58,7 +58,7 @@ Single endpoint now handles 8 log types transactionally:
 - **API:** `/api/audit/explorer` (table data endpoint)
 - **Features:** Entity filter (meal/mar/audit/batch), search, pagination
 
-### Environment Variables (v3.4)
+### Environment Variables
 
 ```bash
 # Required
@@ -133,7 +133,7 @@ Clears both `gwc_session` and legacy `session` cookies.
 - `GET /api/audit/kpi` - KPI metrics endpoint
 - `GET /api/ops/db-health` - Database health check
 - `POST /api/ops/uat` - UAT stress/cleanup runner
-- `GET /api/engine/commit` - View commit history
+- `GET /api/qa/detect-anomalies` - Blue Team anomaly detector
 - All PATCH/POST engine routes except preview/export
 
 ---

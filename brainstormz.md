@@ -116,8 +116,10 @@ Every brainstorm round must end with:
 
 ### Gemini Findings — Verification Lane
 
-- Pending response (`VER-LANE-RESYNC`).
-- Fallback applied by Codex: README now includes Mermaid architecture/data-flow/auth/QA diagrams + verification checklist while awaiting Gemini payload.
+- [VER-LANE-RESYNC] checklist generated.
+- Identified /admin and test route drift in README diagrams.
+- Verified v3.5.0 parity across docs and package.json.
+- Next: Enrich README with Mermaid diagrams and Wave-1 verification checklist.
 
 ### Codex Decision (Current)
 
