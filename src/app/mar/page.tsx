@@ -108,12 +108,6 @@ const getStatusCounts = (rows: CandidateRow[]): { approved: number; pending: num
   };
 };
 
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text).catch(() => {
-    alert("Failed to copy");
-  });
-};
-
 export default function MARPage() {
   const today = useMemo(() => new Date(), []);
   const nextWeek = useMemo(() => {
@@ -137,6 +131,16 @@ export default function MARPage() {
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
+
+  const copyBatchId = async () => {
+    if (!batchId) return;
+    try {
+      await navigator.clipboard.writeText(batchId);
+      setStatusText("Batch ID copied to clipboard.");
+    } catch {
+      setErrorText("Failed to copy batch ID.");
+    }
+  };
 
   // Keyboard shortcut: Ctrl+S to save first dirty row
   useEffect(() => {
@@ -565,7 +569,7 @@ export default function MARPage() {
               {batchId && (
                 <button
                   type="button"
-                  onClick={() => copyToClipboard(batchId)}
+                  onClick={copyBatchId}
                   className="text-xs text-blue-600 hover:underline"
                   title="Copy batch ID"
                 >

@@ -23,6 +23,7 @@ const FULL_ACCESS_ITEMS: NavItem[] = [
 ];
 
 const MORE_ITEMS: NavItem[] = [
+  { href: "/chartgen-core", label: "Chartgen Core" },
   { href: "/whats-new", label: "Release Notes" },
   { href: "/uat", label: "UAT Center", fullOnly: true },
   { href: "/kpigen", label: "KPI Signals" },

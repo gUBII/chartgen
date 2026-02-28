@@ -1,6 +1,6 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
-Last updated: 2026-03-01
+Last updated: 2026-02-28
 Owner: Codex
 
 This file replaces the old speculative roadmap with a stateful ledger.
@@ -23,60 +23,51 @@ Completed work is explicitly deprecated from future planning.
 | Grouped commit API for 8 chart arrays | `DEPRECATED_PROD` | `v3.5`, commits `09603604`, `6aae21d3` |
 | Restoration tabbed preview + defect highlight | `DEPRECATED_PROD` | `v3.5`, commit `d23acc20` |
 | DB-backed gap reports (`GapReport`) | `DEPRECATED_PROD` | `v3.5`, commit `4bc21d6b` |
-| Blue Team anomaly detector route | `DEPRECATED_MAIN` | commit `af40db4d` |
-| Netlify Prisma generate build fix | `DEPRECATED_MAIN` | commit `827a787b` |
-| ESLint cloud compatibility fix (`.mjs`) | `DEPRECATED_MAIN` | commit `dfd89091` |
-| Schema collision safety gate | `DEPRECATED_MAIN` | commit `2fdf1118` |
+| Blue Team anomaly detector route | `DEPRECATED_PROD` | commit `af40db4d` (ancestor of deployed `3bda6faa`) |
+| Netlify Prisma generate build fix | `DEPRECATED_PROD` | commit `827a787b` (ancestor of deployed `3bda6faa`) |
+| ESLint cloud compatibility fix (`.mjs`) | `DEPRECATED_PROD` | commit `dfd89091` (ancestor of deployed `3bda6faa`) |
+| Schema collision safety gate | `DEPRECATED_PROD` | commit `2fdf1118` (ancestor of deployed `3bda6faa`) |
 
-### Step 2 — Items implemented locally (keep, but not re-spec)
+### Step 2 — Items shipped and closed from previous lanes
 
 | Area | Status | Evidence |
 |---|---|---|
-| App Shell (`SiteHeader`, `PrimaryNav`, `SiteFooter`, `AppLayout`) | `DEPRECATED_MAIN` | `src/components/shell/*`, `src/app/layout.tsx` |
-| UI Kit primitives (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, forms) | `DEPRECATED_MAIN` | `src/components/ui/*` |
-| IACP v2 protocol docs and role matrix | `DEPRECATED_MAIN` | `src/docs/iacp/*`, `claude.md`, `gemini.md` |
+| App Shell (`SiteHeader`, `PrimaryNav`, `SiteFooter`, `AppLayout`) | `DEPRECATED_PROD` | commits `67a85a4c`, `f14552a5`, `409c2248` (included in deployed `3bda6faa`) |
+| UI Kit primitives (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, forms) | `DEPRECATED_PROD` | commit `67a85a4c` (included in deployed `3bda6faa`) |
+| IACP v2 protocol docs and role matrix (baseline) | `DEPRECATED_MAIN` | `src/docs/iacp/*`, `claude.md`, `gemini.md` (local policy refresh in progress) |
 
 ### Step 3 — Items still open (active backlog)
 
 | ID | Work | Status | Owner |
 |---|---|---|---|
-| AD-01 | Create `/admin` dashboard route + list UI | `DEPRECATED_MAIN` | Claude |
-| AD-02 | Admin create/edit forms + save path per chart family | `DEPRECATED_MAIN` | Claude |
-| UP-01 | Unified preview API (8 families: Meal + MAR + Sleep + BGL + Bowel + Hygiene + Community + Reposition) | `DEPRECATED_MAIN` | Claude |
-| UP-02 | Restoration page wiring for all 8 families | `DEPRECATED_MAIN` | Claude |
-| CL-01 | Remove `/mealtime-chartgen` alias + update all references | `DEPRECATED_MAIN` | Claude |
-| AC-01 | Admin participant/staff CRUD (API + UI) | `DEPRECATED_MAIN` | Claude |
-| FH-01 | Self-host Orbitron + Space Grotesk (remove next/font/google network dep) | `DEPRECATED_PROD` | Claude |
-| LP-01/02/03 | Landing decomposition from 414-line page | `ACTIVE` | Codex + Claude |
-| RS-01/02 | Restoration decomposition into hooks/components | `DEPRECATED_MAIN` | Codex |
-| MC-01 | `/chartgen-core` route + catalog components | `ACTIVE` | Claude |
+| RS-04 | Restoration client/worker dropdown + weekday worker assignment | `LOCAL_DONE_PENDING_REVIEW` | Codex |
+| MC-01 | `/chartgen-core` route + catalog components | `LOCAL_DONE_PENDING_REVIEW` | Codex |
 | PF-01 | `/entry` preflight wizard | `ACTIVE` | Claude |
-| CM-01 | Hygiene/Community/Repositioning chart modules (wired in restoration engine and preview API) | `DEPRECATED_MAIN` | Codex |
-| CM-02 | Extract `MealChartModule` from engine and include in module timeline orchestration | `DEPRECATED_MAIN` | Codex |
-| EX-01/02 | Audit explorer table/filter drill-down upgrade | `ACTIVE` | Claude |
-| AE-01/02/03 | Audit engine UI composition upgrades | `ACTIVE` | Claude |
+| EX-01/02 | Audit explorer table/filter drill-down upgrade (replace mock table with real source) | `ACTIVE` | Claude |
+| AE-01/02/03 | Audit engine UI composition upgrades (replace alert flow + richer KPI composition) | `ACTIVE` | Claude |
+| PL-01 | Remove remaining `window.alert` UX from live pages | `LOCAL_DONE_PENDING_REVIEW` | Codex |
+| PL-03 | Full E2E/UAT flow consolidation (single batched release gate) | `ACTIVE` | Codex |
 
 ## 2) Ticket Mapping (Old Plan -> Current Truth)
 
 | Legacy Ticket | New State |
 |---|---|
-| UI-01/UI-02/UI-03/UI-04 | `LOCAL_DONE_PENDING_REVIEW` |
-| SH-01/SH-02/SH-03/SH-04 | `LOCAL_DONE_PENDING_REVIEW` |
+| UI-01/UI-02/UI-03/UI-04 | `DEPRECATED_PROD` |
+| SH-01/SH-02/SH-03/SH-04 | `DEPRECATED_PROD` |
 | RS-03 (tabbed restoration) | `DEPRECATED_PROD` |
-| PL-01 (`window.alert` replacement) | `DEPRECATED_MAIN` (no `window.alert` currently found) |
+| LP-01/02/03 (landing decomposition) | `DEPRECATED_PROD` (commit `f14552a5`) |
+| PL-01 (`window.alert` replacement) | `LOCAL_DONE_PENDING_REVIEW` |
 | PL-03 (full E2E flow) | `ACTIVE` |
 
-## 3) Active Dispatch Snapshot
+## 3) Active Dispatch Snapshot (Current)
 
 ### Claude Dispatches
 
-- `085DE9E0-0F27-45F4-A6CE-B0CE10A83367` — Wave-1 stabilization, UAT, synthetic seeds, admin MVP.
-- `D8F2A719-RESYNC` — schedule truth + JS diagnostics + `brainstormz.md` findings.
+- Pending next batch dispatch for `PF-01`, `AE-01`, `AE-02`, `AE-03`.
 
 ### Gemini Dispatches
 
-- `1A6FFBFD-1140-49E5-948E-5DE4B3D852BE` — README Mermaid architecture/data-flow/auth/QA diagrams.
-- `VER-LANE-RESYNC` — independent verification checklist and diagram drift report.
+- `NP-SUMMARY-20260301-A` — no-edit stale/done/left verification for this ledger (PASS).
 
 ## 4) Promotion Rules (No Guesswork)
 
@@ -93,9 +84,9 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 1. Netlify deploy for the commit succeeds.
 2. UAT smoke checks pass on live route.
 
-## 5) Immediate Next Actions
+## 5) Immediate Next Actions (Frugal)
 
-1. Verify production deploy status for commit `737f18a4`.
-2. Run live UAT smoke for restoration preview/commit and audit routes.
-3. Promote eligible `DEPRECATED_MAIN` items to `DEPRECATED_PROD` with evidence.
-4. Continue active feature lanes (`LP-*`, `MC-*`, `PF-*`, `EX-*`, `AE-*`).
+1. Review and merge local `RS-04` + `MC-01` + `PL-01` into batched release candidate (no deploy yet).
+2. Implement `PF-01` + `AE-01/02/03` in one coherent batch.
+3. Run local gates (`lint`, `build`) + independent verification.
+4. Perform one deployment only after `DEPLOY_APPROVED`.
