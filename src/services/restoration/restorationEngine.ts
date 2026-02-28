@@ -332,12 +332,12 @@ export class RestorationEngine {
     const rng = new Mulberry32(options?.seed ?? 20260227);
     const generatedRecords: Record<string, unknown>[] = [];
     const scheduledByModule = new Map<string, ScheduledTask[]>();
-    const moduleByType = new Map(activeModules.map((module) => [module.type, module]));
+    const moduleByType = new Map(activeModules.map((chartModule) => [chartModule.type, chartModule]));
     const masterSchedule: ScheduledTask[] = [];
 
-    for (const module of activeModules) {
-      const scheduledTasks = module.buildSchedule(day);
-      scheduledByModule.set(module.type, scheduledTasks);
+    for (const chartModule of activeModules) {
+      const scheduledTasks = chartModule.buildSchedule(day);
+      scheduledByModule.set(chartModule.type, scheduledTasks);
       masterSchedule.push(...scheduledTasks);
     }
 
@@ -393,8 +393,8 @@ export class RestorationEngine {
     }
 
     for (const [moduleType, realizedTasks] of realizedByModule.entries()) {
-      const module = moduleByType.get(moduleType);
-      if (!module) continue;
+      const chartModule = moduleByType.get(moduleType);
+      if (!chartModule) continue;
 
       const ctx: GenerationContext = {
         rng,
@@ -405,8 +405,8 @@ export class RestorationEngine {
         },
       };
 
-      const moduleRows = realizedTasks.flatMap((task) => module.realizeTask(task, ctx));
-      const defectedRows = module.injectDefects ? module.injectDefects(moduleRows, ctx) : moduleRows;
+      const moduleRows = realizedTasks.flatMap((task) => chartModule.realizeTask(task, ctx));
+      const defectedRows = chartModule.injectDefects ? chartModule.injectDefects(moduleRows, ctx) : moduleRows;
       generatedRecords.push(...defectedRows);
     }
 
@@ -727,7 +727,7 @@ export class RestorationEngine {
       // Compute scenario weights, optionally personalized by historical refusal/held rates
       let refusalWeight = 45;
       let heldWeight = 25;
-      let lateWeight = 30;
+      const lateWeight = 30;
 
       // If participant has historical refusal/held data, adjust weights toward their pattern
       if (

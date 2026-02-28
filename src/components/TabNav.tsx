@@ -32,8 +32,14 @@ export function TabNav() {
           : "Modules";
 
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
+    if (!isMobileMenuOpen) return;
+    const timerId = window.setTimeout(() => {
+      setIsMobileMenuOpen(false);
+    }, 0);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [isMobileMenuOpen, pathname]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

@@ -1,8 +1,8 @@
 # Operations Runbook
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
-## 0) Current Live Links (Verified 2026-02-27)
+## 0) Current Live Links (Verified 2026-02-28)
 
 - Production app: https://chartgen-gubii.netlify.app
 - Main deploy alias: https://main--chartgen-gubii.netlify.app
@@ -46,6 +46,7 @@ pkill -f "next start -p 4000" || true
 ```bash
 cd /Users/moofasa/chartgen
 npm run db:health
+npm run db:health:trend -- --url https://chartgen-gubii.netlify.app --samples 3 --interval 1 --cookie "gwc_session=<full-session-token>"
 npx prisma validate
 npx prisma migrate status
 ```
@@ -107,7 +108,7 @@ Expected:
 
 2. Verify SITE_PASSWORD is set and matches login attempt:
    ```bash
-   echo $SITE_PASSWORD  # Should not be empty
+   echo $SESSION_SECRET # Should not be empty
    ```
 
 3. Check browser/curl cookie format:
@@ -152,7 +153,7 @@ curl -X POST http://localhost:3000/api/ops/uat \
 
 Cleanup apply requires the exact `requiredConfirmationText` returned by dry-run.
 
-## 6) Governance Error Handling
+## 7) Governance Error Handling
 
 ### `FORBIDDEN_ROLE` during `approveAll`
 
@@ -184,7 +185,7 @@ Fix:
 
 - create or use a valid staff record
 
-## 7) Commit Error Handling
+## 8) Commit Error Handling
 
 ### `NO_APPROVED_CANDIDATES`
 
@@ -228,14 +229,14 @@ Fix:
 2. verify `DATABASE_URL` in `.env`
 3. restart app after env changes
 
-## 8) Seed Baseline IDs
+## 9) Seed Baseline IDs
 
 From `prisma/seed.cjs`:
 
 - Supervisor: `32213`
 - Participant: `112334`
 
-## 9) Testing Reality
+## 10) Testing Reality
 
 - `npm run test:governance` is available for executable approval-governance integration checks.
 - `npm test` is still a placeholder script and is not a reliable gate.
@@ -243,7 +244,12 @@ From `prisma/seed.cjs`:
 - Recommended current gate: lint + build + Prisma checks + `npm run test:governance` + API smoke tests.
 - See `src/docs/QUALITY_AND_TESTING.md` for details and next maturity steps.
 
-## 10) Agent Handshake Verification
+## 11) Agent Handshake Verification
+
+**Roles:**
+- **Codex:** Primary orchestrator (dispatch + acceptance authority)
+- **Claude:** Implementation architect (complex implementation when dispatched)
+- **Gemini:** Independent Verification
 
 Protocol docs:
 
@@ -253,7 +259,8 @@ Protocol docs:
 Runtime logs:
 
 - `/tmp/codex_claude_handshake.log`
-- `/tmp/codex_gemini_handshake.log`
+- `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (canonical for Gemini)
+- `/tmp/codex_gemini_handshake.log` (legacy mirror)
 
 Standard message format:
 
@@ -269,14 +276,16 @@ Quick check commands:
 
 ```bash
 tail -n 80 /tmp/codex_claude_handshake.log
+tail -n 80 /Users/moofasa/chartgen/handoff/gemini_handshake.md
 tail -n 80 /tmp/codex_gemini_handshake.log
 rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_claude_handshake.log
+rg -n "INSTRUCTION|RESULT|DIGEST" /Users/moofasa/chartgen/handoff/gemini_handshake.md
 rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_gemini_handshake.log
 ```
 
 Rules:
 
 - keep protocol guidance in `.md` files only
-- keep runtime execution records in `/tmp` handshake logs only
+- keep runtime execution records in canonical handshake logs (`/tmp` for Claude, `handoff/` for Gemini)
 - reject placeholder/template-only `RESULT` messages
 - prefer non-interactive commands when assigning agent checks

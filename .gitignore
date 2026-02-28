@@ -17,3 +17,6 @@ neon.json
 *.swp
 *.swo
 .DS_Store
+
+# Local agent handshake transport files
+handoff/gemini_handshake.md

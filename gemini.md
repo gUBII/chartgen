@@ -3,10 +3,11 @@
 ## Current State
 - Role: `INDEPENDENT VERIFIER`
 - State: `ACTIVE`
-- Dispatch source: Codex UUIDs via `/tmp/codex_gemini_handshake.log`
+- Dispatch source: Codex UUIDs via workspace handshake file
 
 ## Channel
-- Handshake log: `/tmp/codex_gemini_handshake.log`
+- Handshake log (canonical): `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- Legacy log (optional mirror): `/tmp/codex_gemini_handshake.log`
 - Protocol source: `src/docs/iacp/`
 
 ## Primary Work

@@ -103,11 +103,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Verify the token and update state if needed.
-    // No setState in effect body: state is already initialized from cookie during hydration.
-    void refreshRole();
-    // Empty dependency array: only run once on mount to avoid infinite loops.
-    // refreshRole is memoized with useCallback([]), so it's safe here.
+    // Defer role refresh to avoid synchronous state updates in effect body.
+    const timerId = window.setTimeout(() => {
+      void refreshRole();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
   }, [refreshRole]);
 
   const applyRole = (nextRole: "full" | "guest" | null) => {
