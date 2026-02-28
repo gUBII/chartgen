@@ -70,6 +70,8 @@ For `approveAll` in both meal and MAR routes:
 - `ADMINISTERED`
 - `REFUSED`
 - `HELD`
+- `LATE`
+- `NOT_ADMINISTERED`
 
 Migration applied:
 
@@ -82,6 +84,67 @@ Migration applied:
 3. Approve candidates via `approveAll` with governance checks.
 4. Commit approved candidates to `MealLog`/`MARLog` (`source = RESTORED_APPROVED`).
 5. Record append-only `AuditEvent` for traceability.
+
+## Runtime Architecture
+
+```mermaid
+flowchart LR
+  Browser["Next.js App Router UI"] --> Auth["/api/auth/* session endpoints"]
+  Browser --> Engine["/api/engine/* preview/commit"]
+  Browser --> Audit["/api/audit/* gap reports"]
+  Browser --> Ops["/api/ops/* db-health + uat"]
+  Engine --> Prisma["Prisma Client"]
+  Audit --> Prisma
+  Ops --> Prisma
+  Prisma --> Postgres["PostgreSQL / Neon"]
+  Prisma --> Tmp["/tmp artifacts (fallback/reporting)"]
+```
+
+## Data Flow (Preview to Ledger)
+
+```mermaid
+sequenceDiagram
+  participant UI as Restoration UI
+  participant Preview as /api/engine/preview
+  participant Review as Candidate Review
+  participant Commit as /api/engine/commit
+  participant DB as PostgreSQL
+  participant Audit as AuditEvent
+
+  UI->>Preview: POST generate payload
+  Preview->>DB: create RestorationBatch + candidates
+  UI->>Review: PATCH edits / approveAll
+  UI->>Commit: POST grouped payload (8 log arrays) or batch commit
+  Commit->>DB: transaction createMany (ledger tables)
+  Commit->>Audit: append LEDGER_WRITTEN event + hash chain
+```
+
+## Auth Session Flow
+
+```mermaid
+flowchart TD
+  Login["/login"] --> AuthPost["POST /api/auth/login"]
+  AuthPost --> Cookie["Set-Cookie: gwc_session"]
+  Cookie --> Guard{"Protected route?"}
+  Guard -- Yes --> Check["getSessionFromRequest()"]
+  Check --> Role{"role=full?"}
+  Role -- Yes --> Full["Allow /restoration /audit-engine /audit-explorer /uat"]
+  Role -- No --> Guest["Restrict + route to /login or guest-safe pages"]
+```
+
+## QA and Anomaly Detection Flow
+
+```mermaid
+flowchart LR
+  Synthetic["SYNTHETIC_QA logs"] --> Tables["SleepSettlingLog / BowelFluidLog / RestrictivePracticeEvent"]
+  Tables --> Detector["GET /api/qa/detect-anomalies"]
+  Detector --> Ghost["Ghost Shift detector"]
+  Detector --> Bowel["Constipation Gap detector"]
+  Detector --> Restraint["Unauthorised Restraint detector"]
+  Ghost --> Summary["Breach summary output"]
+  Bowel --> Summary
+  Restraint --> Summary
+```
 
 ## Routes
 
@@ -201,6 +264,17 @@ npm run db:stress -- --concurrency 20 --duration-sec 45 --mode simple
 npm run db:cleanup:uat -- --participant-key 112334
 ```
 
+## Verification Notes
+
+Use this checklist for independent verifier lane before merge/deploy:
+
+1. Route access boundaries are correct (`full` routes blocked for guest).
+2. Build compiles against current Prisma schema (`GapReport` and QA tables present in client).
+3. Lint report has no new errors relative to baseline.
+4. Grouped commit accepts all 8 arrays and writes transactionally.
+5. Defect-highlighted rows remain visible in restoration preview.
+6. `/api/qa/detect-anomalies` returns expected breach types for seeded synthetic records.
+
 ## Lint Modes
 
 - `npm run lint`
@@ -254,7 +328,7 @@ SESSION_TTL_SEC=604800
 
 ### Build Context
 
-`netlify.toml` runs `npm run build` for production and preview contexts.
+`netlify.toml` runs `npx prisma generate && npm run build` for production and preview contexts.
 
 Database migrations are intentionally run outside the build step so production deploys do not fail when DB credentials are missing or invalid at build time.
 
@@ -306,7 +380,7 @@ DATABASE_URL="postgresql://...-pooler..." DIRECT_URL="postgresql://...direct..."
 
 1. Go to [netlify.com](https://netlify.com)
 2. Click "New site from Git" > Connect GitHub > Select `gUBII/chartgen`
-3. Build command auto-fills to `npm run build`
+3. Build command should be `npx prisma generate && npm run build`
 4. Publish directory: `.next`
 5. Click Deploy
 6. After deploy, go Settings > Build & Deploy > Environment
@@ -412,7 +486,7 @@ curl -X POST http://localhost:3000/api/engine/commit \
 
 - `npm run test:governance` runs executable governance integration checks against a running API server.
 - `npm test` remains a placeholder and is not wired to a framework suite yet.
-- `src/app/api/engine/__tests__/approveAll.test.ts` exists as a draft but is not runnable in current tooling.
+- A standalone `approveAll` test file under `src/app/api/engine/__tests__/` is not present in the current repository.
 - Current verification is build + Prisma validation + `npm run test:governance` + runtime API smoke testing.
 
 See: `src/docs/QUALITY_AND_TESTING.md`.

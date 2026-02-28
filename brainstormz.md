@@ -87,6 +87,7 @@ Every brainstorm round must end with:
 ### Gemini Findings — Verification Lane
 
 - Pending response (`VER-LANE-RESYNC`).
+- Fallback applied by Codex: README now includes Mermaid architecture/data-flow/auth/QA diagrams + verification checklist while awaiting Gemini payload.
 
 ### Codex Decision (Current)
 
