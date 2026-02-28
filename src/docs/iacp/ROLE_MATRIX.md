@@ -1,33 +1,40 @@
-# IACP Role Matrix
+# IACP Role Matrix (v3)
 
 Last updated: 2026-03-01
 
-## Active Roles
+## Elected Roles (Bias-Stripped)
 
 - Codex
-  - Role: `PRIMARY ORCHESTRATOR`
+  - Role: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
   - State: `ACTIVE`
-  - Owns: sequencing, dispatch, acceptance, merge/deploy readiness
-  - Owns: deploy budget enforcement and release batching decisions
+  - Owns: backlog truth, merge gates, release go/no-go
+  - Owns: deploy budget enforcement and batch release decisions
 
 - Claude
-  - Role: `IMPLEMENTATION ARCHITECT`
-  - State: `STANDBY` (reactivates when dispatched)
-  - Owns when active: complex implementation, architecture refactors, deep root-cause lanes
-  - Constraint: no deploy execution unless Codex dispatch includes `DEPLOY_APPROVED`
+  - Role: `PRINCIPAL_BUILDER_COMPLEX_SYSTEMS`
+  - State: `ON_DISPATCH`
+  - Owns when active: complex implementation, multi-file refactors, root-cause lanes
+  - Constraint: no deploy execution unless dispatch includes `DEPLOY_APPROVED`
 
 - Gemini
-  - Role: `INDEPENDENT VERIFIER`
-  - State: `ACTIVE`
-  - Owns: verification checks, contradiction detection, independent PASS/FAIL evidence
-  - Constraint: verify deploy necessity/truth; do not trigger deploys autonomously
+  - Role: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
+  - State: `ON_DISPATCH`
+  - Owns: independent verification, contradiction detection, docs/diagram coherence
+  - Constraint: no autonomous deploy triggering
 
-## Dispatch Direction
+## Lane Model
 
-- Codex -> Claude: complex implementation tasks
-- Codex -> Gemini: verification and contradiction checks
-- Claude/Gemini -> Codex: results only; no autonomous orchestration
+- Lane A (Build): Codex + Claude on explicit file ownership.
+- Lane B (Verify): Gemini independent PASS/FAIL evidence and docs coherence.
+- Lanes run in parallel when file ownership does not overlap.
 
-## Authority Boundary
+## Dispatch Direction (Non-Blocking)
 
-- Only Codex can finalize status truth when agent outputs conflict.
+- Operator or Codex can trigger dispatches.
+- Claude and Gemini execute in parallel by explicit file ownership.
+- Claude/Gemini return results to Codex for release decision only.
+- No agent waits on an orchestrator tick when ownership is clear.
+
+## Conflict Authority
+
+When outputs conflict, Codex resolves release truth using gate evidence.

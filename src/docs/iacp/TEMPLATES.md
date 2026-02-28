@@ -1,6 +1,11 @@
-# IACP Dispatch Templates
+# IACP Dispatch Templates (v3)
 
-## Implementation Task (Codex -> Claude)
+## Core Rule
+
+- Every result starts with role/name.
+- One UUID = one bounded objective.
+
+## Implementation Task (Operator/Codex -> Claude)
 
 ```text
 INSTRUCTION [UUID]
@@ -20,6 +25,7 @@ Constraints:
 - no deploy unless `DEPLOY_APPROVED` is explicitly present
 Reply:
 RESULT [UUID]
+Role: CLAUDE
 Status: PASS|FAIL|BLOCKED
 Files changed: <list|none>
 Validation:
@@ -29,7 +35,7 @@ Blockers: <none|single blocker>
 Next: <single next step>
 ```
 
-## Verification Task (Codex -> Gemini)
+## Verification Task (Operator/Codex -> Gemini)
 
 ```text
 INSTRUCTION [UUID]
@@ -37,10 +43,10 @@ No edits. Verify:
 1) <assertion>
 2) <assertion>
 Reply one line:
-RESULT [UUID] PASS|FAIL <k1>=<yes|no> <k2>=<yes|no> risk=<short>
+RESULT [UUID] Role=GEMINI PASS|FAIL <k1>=<yes|no> <k2>=<yes|no> risk=<short>
 ```
 
-## Deploy Verification Task (Codex -> Gemini)
+## Deploy Verification Task (Operator/Codex -> Gemini)
 
 ```text
 INSTRUCTION [UUID]
@@ -50,7 +56,7 @@ Scope:
 2) Confirm deploy state is ready.
 3) Confirm production env DB host is remote (not localhost).
 Reply:
-RESULT [UUID] PASS|FAIL commit_match=<yes|no> ready=<yes|no> remote_db=<yes|no> risk=<short>
+RESULT [UUID] Role=GEMINI PASS|FAIL commit_match=<yes|no> ready=<yes|no> remote_db=<yes|no> risk=<short>
 ```
 
 ## Schema Safety Task
@@ -61,6 +67,7 @@ No edits.
 Run: npm run schema:check:collision
 Reply:
 RESULT [UUID]
+Role: <CLAUDE|GEMINI>
 Status: PASS|FAIL|BLOCKED
 CpSafeNow: yes|no
 CollisionCount: <n>

@@ -247,9 +247,9 @@ From `prisma/seed.cjs`:
 ## 11) Agent Handshake Verification
 
 **Roles:**
-- **Codex:** Primary orchestrator (dispatch + acceptance authority)
-- **Claude:** Implementation architect (complex implementation when dispatched)
-- **Gemini:** Independent Verification
+- **Codex:** Program Director + Release Governor (dispatch + acceptance authority)
+- **Claude:** Principal Builder (complex implementation when dispatched)
+- **Gemini:** Independent QA Verifier + Docs/Diagram Lead
 
 Protocol docs:
 
@@ -259,8 +259,7 @@ Protocol docs:
 Runtime logs:
 
 - `/tmp/codex_claude_handshake.log`
-- `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (canonical for Gemini)
-- `/tmp/codex_gemini_handshake.log` (legacy mirror)
+- `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
 Standard message format:
 
@@ -277,15 +276,14 @@ Quick check commands:
 ```bash
 tail -n 80 /tmp/codex_claude_handshake.log
 tail -n 80 /Users/moofasa/chartgen/handoff/gemini_handshake.md
-tail -n 80 /tmp/codex_gemini_handshake.log
 rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_claude_handshake.log
 rg -n "INSTRUCTION|RESULT|DIGEST" /Users/moofasa/chartgen/handoff/gemini_handshake.md
-rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_gemini_handshake.log
 ```
 
 Rules:
 
 - keep protocol guidance in `.md` files only
 - keep runtime execution records in canonical handshake logs (`/tmp` for Claude, `handoff/` for Gemini)
+- each `RESULT` starts with role/name
 - reject placeholder/template-only `RESULT` messages
 - prefer non-interactive commands when assigning agent checks

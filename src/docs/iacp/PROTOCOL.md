@@ -1,55 +1,67 @@
-# IACP Protocol Semantics
+# IACP Protocol Semantics (v3)
 
-## Handshake Channels
+## Canonical Handshake Channels
 
-- Claude channel: `/tmp/codex_claude_handshake.log`
-- Gemini channel (canonical): `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
-- Gemini legacy mirror: `/tmp/codex_gemini_handshake.log`
+- Claude: `/tmp/codex_claude_handshake.log`
+- Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
-## Channel Access Rule
+Only these paths are canonical.
 
-- If an agent runtime cannot read `/tmp`, use a workspace-local handshake file under `handoff/`.
-- Codex should mirror critical Gemini dispatches/results to both channels during transition periods.
+## Message Contract
 
-## Message Structure
+- Instruction header: `INSTRUCTION [UUID]`
+- Result header: `RESULT [UUID]`
+- Every response must start with role/name.
 
-- Instruction: `INSTRUCTION [UUID]`
-- Result: `RESULT [UUID]`
+## Polling Semantics
 
-## Deploy Budget Semantics
+Use discrete poll gating:
 
-- Default assumption for all UUID scopes: `NO_DEPLOY`.
-- Deploy is only allowed when dispatch explicitly states `DEPLOY_APPROVED`.
-- If `DEPLOY_APPROVED` is absent, agents must stop at local validation + commit readiness.
-- Codex owns final deploy trigger decision.
+- `p = event_change OR timer_tick`
+- If `p = 0`, do not poll.
+- If `p = 1`, poll once and return to work/standby.
+
+No free-running poll loops.
+
+## Dispatch Semantics
+
+- One UUID = one bounded objective.
+- File ownership must be explicit for parallel lanes.
+- Operator-triggered dispatch is valid.
+- Codex does not block execution lanes; Codex governs release truth.
+- Default scope is `NO_DEPLOY`.
+- Deploy is legal only when instruction includes `DEPLOY_APPROVED`.
 
 ## Mandatory Result Fields (edit tasks)
 
 - `Status: PASS|FAIL|BLOCKED`
 - `Files changed: <list|none>`
-- `Validation:` command + key output
+- `Validation: <command>: exit <code> | <summary>`
 - `Commit: <hash|no commit>`
 - `Blockers: <none|single concrete blocker>`
 - `Next: <single next action>`
 
 ## Environment Truth Rule
 
-- Local dev runs against local env files (`.env`).
-- Production parity checks run with `.env.production.local` and Netlify env references.
-- Any result that references production with `localhost` values is invalid and must return `FAIL` or `BLOCKED`.
+- Local checks use `.env`.
+- Production parity checks use `.env.production.local` and Netlify truth.
+- Any production claim with localhost DB values is invalid and must be `FAIL` or `BLOCKED`.
 
-## Status Integrity
+## Discrete Status Integrity
 
-- `PASS` means deploy-eligible for stated scope.
-- `PASS` is invalid if result contains safety contradiction markers, including:
+For task `T`:
+
+- `PASS(T) = 1 <=> (all required gates pass) AND (no safety contradiction) AND (schema safe when applicable)`
+- Contradiction examples:
   - `append_as_is=UNSAFE`
   - `cp_safe_now=no`
   - `CollisionCount > 0`
-- In those cases, status must be `FAIL` or `BLOCKED`.
+  - prod/local env mismatch
+
+If contradiction exists, `Status` cannot be `PASS`.
 
 ## Non-Negotiables
 
-- No placeholder tokens in final results.
+- No placeholder values in final results.
 - No interactive command flows in agent tasks.
-- One UUID = one bounded objective.
-- No autonomous production deploy calls by Claude/Gemini.
+- No autonomous production deploy calls by Claude or Gemini.

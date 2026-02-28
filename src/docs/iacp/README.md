@@ -1,41 +1,62 @@
-# IACP v2 - Agent Protocol Pack
+# IACP v3 - Agent Protocol Pack
 
 Last updated: 2026-03-01
-Owner: Codex (Primary Orchestrator)
+Owner: Codex (Program Director + Release Governor)
 
 ## Purpose
 
-Single source of truth for agent coordination in this repository.
+Single source of truth for multi-agent execution, verification, and frugal release control.
 
-## Current Policy
+## Canonical Policy
 
-- Cost-control mode is active: local-first execution and batched deploys.
-- Production deploys require explicit Codex approval (`DEPLOY_APPROVED`) after gate pass.
-- Environment handling must follow the local/prod swap rules from `src/docs/WORKFLOW_FRUGAL.md`.
+- Local-first, deploy-last is always the default.
+- Deploy requires explicit `DEPLOY_APPROVED` plus full gate pass.
+- Channel paths are canonical and non-duplicated.
+- Operator/Codex can trigger dispatch; agents execute in parallel by file ownership.
+
+## Discrete Governance Model
+
+For task `T`, define:
+
+- `g_i(T) in {0,1}` for each required gate (`build`, `lint`, `verify`, optional deploy truth).
+- `v(T) in {0,1}` where `1` means safety contradiction present (`UNSAFE`, `cp_safe_now=no`, `collisions>0`, env mismatch, etc.).
+- `sigma(T) in {0,1}` where schema safety is:
+  - `1` for non-schema tasks
+  - `1` for schema tasks only when `cp_safe_now=yes AND collisions=0`
+- `d(T) in {0,1}` where `1` means dispatch includes `DEPLOY_APPROVED`.
+
+Lock rules:
+
+- `PASS(T) = 1 <=> (product over required i of g_i(T)) = 1 AND v(T) = 0 AND sigma(T) = 1`
+- `DEPLOY(T) = 1 <=> PASS(T) = 1 AND d(T) = 1`
+
+If either expression is false, status must be `FAIL` or `BLOCKED`.
 
 ## Files
 
-- `ROLE_MATRIX.md` - who owns what
-- `PROTOCOL.md` - handshake semantics and status integrity rules
-- `TEMPLATES.md` - dispatch/result templates
-- `GATES.md` - merge and deploy quality gates
+- `ROLE_MATRIX.md`: roles, authority, and ownership boundaries
+- `PROTOCOL.md`: handshake semantics, polling semantics, status integrity
+- `TEMPLATES.md`: dispatch/result templates
+- `GATES.md`: gate definitions and pass criteria
 
 ## Quick Start
 
-1. Read `ROLE_MATRIX.md`
-2. Follow `PROTOCOL.md` (UUID + strict result contract)
-3. Use `TEMPLATES.md` for all dispatches
-4. Enforce `GATES.md` before release decisions
-5. Apply frugal deploy policy (`src/docs/WORKFLOW_FRUGAL.md`)
+1. Read `ROLE_MATRIX.md`.
+2. Follow `PROTOCOL.md` message contract.
+3. Use `TEMPLATES.md` for dispatch and results.
+4. Evaluate every task through `GATES.md`.
+5. Follow frugal mode from `src/docs/WORKFLOW_FRUGAL.md`.
 
-## Channel Note
+## Channel Truth
 
-Gemini uses a workspace-local handshake channel (`handoff/gemini_handshake.md`) as canonical to avoid sandbox visibility issues with `/tmp`.
+- Claude: `/tmp/codex_claude_handshake.log`
+- Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
-## Related Documentation & Policies
+No dual-channel mirroring for canonical truth.
 
-- **Main README.md (`/README.md`):** Contains detailed system architecture diagrams (Mermaid flowcharts for Runtime Architecture, Data Flow, Auth Session, QA Flow) and the project's "Fast Coding Policy". These are essential references for all agents and contributors.
+## Hard Rules
 
-## Hard Rule
-
-`PASS` is only valid when scope is ship-safe. Any contradictory safety signal forces `FAIL` or `BLOCKED`.
+- Every response starts with role/name.
+- One UUID maps to one bounded objective.
+- No placeholder results.
+- `PASS` is forbidden when any contradiction signal exists.

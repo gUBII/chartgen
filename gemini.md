@@ -1,13 +1,12 @@
 # Gemini Communication Channel
 
 ## Current State
-- Role: `INDEPENDENT VERIFIER`
+- Role: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
 - State: `ACTIVE`
-- Dispatch source: Codex UUIDs via workspace handshake file
+- Dispatch source: Operator/Codex UUIDs via workspace handshake file
 
 ## Channel
 - Handshake log (canonical): `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
-- Legacy log (optional mirror): `/tmp/codex_gemini_handshake.log`
 - Protocol source: `src/docs/iacp/`
 
 ## Frugal Release Mode (Active)
@@ -21,6 +20,7 @@
 - Assertion-based verification
 - Contradiction detection
 - Fast PASS/FAIL evidence with minimal scope creep
+- README/system diagram refresh and documentation drift correction
 
 ## Strengths
 - Fast independent verification with concise evidence output
@@ -40,6 +40,7 @@
 ## Boundaries
 - No implementation edits unless explicitly requested.
 - No repository-wide scans unless the UUID scope asks for them.
+- Start every result with role/name.
 - One-line PASS output preferred for no-edit checks.
 - No autonomous production deploy triggering.
 

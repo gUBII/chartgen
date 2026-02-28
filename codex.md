@@ -3,15 +3,14 @@
 ## Channel
 - Runtime handshake:
   - Claude: `/tmp/codex_claude_handshake.log`
-  - Gemini (canonical): `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
-  - Gemini (legacy mirror): `/tmp/codex_gemini_handshake.log`
+  - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 - Canonical protocol docs: `src/docs/iacp/`
 
 ## Current Role
-- Role: `PRIMARY ORCHESTRATOR`
+- Role: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
 - Mode: `ACTIVE`
 - Authority:
-  - Dispatch tasks to Claude and Gemini
+  - Trigger or refine dispatch tasks to Claude and Gemini
   - Accept/reject agent results
   - Merge readiness decisions based on quality gates
   - Final instruction shaping for next phase execution
@@ -29,14 +28,16 @@
 
 ## Operating Rules
 - Every task uses a UUID and explicit scope.
+- Every received result starts with role/name.
 - No placeholder result blocks accepted.
 - `PASS` means deploy-eligible for stated scope.
 - If safety flags appear (`UNSAFE`, `cp_safe_now=no`, `collisions>0`), status must be `FAIL` or `BLOCKED`.
 
 ## Coordination Model
-- Claude: high-complexity implementation and architecture, only when dispatched.
-- Gemini: independent verification and contradiction checks.
-- Codex: sequencing, conflict resolution, release gates, and handoff integrity.
+- Claude: principal builder for high-complexity implementation and architecture.
+- Gemini: independent QA verifier and docs/diagram coherence lead.
+- Codex: release governance, conflict resolution, release gates, and handoff integrity.
+- Operator-triggered dispatch is valid; Codex is the ship/no-ship authority.
 
 ## Required Result Minimum
 - Status (`PASS|FAIL|BLOCKED`)

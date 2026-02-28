@@ -298,7 +298,6 @@ npm run db:health
 npm run db:health:trend -- --url https://chartgen-gubii.netlify.app --samples 3 --interval 1 --cookie "gwc_session=<full-session-token>"
 npm run agent:check:result -- /tmp/codex_claude_handshake.log <UUID>
 npm run agent:check:result -- /Users/moofasa/chartgen/handoff/gemini_handshake.md <UUID>
-npm run agent:check:result -- /tmp/codex_gemini_handshake.log <UUID>
 npx prisma validate
 npx prisma migrate status
 npm run db:stress -- --concurrency 20 --duration-sec 45 --mode simple

@@ -34,7 +34,7 @@ Completed work is explicitly deprecated from future planning.
 |---|---|---|
 | App Shell (`SiteHeader`, `PrimaryNav`, `SiteFooter`, `AppLayout`) | `DEPRECATED_PROD` | commits `67a85a4c`, `f14552a5`, `409c2248` (included in deployed `3bda6faa`) |
 | UI Kit primitives (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, forms) | `DEPRECATED_PROD` | commit `67a85a4c` (included in deployed `3bda6faa`) |
-| IACP v2 protocol docs and role matrix (baseline) | `DEPRECATED_MAIN` | `src/docs/iacp/*`, `claude.md`, `gemini.md` (local policy refresh in progress) |
+| IACP v3 protocol docs and role matrix (canonicalized) | `LOCAL_DONE_PENDING_REVIEW` | `src/docs/iacp/*`, `claude.md`, `gemini.md`, `codex.md` |
 
 ### Step 3 — Items still open (active backlog)
 
@@ -106,3 +106,44 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 1. Promote all `LOCAL_DONE_PENDING_REVIEW` items to `DEPRECATED_MAIN` after Gemini verification + Codex review.
 2. Perform one batched deployment only after `DEPLOY_APPROVED`.
 3. PL-03 gate: run `src/docs/PL03_SMOKE_MATRIX.md` gate commands before any deploy.
+
+## 6) IACP v3 Lock + Code Cleaning Day (ACTIVE)
+
+### 6.1 Workflow Lock (Final)
+
+- Canonical roles are now:
+  - Codex: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
+  - Claude: `PRINCIPAL_BUILDER_COMPLEX_SYSTEMS`
+  - Gemini: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
+- Canonical channels are now:
+  - Claude: `/tmp/codex_claude_handshake.log`
+  - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- No deploy until full pipeline closure under v3 workflow.
+
+### 6.2 Discrete Gate Formula (Locked)
+
+For any task `T`:
+
+- `PASS(T) = 1 <=> (all required gates pass) AND (no contradiction flags) AND (schema safe when applicable)`
+- `DEPLOY(T) = 1 <=> PASS(T)=1 AND dispatch has DEPLOY_APPROVED`
+
+Any contradiction (`UNSAFE`, `cp_safe_now=no`, `collisions>0`, env mismatch) forces `FAIL` or `BLOCKED`.
+
+### 6.3 Code Cleaning Day Board
+
+| ID | Work | Owner | Status |
+|---|---|---|---|
+| CLN-01 | Remove deprecated handshake mirror references from canonical docs | Codex | `DONE_LOCAL` |
+| CLN-02 | Normalize IACP terminology from v2 to v3 across protocol docs | Codex | `DONE_LOCAL` |
+| CLN-03 | Dead/deprecated docs wording trim and channel-map cleanup | Codex | `ACTIVE` |
+| CLN-04 | Source cleanup pass: remove deprecated code paths and redundant UX text in active routes | Claude | `ACTIVE` |
+| CLN-05 | Independent verification of CLN-03/04 plus docs/diagram refresh | Gemini | `ACTIVE` |
+
+### 6.4 Pipeline Order (No Deploy)
+
+1. Codex completes CLN-03 and stages scoped changes.
+2. Operator/Codex dispatches CLN-04 and CLN-05 in parallel by file ownership.
+3. Claude completes CLN-04 with lint/build evidence.
+4. Gemini verifies CLN-03/04 and emits PASS/FAIL evidence.
+5. Codex runs final review, merge batch, and gate summary.
+6. Deployment remains blocked until explicit `DEPLOY_APPROVED`.
