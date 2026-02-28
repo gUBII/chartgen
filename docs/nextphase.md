@@ -1,6 +1,6 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
-Last updated: 2026-02-28
+Last updated: 2026-03-01
 Owner: Codex
 
 This file replaces the old speculative roadmap with a stateful ledger.
@@ -46,12 +46,13 @@ Completed work is explicitly deprecated from future planning.
 | UP-02 | Restoration page wiring for all 5 families | `LOCAL_DONE` | Claude |
 | CL-01 | Remove `/mealtime-chartgen` alias + update all references | `LOCAL_DONE` | Claude |
 | AC-01 | Admin participant/staff CRUD (API + UI) | `LOCAL_DONE` | Claude |
+| FH-01 | Self-host Orbitron + Space Grotesk (remove next/font/google network dep) | `DEPRECATED_PROD` | Claude |
 | LP-01/02/03 | Landing decomposition from 414-line page | `ACTIVE` | Codex + Claude |
 | RS-01/02 | Restoration decomposition into hooks/components | `ACTIVE` | Codex |
 | MC-01 | `/chartgen-core` route + catalog components | `ACTIVE` | Claude |
 | PF-01 | `/entry` preflight wizard | `ACTIVE` | Claude |
-| CM-01 | Hygiene/Community/Repositioning chart modules (partially addressed — Sleep/BGL/Bowel now wired) | `ACTIVE` | Codex |
-| CM-02 | Extract `MealChartModule` from engine | `ACTIVE` | Codex |
+| CM-01 | Hygiene/Community/Repositioning chart modules (wired in restoration engine and preview API) | `LOCAL_DONE_PENDING_REVIEW` | Codex |
+| CM-02 | Extract `MealChartModule` from engine and include in module timeline orchestration | `LOCAL_DONE_PENDING_REVIEW` | Codex |
 | EX-01/02 | Audit explorer table/filter drill-down upgrade | `ACTIVE` | Claude |
 | AE-01/02/03 | Audit engine UI composition upgrades | `ACTIVE` | Claude |
 
@@ -99,4 +100,3 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 3. Run build + lint delta.
 4. Stage atomic commits (shell/ui, docs, admin, diagnostics).
 5. Deploy and verify live UAT.
-

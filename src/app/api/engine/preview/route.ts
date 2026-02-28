@@ -560,6 +560,9 @@ export async function POST(request: NextRequest) {
     const sleepLogs = moduleLogs.filter((r) => "checkedAt" in r);
     const bglLogs = moduleLogs.filter((r) => "bglReadingMmolL" in r);
     const bowelLogs = moduleLogs.filter((r) => "hadBowelMotion" in r);
+    const hygieneLogs = moduleLogs.filter((r) => "showerStatus" in r && "oralCareStatus" in r);
+    const communityLogs = moduleLogs.filter((r) => "departedAt" in r && "destination" in r);
+    const repositionLogs = moduleLogs.filter((r) => "turnedAt" in r && "position" in r);
 
     const result = {
       batchId: txResult.batchId,
@@ -570,12 +573,18 @@ export async function POST(request: NextRequest) {
       sleepLogs,
       bglLogs,
       bowelLogs,
+      hygieneLogs,
+      communityLogs,
+      repositionLogs,
       candidateCount: txResult.mealRows.length,
       marCandidateCount: txResult.marRows.length,
       moduleCounts: {
         sleep: sleepLogs.length,
         bgl: bglLogs.length,
         bowel: bowelLogs.length,
+        hygiene: hygieneLogs.length,
+        community: communityLogs.length,
+        reposition: repositionLogs.length,
       },
     };
 

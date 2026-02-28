@@ -11,6 +11,10 @@ import { prisma } from "../../lib/prisma";
 import { SleepChartModule } from "./modules/SleepChartModule";
 import { BglChartModule } from "./modules/BglChartModule";
 import { BowelFluidChartModule } from "./modules/BowelFluidChartModule";
+import { MealChartModule } from "./modules/MealChartModule";
+import { HygieneChartModule } from "./modules/HygieneChartModule";
+import { CommunityAccessChartModule } from "./modules/CommunityAccessChartModule";
+import { RepositioningChartModule } from "./modules/RepositioningChartModule";
 import type { AnyRecord, ChartModule, DayContext, GenerationContext, RealizedTask, ScheduledTask } from "./modules/types";
 
 const RNG_SCALE = 1_000_000;
@@ -325,19 +329,25 @@ export class RestorationEngine {
     options?: { seed?: number; link?: Record<string, unknown> }
   ): Promise<Record<string, unknown>[]> {
     const activeModules: ChartModule[] = [
+      new MealChartModule(),
       new SleepChartModule(),
       new BglChartModule(),
       new BowelFluidChartModule(),
+      new HygieneChartModule(),
+      new CommunityAccessChartModule(),
+      new RepositioningChartModule(),
     ];
     const rng = new Mulberry32(options?.seed ?? 20260227);
     const generatedRecords: Record<string, unknown>[] = [];
-    const scheduledByModule = new Map<string, ScheduledTask[]>();
     const moduleByType = new Map(activeModules.map((chartModule) => [chartModule.type, chartModule]));
     const masterSchedule: ScheduledTask[] = [];
+    const taskModuleType = new Map<string, string>();
 
     for (const chartModule of activeModules) {
       const scheduledTasks = chartModule.buildSchedule(day);
-      scheduledByModule.set(chartModule.type, scheduledTasks);
+      for (const scheduledTask of scheduledTasks) {
+        taskModuleType.set(scheduledTask.id, chartModule.type);
+      }
       masterSchedule.push(...scheduledTasks);
     }
 
@@ -351,9 +361,7 @@ export class RestorationEngine {
       durationMin: task.durationMin,
       payload: {
         ...(task.payload ?? {}),
-        moduleType: [...moduleByType.entries()].find(([, mod]) =>
-          (scheduledByModule.get(mod.type) ?? []).some((t) => t.id === task.id)
-        )?.[0],
+        moduleType: taskModuleType.get(task.id),
       },
     }));
 
@@ -366,12 +374,20 @@ export class RestorationEngine {
     for (const task of realizedTimeline) {
       const moduleType = typeof task.payload?.moduleType === "string"
         ? task.payload.moduleType
+        : task.kind === "MEAL"
+          ? "MEAL"
         : task.kind === "SLEEP"
           ? "SLEEP_SETTLING"
           : task.kind === "BGL"
             ? "BGL"
             : task.kind === "BOWEL"
               ? "BOWEL_FLUID"
+              : task.kind === "HYGIENE"
+                ? "HYGIENE"
+                : task.kind === "COMMUNITY"
+                  ? "COMMUNITY_ACCESS"
+                  : task.kind === "REPOSITION"
+                    ? "REPOSITIONING"
               : undefined;
       if (!moduleType) continue;
 
@@ -418,6 +434,15 @@ export class RestorationEngine {
       .map((row) => row as AnyRecord);
     const bowelRows = generatedRecords
       .filter((row) => "hadBowelMotion" in row)
+      .map((row) => row as AnyRecord);
+    const hygieneRows = generatedRecords
+      .filter((row) => "showerStatus" in row && "oralCareStatus" in row)
+      .map((row) => row as AnyRecord);
+    const communityRows = generatedRecords
+      .filter((row) => "departedAt" in row && "destination" in row && "transportMethod" in row)
+      .map((row) => row as AnyRecord);
+    const repositionRows = generatedRecords
+      .filter((row) => "turnedAt" in row && "position" in row)
       .map((row) => row as AnyRecord);
 
     const transactionOps = [];
@@ -495,6 +520,133 @@ export class RestorationEngine {
             cumulativeIntakeMl: Number(row.cumulativeIntakeMl ?? 0),
             cumulativeOutputMl: Number(row.cumulativeOutputMl ?? 0),
             netBalanceMl: Number(row.netBalanceMl ?? 0),
+            qaMeta: (row.qaMeta as object | null) ?? null,
+          })),
+        })
+      );
+    }
+    if (hygieneRows.length > 0) {
+      transactionOps.push(
+        prisma.hygieneLog.createMany({
+          data: hygieneRows.map((row) => ({
+            source: String(row.source) as "SYNTHETIC_QA" | "PRODUCTION",
+            participantId: String(row.participantId),
+            staffId: String(row.staffId),
+            localDate: String(row.localDate),
+            loggedAt: new Date(String(row.loggedAt)),
+            showerStatus: String(row.showerStatus) as
+              | "COMPLETED"
+              | "PARTIAL"
+              | "REFUSED"
+              | "NOT_APPLICABLE"
+              | "UNKNOWN",
+            oralCareStatus: String(row.oralCareStatus) as
+              | "COMPLETED"
+              | "PARTIAL"
+              | "REFUSED"
+              | "NOT_APPLICABLE"
+              | "UNKNOWN",
+            groomingStatus: String(row.groomingStatus) as
+              | "COMPLETED"
+              | "PARTIAL"
+              | "REFUSED"
+              | "NOT_APPLICABLE"
+              | "UNKNOWN",
+            continenceCareStatus: String(row.continenceCareStatus) as
+              | "COMPLETED"
+              | "PARTIAL"
+              | "REFUSED"
+              | "NOT_APPLICABLE"
+              | "UNKNOWN",
+            skinIntegrityChecked: String(row.skinIntegrityChecked) as
+              | "COMPLETED"
+              | "PARTIAL"
+              | "REFUSED"
+              | "NOT_APPLICABLE"
+              | "UNKNOWN",
+            refusalReason: (row.refusalReason as string | null) ?? null,
+            alternativeMethod: (row.alternativeMethod as string | null) ?? null,
+            notes: (row.notes as string | null) ?? null,
+            qaSeverity: (String(row.qaSeverity ?? "NONE") as
+              | "NONE"
+              | "INFO"
+              | "WARN"
+              | "ERROR"
+              | "CRITICAL"),
+            qaAnomalyFlag: Boolean(row.qaAnomalyFlag),
+            qaMeta: (row.qaMeta as object | null) ?? null,
+          })),
+        })
+      );
+    }
+    if (communityRows.length > 0) {
+      transactionOps.push(
+        prisma.communityAccessQaLog.createMany({
+          data: communityRows.map((row) => ({
+            source: String(row.source) as "SYNTHETIC_QA" | "PRODUCTION",
+            participantId: String(row.participantId),
+            staffId: String(row.staffId),
+            localDate: String(row.localDate),
+            departedAt: new Date(String(row.departedAt)),
+            returnedAt: row.returnedAt ? new Date(String(row.returnedAt)) : null,
+            destination: String(row.destination),
+            purpose: String(row.purpose) as "SOCIAL" | "MEDICAL" | "CAPACITY_BUILDING" | "OTHER",
+            transportMethod: String(row.transportMethod) as
+              | "WALK"
+              | "PUBLIC_TRANSPORT"
+              | "TAXI_RIDESHARE"
+              | "PROVIDER_VEHICLE"
+              | "PRIVATE_VEHICLE"
+              | "OTHER",
+            odometerStart: row.odometerStart == null ? null : Number(row.odometerStart),
+            odometerEnd: row.odometerEnd == null ? null : Number(row.odometerEnd),
+            notes: (row.notes as string | null) ?? null,
+            qaSeverity: (String(row.qaSeverity ?? "NONE") as
+              | "NONE"
+              | "INFO"
+              | "WARN"
+              | "ERROR"
+              | "CRITICAL"),
+            qaAnomalyFlag: Boolean(row.qaAnomalyFlag),
+            qaMeta: (row.qaMeta as object | null) ?? null,
+          })),
+        })
+      );
+    }
+    if (repositionRows.length > 0) {
+      transactionOps.push(
+        prisma.repositioningQaLog.createMany({
+          data: repositionRows.map((row) => ({
+            source: String(row.source) as "SYNTHETIC_QA" | "PRODUCTION",
+            participantId: String(row.participantId),
+            staffId: String(row.staffId),
+            localDate: String(row.localDate),
+            turnedAt: new Date(String(row.turnedAt)),
+            position: String(row.position) as
+              | "LEFT_SIDE"
+              | "RIGHT_SIDE"
+              | "SUPINE"
+              | "PRONE"
+              | "SEATED"
+              | "TILT_IN_SPACE"
+              | "OTHER",
+            skinCheckOutcome: String(row.skinCheckOutcome) as
+              | "INTACT"
+              | "REDNESS"
+              | "BREAKDOWN"
+              | "PAIN"
+              | "REQUIRES_ESCALATION"
+              | "UNKNOWN"
+              | "OTHER",
+            notes: (row.notes as string | null) ?? null,
+            planIntervalMin: row.planIntervalMin == null ? null : Number(row.planIntervalMin),
+            qaSeverity: (String(row.qaSeverity ?? "NONE") as
+              | "NONE"
+              | "INFO"
+              | "WARN"
+              | "ERROR"
+              | "CRITICAL"),
+            qaAnomalyFlag: Boolean(row.qaAnomalyFlag),
             qaMeta: (row.qaMeta as object | null) ?? null,
           })),
         })
