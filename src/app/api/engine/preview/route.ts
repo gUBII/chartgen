@@ -25,6 +25,8 @@ type PreviewRequestBody = {
   endDate?: string;
   endTime?: string;
   generatedByStaffId?: string;
+  defaultWorkerStaffId?: string;
+  workerScheduleByDow?: Record<string, string>;
   seed?: number;
   profile?: "balanced" | "strict";
   medications?: Array<{
@@ -266,6 +268,27 @@ const makeScheduledTime = (baseDay: Date, hour: number, minute: number): Date =>
   return scheduled;
 };
 
+const parseWorkerSchedule = (value: unknown): Record<number, string> => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  const result: Record<number, string> = {};
+  for (const [rawDow, rawStaffId] of Object.entries(value as Record<string, unknown>)) {
+    const dow = Number(rawDow);
+    const staffId = String(rawStaffId ?? "").trim();
+    if (!Number.isInteger(dow) || dow < 0 || dow > 6) {
+      throw new PreviewApiError(400, "INVALID_WORKER_SCHEDULE", `Invalid day key in workerScheduleByDow: ${rawDow}`);
+    }
+    if (!staffId) {
+      continue;
+    }
+    result[dow] = staffId;
+  }
+
+  return result;
+};
+
 export async function POST(request: NextRequest) {
   try {
     let body: PreviewRequestBody;
@@ -302,24 +325,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const generatedByStaff = body.generatedByStaffId?.trim()
-      ? await prisma.staff.findUnique({
-          where: { id: body.generatedByStaffId.trim() },
+    const workerScheduleByDow = parseWorkerSchedule(body.workerScheduleByDow);
+    const requestedByStaffIdInput = body.generatedByStaffId?.trim() ?? "";
+    const defaultWorkerStaffIdInput = body.defaultWorkerStaffId?.trim() ?? "";
+
+    const referencedIds = new Set<string>();
+    if (requestedByStaffIdInput) referencedIds.add(requestedByStaffIdInput);
+    if (defaultWorkerStaffIdInput) referencedIds.add(defaultWorkerStaffIdInput);
+    for (const workerId of Object.values(workerScheduleByDow)) {
+      if (workerId) referencedIds.add(workerId);
+    }
+
+    const referencedStaffRows = referencedIds.size
+      ? await prisma.staff.findMany({
+          where: { id: { in: [...referencedIds] } },
           select: { id: true, role: true },
         })
-      : await prisma.staff.findFirst({
-          where: { role: { in: ["SUPERVISOR", "CLINICAL_LEAD", "SUPPORT_WORKER"] } },
-          orderBy: { createdAt: "asc" },
-          select: { id: true, role: true },
-        });
+      : [];
+    const staffById = new Map(referencedStaffRows.map((row) => [row.id, row]));
 
-    if (!generatedByStaff) {
+    const missingReferencedIds = [...referencedIds].filter((id) => !staffById.has(id));
+    if (missingReferencedIds.length > 0) {
+      throw new PreviewApiError(
+        400,
+        "INVALID_STAFF_ID",
+        "One or more selected workers/staff could not be found.",
+        { missingStaffIds: missingReferencedIds }
+      );
+    }
+
+    const fallbackStaff = await prisma.staff.findFirst({
+      where: { role: { in: ["SUPPORT_WORKER", "SUPERVISOR", "CLINICAL_LEAD"] } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, role: true },
+    });
+
+    if (!fallbackStaff) {
       throw new PreviewApiError(
         409,
         "STAFF_REQUIRED",
         "No staff record is available. Create a Staff row before generating preview batches."
       );
     }
+
+    const defaultWorkerStaffId = defaultWorkerStaffIdInput || requestedByStaffIdInput || fallbackStaff.id;
+    const requestedByStaffId = requestedByStaffIdInput || defaultWorkerStaffId;
+
+    const resolveWorkerForDay = (day: Date): string => {
+      const dow = day.getDay();
+      const mappedWorker = workerScheduleByDow[dow];
+      if (mappedWorker) {
+        return mappedWorker;
+      }
+      return defaultWorkerStaffId;
+    };
 
     const participant = await prisma.participant.findUnique({
       where: { id: participantId },
@@ -354,7 +413,7 @@ export async function POST(request: NextRequest) {
       const batch = await tx.restorationBatch.create({
         data: {
           participantId: participant.id,
-          requestedByStaffId: generatedByStaff.id,
+          requestedByStaffId,
           reason: `Preview generation ${recoveryStart.toISOString()} -> ${recoveryEnd.toISOString()}`,
           recoveryStart,
           recoveryEnd,
@@ -370,6 +429,7 @@ export async function POST(request: NextRequest) {
 
       // Meal candidates
       for (const day of days) {
+        const dayWorkerStaffId = resolveWorkerForDay(day);
         for (const template of DEFAULT_MEAL_TEMPLATES) {
           const scheduledTime = makeScheduledTime(day, template.hour, template.minute);
           if (!isWithinWindow(scheduledTime, recoveryStart, recoveryEnd)) {
@@ -391,7 +451,7 @@ export async function POST(request: NextRequest) {
             },
             {
               restorationBatchId: batch.id,
-              generatedByStaffId: generatedByStaff.id,
+              generatedByStaffId: dayWorkerStaffId,
               generatedAt,
             }
           );
@@ -407,7 +467,7 @@ export async function POST(request: NextRequest) {
             swallowingObservations: generated.swallowingObservations,
             deviationReason: generated.deviationReason,
             restorationBatchId: batch.id,
-            generatedByStaffId: generatedByStaff.id,
+            generatedByStaffId: dayWorkerStaffId,
             createdAt: generatedAt,
           });
 
@@ -415,7 +475,7 @@ export async function POST(request: NextRequest) {
             data: {
               restorationBatchId: batch.id,
               participantId: generated.participantId,
-              generatedByStaffId: generatedByStaff.id,
+              generatedByStaffId: dayWorkerStaffId,
               timestamp: generated.timestamp,
               mealType: generated.mealType,
               foodTexture: generated.foodTexture,
@@ -431,6 +491,7 @@ export async function POST(request: NextRequest) {
             },
             select: {
               id: true,
+              generatedByStaffId: true,
               timestamp: true,
               mealType: true,
               foodTexture: true,
@@ -469,7 +530,7 @@ export async function POST(request: NextRequest) {
             },
             {
               restorationBatchId: batch.id,
-              generatedByStaffId: generatedByStaff.id,
+              generatedByStaffId: dayWorkerStaffId,
               generatedAt,
             }
           );
@@ -485,7 +546,7 @@ export async function POST(request: NextRequest) {
             omissionReason: generated.omissionReason,
             statusComment: generated.statusComment,
             restorationBatchId: batch.id,
-            generatedByStaffId: generatedByStaff.id,
+            generatedByStaffId: dayWorkerStaffId,
             createdAt: generatedAt,
           });
 
@@ -493,7 +554,7 @@ export async function POST(request: NextRequest) {
             data: {
               restorationBatchId: batch.id,
               participantId: generated.participantId,
-              generatedByStaffId: generatedByStaff.id,
+              generatedByStaffId: dayWorkerStaffId,
               scheduledAdminTime: generated.scheduledAdminTime,
               actualAdminTime: generated.actualAdminTime,
               medicationName: generated.medicationName,
@@ -509,6 +570,7 @@ export async function POST(request: NextRequest) {
             },
             select: {
               id: true,
+              generatedByStaffId: true,
               scheduledAdminTime: true,
               actualAdminTime: true,
               medicationName: true,
@@ -529,7 +591,7 @@ export async function POST(request: NextRequest) {
       return {
         batchId: batch.id,
         participantId: batch.participantId,
-        generatedByStaffId: generatedByStaff.id,
+        generatedByStaffId: requestedByStaffId,
         mealRows,
         marRows,
       };
@@ -538,11 +600,12 @@ export async function POST(request: NextRequest) {
     // Phase 2: Sleep/BGL/Bowel via generateBatch (runs its own transaction)
     const moduleLogs: Record<string, unknown>[] = [];
     for (const day of days) {
+      const dayWorkerStaffId = resolveWorkerForDay(day);
       const dayRecords = await engine.generateBatch(
         {
           date: day,
           participantId: participant.id,
-          staffId: generatedByStaff.id,
+          staffId: dayWorkerStaffId,
           planConfig: {},
         },
         { seed: body.seed }
@@ -568,6 +631,8 @@ export async function POST(request: NextRequest) {
       batchId: txResult.batchId,
       participantId: txResult.participantId,
       generatedByStaffId: txResult.generatedByStaffId,
+      defaultWorkerStaffId,
+      workerScheduleByDow,
       candidates: txResult.mealRows,
       marLogs: txResult.marRows,
       sleepLogs,

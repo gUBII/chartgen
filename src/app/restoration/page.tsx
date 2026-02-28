@@ -21,7 +21,12 @@ export default function RestorationPage() {
 
       <GenerateForm
         participantId={state.participantId} setParticipantId={state.setParticipantId}
-        actorStaffId={state.actorStaffId} setActorStaffId={state.setActorStaffId}
+        participants={state.participants}
+        reviewerStaffId={state.reviewerStaffId} setReviewerStaffId={state.setReviewerStaffId}
+        defaultWorkerStaffId={state.defaultWorkerStaffId} setDefaultWorkerStaffId={state.setDefaultWorkerStaffId}
+        workerScheduleByDow={state.workerScheduleByDow} setWorkerForDow={state.setWorkerForDow}
+        staffOptions={state.staffOptions}
+        loadingOptions={state.loadingOptions}
         startDate={state.startDate} setStartDate={state.setStartDate}
         startTime={state.startTime} setStartTime={state.setStartTime}
         endDate={state.endDate} setEndDate={state.setEndDate}

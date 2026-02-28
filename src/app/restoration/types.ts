@@ -3,6 +3,7 @@ import type { AmountEaten } from "@prisma/client";
 export type CandidateRow = {
   id: string;
   timestamp: string;
+  generatedByStaffId?: string;
   mealType: string;
   foodTexture: number;
   fluidThickness: number;
@@ -21,6 +22,17 @@ export type ApiError = {
 };
 
 export type ChartLog = Record<string, unknown>;
+
+export type ParticipantOption = {
+  id: string;
+  fullName: string;
+};
+
+export type StaffOption = {
+  id: string;
+  displayName: string;
+  role: "SUPPORT_WORKER" | "SUPERVISOR" | "CLINICAL_LEAD" | string;
+};
 
 export type ActiveTab = "medication" | "nutrition" | "night" | "health";
 

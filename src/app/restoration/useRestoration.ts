@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AmountEaten } from "@prisma/client";
-import type { CandidateRow, ChartLog, ActiveTab } from "./types";
+import type { CandidateRow, ChartLog, ActiveTab, ParticipantOption, StaffOption } from "./types";
 import {
   toDateInput,
   toLocalDateTimeInput,
@@ -21,7 +21,12 @@ export function useRestoration() {
   }, []);
 
   const [participantId, setParticipantId] = useState("");
-  const [actorStaffId, setActorStaffId] = useState("");
+  const [reviewerStaffId, setReviewerStaffId] = useState("");
+  const [defaultWorkerStaffId, setDefaultWorkerStaffId] = useState("");
+  const [workerScheduleByDow, setWorkerScheduleByDow] = useState<Record<string, string>>({});
+  const [participants, setParticipants] = useState<ParticipantOption[]>([]);
+  const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
   const [startDate, setStartDate] = useState(toDateInput(today));
   const [startTime, setStartTime] = useState("00:00");
   const [endDate, setEndDate] = useState(toDateInput(nextWeek));
@@ -46,12 +51,116 @@ export function useRestoration() {
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
 
+  const parseApiPayload = async (response: Response): Promise<any> => {
+    try {
+      return await response.json();
+    } catch {
+      const text = await response.text().catch(() => "");
+      return {
+        ok: false,
+        error: {
+          code: "INVALID_RESPONSE",
+          message: text ? `Non-JSON response: ${text.slice(0, 140)}` : "Unexpected API response format.",
+        },
+      };
+    }
+  };
+
+  const chooseReviewer = (staffList: StaffOption[]): string => {
+    const elevated = staffList.find((s) => s.role === "SUPERVISOR" || s.role === "CLINICAL_LEAD");
+    return elevated?.id ?? staffList[0]?.id ?? "";
+  };
+
+  const chooseDefaultWorker = (staffList: StaffOption[]): string => {
+    const support = staffList.find((s) => s.role === "SUPPORT_WORKER");
+    return support?.id ?? staffList[0]?.id ?? "";
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadOptions = async () => {
+      setLoadingOptions(true);
+      try {
+        const [participantsRes, staffRes] = await Promise.all([
+          fetch("/api/admin/participants"),
+          fetch("/api/admin/staff"),
+        ]);
+        const participantsPayload = await parseApiPayload(participantsRes);
+        const staffPayload = await parseApiPayload(staffRes);
+
+        if (!participantsRes.ok || !participantsPayload?.ok) {
+          throw new Error(getErrorMessage(participantsPayload?.error));
+        }
+        if (!staffRes.ok || !staffPayload?.ok) {
+          throw new Error(getErrorMessage(staffPayload?.error));
+        }
+
+        const participantRows: ParticipantOption[] = asArray(participantsPayload.data).map((row) => ({
+          id: String(row.id),
+          fullName: String(row.fullName ?? row.id),
+        }));
+        const staffRows: StaffOption[] = asArray(staffPayload.data).map((row) => ({
+          id: String(row.id),
+          displayName: String(row.displayName ?? row.id),
+          role: String(row.role ?? "SUPPORT_WORKER"),
+        }));
+
+        if (cancelled) return;
+
+        setParticipants(participantRows);
+        setStaffOptions(staffRows);
+
+        if (!participantId && participantRows.length > 0) {
+          setParticipantId(participantRows[0].id);
+        }
+        if (!reviewerStaffId && staffRows.length > 0) {
+          setReviewerStaffId(chooseReviewer(staffRows));
+        }
+        if (!defaultWorkerStaffId && staffRows.length > 0) {
+          setDefaultWorkerStaffId(chooseDefaultWorker(staffRows));
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setErrorText(error instanceof Error ? error.message : "Failed to load clients/workers.");
+      } finally {
+        if (!cancelled) {
+          setLoadingOptions(false);
+        }
+      }
+    };
+
+    loadOptions();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setWorkerForDow = (dow: string, staffId: string) => {
+    setWorkerScheduleByDow((current) => ({
+      ...current,
+      [dow]: staffId,
+    }));
+  };
+
   const onGenerate = async () => {
+    if (!participantId.trim()) {
+      setErrorText("Select a client before generating.");
+      return;
+    }
+    if (!defaultWorkerStaffId.trim()) {
+      setErrorText("Select a default worker before generating.");
+      return;
+    }
+
     setErrorText("");
     setStatusText("Generating preview batch...");
     setLoadingGenerate(true);
 
     try {
+      const schedulePayload = Object.fromEntries(
+        Object.entries(workerScheduleByDow).filter(([, staffId]) => String(staffId).trim().length > 0)
+      );
       const response = await fetch("/api/engine/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,11 +170,13 @@ export function useRestoration() {
           startTime,
           endDate,
           endTime,
-          generatedByStaffId: actorStaffId || undefined,
+          generatedByStaffId: reviewerStaffId || defaultWorkerStaffId,
+          defaultWorkerStaffId,
+          workerScheduleByDow: schedulePayload,
         }),
       });
 
-      const payload = await response.json();
+      const payload = await parseApiPayload(response);
       if (!response.ok || !payload?.ok) {
         throw new Error(getErrorMessage(payload?.error));
       }
@@ -76,6 +187,7 @@ export function useRestoration() {
       const candidateRows = asArray(data.candidates).map((candidate) => ({
         id: String(candidate.id),
         timestamp: toLocalDateTimeInput(String(candidate.timestamp)),
+        generatedByStaffId: String(candidate.generatedByStaffId ?? defaultWorkerStaffId ?? reviewerStaffId ?? ""),
         mealType: String(candidate.mealType),
         foodTexture: Number(candidate.foodTexture),
         fluidThickness: Number(candidate.fluidThickness),
@@ -114,7 +226,7 @@ export function useRestoration() {
             ? mixedSplit.mealLogs
             : candidateRows.map((row) => ({
                 participantId,
-                createdByStaffId: actorStaffId,
+                createdByStaffId: defaultWorkerStaffId || reviewerStaffId,
                 timestamp: toIsoFromLocalDateTime(row.timestamp),
                 mealType: row.mealType,
                 foodTexture: row.foodTexture,
@@ -176,7 +288,7 @@ export function useRestoration() {
           timestamp: toIsoFromLocalDateTime(row.timestamp),
         }),
       });
-      const payload = await response.json();
+      const payload = await parseApiPayload(response);
       if (!response.ok || !payload?.ok) {
         throw new Error(getErrorMessage(payload?.error));
       }
@@ -203,12 +315,13 @@ export function useRestoration() {
   };
 
   const onCommit = async () => {
-    if (!actorStaffId.trim()) {
-      setErrorText("Supervisor/Clinical Lead Staff ID is required to commit.");
+    const effectiveWorkerId = defaultWorkerStaffId || reviewerStaffId;
+    if (!effectiveWorkerId.trim()) {
+      setErrorText("Select a worker before commit.");
       return;
     }
 
-    const editableMealLogs = rows.length > 0 ? mapRowsToMealLogs(rows, participantId, actorStaffId) : [];
+    const editableMealLogs = rows.length > 0 ? mapRowsToMealLogs(rows, participantId, effectiveWorkerId) : [];
     const commitMealLogs = mealLogs.length > 0 ? mealLogs : editableMealLogs;
 
     const payload = {
@@ -247,7 +360,7 @@ export function useRestoration() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const commitPayload = await commitResponse.json();
+      const commitPayload = await parseApiPayload(commitResponse);
       if (!commitResponse.ok || !commitPayload?.ok) {
         throw new Error(getErrorMessage(commitPayload?.error));
       }
@@ -323,7 +436,12 @@ export function useRestoration() {
   return {
     // Form state
     participantId, setParticipantId,
-    actorStaffId, setActorStaffId,
+    participants,
+    reviewerStaffId, setReviewerStaffId,
+    defaultWorkerStaffId, setDefaultWorkerStaffId,
+    workerScheduleByDow, setWorkerForDow,
+    staffOptions,
+    loadingOptions,
     startDate, setStartDate,
     startTime, setStartTime,
     endDate, setEndDate,

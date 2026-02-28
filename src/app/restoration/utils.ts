@@ -29,11 +29,29 @@ export const toIsoFromLocalDateTime = (value: string): string => {
   return date.toISOString();
 };
 
-export const getErrorMessage = (error?: ApiError): string => {
+export const getErrorMessage = (error?: ApiError | string | unknown): string => {
   if (!error) {
     return "Unexpected API error.";
   }
-  return `${error.code}: ${error.message}`;
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (typeof error === "object") {
+    const maybe = error as Partial<ApiError> & { error?: unknown; message?: unknown };
+    if (typeof maybe.code === "string" && typeof maybe.message === "string") {
+      return `${maybe.code}: ${maybe.message}`;
+    }
+    if (typeof maybe.message === "string") {
+      return maybe.message;
+    }
+    if (typeof maybe.error === "string") {
+      return maybe.error;
+    }
+  }
+
+  return "Unexpected API error.";
 };
 
 export const getFilenameFromDisposition = (disposition: string | null, fallback: string): string => {
@@ -164,10 +182,10 @@ export const splitMixedEntries = (entries: ChartLog[]) => {
   };
 };
 
-export const mapRowsToMealLogs = (rows: CandidateRow[], participantId: string, actorStaffId: string): ChartLog[] => {
+export const mapRowsToMealLogs = (rows: CandidateRow[], participantId: string, fallbackStaffId: string): ChartLog[] => {
   return rows.map((row) => ({
     participantId,
-    createdByStaffId: actorStaffId,
+    createdByStaffId: row.generatedByStaffId || fallbackStaffId,
     source: "LIVE",
     timestamp: toIsoFromLocalDateTime(row.timestamp),
     mealType: row.mealType,

@@ -303,7 +303,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
         marModel.createMany({
           data: marLogs.map((row: any) => ({
             participantId: String(row.participantId),
-            createdByStaffId: String(row.createdByStaffId ?? row.staffId),
+            createdByStaffId: String(row.createdByStaffId ?? row.staffId ?? row.generatedByStaffId),
             approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
             restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
             source: normalizeEntrySource(row.source),
@@ -325,7 +325,7 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
         mealModel.createMany({
           data: mealLogs.map((row: any) => ({
             participantId: String(row.participantId),
-            createdByStaffId: String(row.createdByStaffId ?? row.staffId),
+            createdByStaffId: String(row.createdByStaffId ?? row.staffId ?? row.generatedByStaffId),
             approvedByStaffId: row.approvedByStaffId ? String(row.approvedByStaffId) : null,
             restorationBatchId: row.restorationBatchId ? String(row.restorationBatchId) : null,
             source: normalizeEntrySource(row.source),
