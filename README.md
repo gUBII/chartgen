@@ -197,6 +197,7 @@ flowchart LR
 - `GET /audit-readiness` - audit-modelling and readiness framing
 - `GET /restoration` - meal chart control center with grouped commit support and defect highlighting (full-access)
 - `GET /mar` - medication chart (MAR) control center
+- `GET /chartgen-core` - technical route (not user-navigable)
 - `GET /audit-engine` - KPI trends and AI gap-report generation (full-access only)
 - `GET /audit-explorer` - audit data browser with filtering and pagination (full-access only)
 - `GET /uat` - online UAT control center (health check + stress + cleanup runners)

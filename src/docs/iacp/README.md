@@ -60,3 +60,9 @@ No dual-channel mirroring for canonical truth.
 - One UUID maps to one bounded objective.
 - No placeholder results.
 - `PASS` is forbidden when any contradiction signal exists.
+
+## Related Documentation & Policies
+
+- `README.md`: canonical architecture diagrams and the `Fast Coding Policy`.
+- `src/docs/WORKFLOW_FRUGAL.md`: local-first/deploy-last rules.
+- `src/docs/QUALITY_AND_TESTING.md`: quality gates and testing reality.
