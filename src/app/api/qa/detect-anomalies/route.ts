@@ -59,11 +59,16 @@ export async function GET(request: NextRequest) {
       detectUnauthorisedRestraint(fromDate, toDate),
     ]);
 
+    const severityRank: Record<ComplianceBreach["severity"], number> = {
+      CRITICAL: 0,
+      HIGH: 1,
+    };
+
     const allBreaches: ComplianceBreach[] = [
       ...ghostShiftBreaches,
       ...constipationBreaches,
       ...restraintBreaches,
-    ].sort((a, b) => (a.severity === "CRITICAL" ? -1 : 1));
+    ].sort((a, b) => severityRank[a.severity] - severityRank[b.severity]);
 
     return NextResponse.json({
       ok: true,
