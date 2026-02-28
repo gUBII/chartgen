@@ -9,6 +9,50 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    version: "v3.9",
+    title: "UI Kit + Admin Dashboard + Preview API Unification",
+    date: "February 28, 2026",
+    highlights: [
+      "Added reusable UI kit primitives and app shell components for consistent rendering across routes.",
+      "Added `/admin` dashboard with participant/staff CRUD and chart-entry management workflows.",
+      "Unified preview API behavior across Meal, MAR, Sleep, BGL, and Bowel families.",
+      "Removed legacy `/mealtime-chartgen` alias and updated navigation references to canonical routes.",
+      "Synced release/docs/protocol truth to current production behavior.",
+    ],
+  },
+  {
+    version: "v3.8",
+    title: "Netlify Reliability + IACP Guardrail Upgrade",
+    date: "February 28, 2026",
+    highlights: [
+      "Unified ESLint cloud config to `.mjs` for Node compatibility across local and Netlify environments.",
+      "Prepended Prisma client generation before Netlify build to prevent stale-client schema mismatches.",
+      "Added schema collision gate and strict PASS semantics for destructive-schema prevention.",
+      "Consolidated IACP protocol docs (roles, gates, templates) for predictable multi-agent execution.",
+    ],
+  },
+  {
+    version: "v3.7",
+    title: "Engine Wiring + Multi-Chart Stabilization",
+    date: "February 27, 2026",
+    highlights: [
+      "Wired chart modules through stochastic timeline realization and transactional persistence.",
+      "Refactored grouped commit API with strict model checks and 422 validation on invalid source/type payloads.",
+      "Stabilized auth/session behavior for Netlify cookie handling and login-loop recovery.",
+      "Kept Phase E restoration tab UX with explicit defect visibility and safer mixed-entry classification.",
+    ],
+  },
+  {
+    version: "v3.6",
+    title: "Blue Team Anomaly Detector + QA Foundations",
+    date: "February 27, 2026",
+    highlights: [
+      "Added `/api/qa/detect-anomalies` with Ghost Shift, Constipation Gap, and Unauthorised Restraint detection.",
+      "Added QA test harness and readiness docs for anomaly validation using synthetic records.",
+      "Introduced modular restoration scaffolding for deterministic synthetic QA generation.",
+    ],
+  },
+  {
     version: "v3.5",
     title: "Phase E + Post-Release Hardening",
     date: "February 27, 2026",
@@ -52,7 +96,7 @@ const RELEASES: Release[] = [
   {
     version: "v3.1",
     title: "Production Truth and Stability Verification",
-    date: "February 27, 2026",
+    date: "January 2026",
     highlights: [
       "Production deploy verification workflow formalized and documented.",
       "Live DB health sampling integrated into operations cadence.",
@@ -62,7 +106,7 @@ const RELEASES: Release[] = [
   {
     version: "v3.0",
     title: "Mobile UAT Set A + Brainstorm Workflow",
-    date: "February 27, 2026",
+    date: "January 2026",
     highlights: [
       "Replaced blank KPIgen route with governance signal content.",
       "Improved mobile typography scaling, touch targets, and toolbar responsiveness.",
@@ -72,7 +116,7 @@ const RELEASES: Release[] = [
   {
     version: "v2.5",
     title: "Lint Workflow Stabilization",
-    date: "February 27, 2026",
+    date: "December 2025",
     highlights: [
       "Moved lint execution to deterministic ESLint command path for Next 16.",
       "Captured known lint debt for explicit follow-up lane.",
@@ -82,7 +126,7 @@ const RELEASES: Release[] = [
   {
     version: "v2.4",
     title: "Auth Transition Test Coverage",
-    date: "February 27, 2026",
+    date: "December 2025",
     highlights: [
       "Added login-to-nav state transition integration tests.",
       "Covered full/guest boundaries and logout reset behavior.",
@@ -92,7 +136,7 @@ const RELEASES: Release[] = [
   {
     version: "v2.3",
     title: "Identity-Aware Login (Phase 1)",
-    date: "February 27, 2026",
+    date: "December 2025",
     highlights: [
       "Introduced optional username + password login path for full users.",
       "Preserved backward compatibility with legacy password-only login.",
@@ -102,7 +146,7 @@ const RELEASES: Release[] = [
   {
     version: "v2.2",
     title: "Agent-Orchestrated Delivery Model",
-    date: "February 27, 2026",
+    date: "November 2025",
     highlights: [
       "Added Claude and Gemini communication channels with structured handshakes.",
       "Introduced orchestration, digest, and evidence-gate planning docs.",
@@ -112,7 +156,7 @@ const RELEASES: Release[] = [
   {
     version: "v2.1",
     title: "Protected Online UAT + Session Hardening",
-    date: "February 2026",
+    date: "November 2025",
     highlights: [
       "Added protected `/api/ops/db-health` and `/api/ops/uat` endpoints.",
       "Implemented signed session hardening with expiry-aware auth checks.",
@@ -122,7 +166,7 @@ const RELEASES: Release[] = [
   {
     version: "v2.0",
     title: "Enterprise Rebrand and UAT Control Center",
-    date: "February 2026",
+    date: "November 2025",
     highlights: [
       "Shifted product positioning to Chartgen by gUBII enterprise framing.",
       "Added dedicated audit-readiness and deployment-notes pages.",
@@ -132,7 +176,7 @@ const RELEASES: Release[] = [
   {
     version: "v1.4",
     title: "Deployment Integrity and DB Workflow Clarity",
-    date: "February 2026",
+    date: "November 2025",
     highlights: [
       "Documented Neon pooled/direct URL deployment model.",
       "Improved operational links truth workflow for deploy verification.",
@@ -142,7 +186,7 @@ const RELEASES: Release[] = [
   {
     version: "v1.3",
     title: "PDF Export and Personalization",
-    date: "February 2026",
+    date: "October 2025",
     highlights: [
       "Added on-demand PDF export for meal and MAR preview charts.",
       "Added personalized founder profile and product presentation updates.",
@@ -152,7 +196,7 @@ const RELEASES: Release[] = [
   {
     version: "v1.2",
     title: "Audit Recovery and Provenance Enhancements",
-    date: "February 2026",
+    date: "October 2025",
     highlights: [
       "Added audit recovery enum values and migration updates.",
       "Refined audit generator behavior and verification utilities.",
@@ -162,7 +206,7 @@ const RELEASES: Release[] = [
   {
     version: "v1.1",
     title: "Approval Governance Controls",
-    date: "February 2026",
+    date: "October 2025",
     highlights: [
       "Added role-based approval rules and batch review controls.",
       "Expanded MAR statuses to better represent real-world administration outcomes.",
@@ -172,7 +216,7 @@ const RELEASES: Release[] = [
   {
     version: "v1.0",
     title: "Core Clinical Chart Engine Foundation",
-    date: "Initial release",
+    date: "October 2025",
     highlights: [
       "Created base Prisma schema for meal and medication tracking.",
       "Implemented restoration API + dashboard workflow foundations.",
@@ -186,9 +230,9 @@ export default function WhatsNewPage() {
     <main className="mx-auto max-w-7xl px-6 pt-10 pb-16 space-y-6">
       <section className="futuristic-panel p-8 sm:p-10">
         <p className="landing-mono text-xs text-blue-200">Release Timeline</p>
-        <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.5</h2>
+        <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.9</h2>
         <p className="text-muted mt-4 max-w-3xl text-sm sm:text-base">
-          Full staged feature ledger of everything delivered so far, organized by release milestone.
+          Full staged feature ledger of everything delivered so far, organized by release milestone (timeline window: October 2025 to February 2026).
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link

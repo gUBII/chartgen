@@ -1,10 +1,42 @@
 # Release History
 
-Last updated: 2026-02-27
+Last updated: 2026-02-28
 
-This document stages all delivered features so far from `v1.0` through `v3.5`.
+This document stages all delivered features so far from `v1.0` through `v3.9`.
+Timeline window (staged): October 2025 to February 2026.
 
-## v3.5 (Current)
+## v3.9 (Current)
+
+**UI Kit + Admin + Unified Preview APIs**
+- Added reusable UI primitives and shell components (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, form controls) for consistent module UX.
+- Added `/admin` dashboard for chart record operations and participant/staff CRUD support.
+- Unified preview API behavior across 5 chart families (Meal, MAR, Sleep, BGL, Bowel) and removed `/mealtime-chartgen` alias.
+- Synced nextphase ledger, protocol docs, and runtime README truth to match shipped behavior.
+
+## v3.8
+
+**Build Reliability + Protocol Hardening**
+- Fixed Netlify compatibility with consolidated ESLint `.mjs` config.
+- Ensured Prisma client generation runs before Netlify production build.
+- Added collision safety gate (`npm run schema:check:collision`) and strict PASS semantics for schema merge decisions.
+- Expanded IACP orchestration docs with role matrix, guardrails, and verifier checklists.
+
+## v3.7
+
+**Engine Wiring + Phase E Stabilization**
+- Wired stochastic chart modules through timeline realization and transactional persistence.
+- Refactored grouped commit API and restoration dashboard for multi-chart tabbed preview + commit payload.
+- Hardened grouped commit validation (all models validated upfront, strict source/type checks).
+- Stabilized auth/session behavior for Netlify cookie handling and edge verification parity.
+
+## v3.6
+
+**Blue Team QA Foundations**
+- Implemented Blue Team anomaly detector route (`/api/qa/detect-anomalies`) with Ghost Shift, Constipation Gap, and Unauthorised Restraint detection.
+- Added QA test suite, readiness reporting, and schema/runbook documentation for anomaly workflows.
+- Introduced modular restoration scaffolding and chart module contracts for synthetic QA expansion.
+
+## v3.5
 
 **Phase E: Grouped Commit & Restoration Refactor**
 - Implemented grouped commit payload supporting 8 log types (MAR, Meal, Sleep, BGL, Bowel, Hygiene, Community, Repositioning) in single transaction.

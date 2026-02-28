@@ -1,7 +1,8 @@
 # Latest Links and Instructions
 
-**Last Updated:** 2026-02-27
-**Version:** 3.5.0
+**Last Updated:** 2026-02-28
+**Version:** 3.9.0
+**Timeline Window:** October 2025 -> February 2026 (staged release ledger)
 
 ## Production Links
 
@@ -45,7 +46,7 @@ Single endpoint now handles 8 log types transactionally:
 
 ---
 
-## Audit Routes & Features (active in v3.5, introduced in v3.4)
+## Audit Routes & Features (active in v3.9, introduced in v3.4+)
 
 ### Audit Engine (KPI + AI Gap-Report)
 - **Page:** `/audit-engine` (protected, full-access only)
@@ -252,9 +253,9 @@ This creates:
 
 ---
 
-## Next Steps (v3.5)
+## Next Steps (v3.9)
 
-- [ ] Persistent gap report storage (move from `/tmp` to database)
-- [ ] Report scheduling (automated daily/weekly)
-- [ ] Custom alert rules on KPI thresholds
-- [ ] Integration with external audit systems
+- [ ] Add integration tests for admin CRUD and unified preview API parity.
+- [ ] Add role-scoped audit dashboards (read-only vs full edit workflows).
+- [ ] Add report scheduling with retention policy enforcement.
+- [ ] Add KPI-driven alerting thresholds and notification hooks.

@@ -8,7 +8,7 @@ interface SiteHeaderProps {
 }
 
 function SiteHeader({
-  version = "v3.5",
+  version = "v3.9",
   authorUrl = "https://github.com/gUBII",
   disclaimerShort = "Independently authored. Deployed in Nexis365-hosted environments.",
   disclaimerLong = "Independently authored product. Deployed in Nexis365-hosted environments supporting GoodwillCare and COHS.",

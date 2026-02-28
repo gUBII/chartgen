@@ -14,10 +14,10 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 
 ## Current Release
 
-- `v3.5.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
-- Phase E complete: grouped commit payload, tabbed restoration dashboard with defect highlighting, strict source/type normalization.
-- Post-release hardening: Prisma Netlify binary target (`rhel-openssl-3.0.x`), auth/session stabilization, cookie-header fallback logic.
-- Auth hydration now reads `gwc_session` (with `session` fallback) to reduce first-paint role mismatch.
+- `v3.9.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
+- Timeline window: `October 2025 -> February 2026` (staged release ledger for historical commits).
+- Added UI kit primitives + shell standardization, admin dashboard CRUD, and unified preview API behavior across 5 chart families.
+- Includes prior Phase E grouped commit pipeline, post-release hardening, and Netlify build reliability gates.
 
 ## Current Truth
 
@@ -25,6 +25,7 @@ Chartgen currently implements:
 
 - Meal preview generation (`POST /api/engine/preview`)
 - MAR preview generation (`POST /api/engine/mar-preview`)
+- Unified preview behavior across Meal, MAR, Sleep, BGL, and Bowel generation families
 - Candidate editing (`PATCH` on both preview routes)
 - Batch approval (`approveAll`) with governance controls
 - Transactional commit into official ledger (`POST /api/engine/commit`)
@@ -32,6 +33,7 @@ Chartgen currently implements:
 - Signed cookie session auth with role-aware access (`full` and `guest`)
 - Protected Ops API for online DB health checks and UAT execution
 - UAT JSON artifact persistence for stress/cleanup runs
+- Admin dashboard for direct chart/staff/participant data operations (`/admin`)
 
 ### Brand and deployment clarity
 
@@ -153,11 +155,10 @@ flowchart LR
 ### Pages
 
 - `GET /` - landing page
-- `GET /whats-new` - full version timeline from `v1.0` to `v3.5`
+- `GET /whats-new` - full version timeline from `v1.0` to `v3.9`
 - `GET /login` - access-control login page
 - `GET /deployment-notes` - deployment and hosting boundary notes
 - `GET /audit-readiness` - audit-modelling and readiness framing
-- `GET /mealtime-chartgen` - mealtime chart module
 - `GET /restoration` - meal chart control center with grouped commit support and defect highlighting (full-access)
 - `GET /mar` - medication chart (MAR) control center
 - `GET /audit-engine` - KPI trends and AI gap-report generation (full-access only)
