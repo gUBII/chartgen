@@ -1,9 +1,9 @@
 [build]
-command = "npm run build"
+command = "npx prisma generate && npm run build"
 publish = ".next"
 
 [build.environment]
 NODE_VERSION = "20"
 
 [context.production]
-command = "npm run build"
+command = "npx prisma generate && npm run build"
