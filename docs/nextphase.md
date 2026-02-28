@@ -40,11 +40,11 @@ Completed work is explicitly deprecated from future planning.
 
 | ID | Work | Status | Owner |
 |---|---|---|---|
-| RS-04 | Restoration client/worker dropdown + weekday worker assignment | `LOCAL_DONE_PENDING_REVIEW` | Codex |
+| RS-04 | Restoration client/worker dropdown + weekday worker assignment | `LOCAL_DONE_PENDING_REVIEW` | Codex+Claude |
 | MC-01 | `/chartgen-core` route + catalog components | `LOCAL_DONE_PENDING_REVIEW` | Codex |
-| PF-01 | `/entry` preflight wizard | `ACTIVE` | Claude |
-| EX-01/02 | Audit explorer table/filter drill-down upgrade (replace mock table with real source) | `ACTIVE` | Claude |
-| AE-01/02/03 | Audit engine UI composition upgrades (replace alert flow + richer KPI composition) | `ACTIVE` | Claude |
+| PF-01 | `/entry` preflight wizard | `LOCAL_DONE_PENDING_REVIEW` | Claude |
+| EX-01/02 | Audit explorer table/filter drill-down upgrade (replace mock table with real source) | `LOCAL_DONE_PENDING_REVIEW` | Codex |
+| AE-01/02/03 | Audit engine UI composition upgrades (replace alert flow + richer KPI composition) | `LOCAL_DONE_PENDING_REVIEW` | Claude |
 | PL-01 | Remove remaining `window.alert` UX from live pages | `LOCAL_DONE_PENDING_REVIEW` | Codex |
 | PL-03 | Full E2E/UAT flow consolidation (single batched release gate) | `ACTIVE` | Codex |
 
@@ -63,7 +63,16 @@ Completed work is explicitly deprecated from future planning.
 
 ### Claude Dispatches
 
-- Pending next batch dispatch for `PF-01`, `AE-01`, `AE-02`, `AE-03`.
+- BATCH4 complete: `PF-01`, `AE-01`, `AE-02`, `AE-03` — `LOCAL_DONE_PENDING_REVIEW`.
+- RS-04 hardening: weekday map inline validation added — `LOCAL_DONE_PENDING_REVIEW`.
+
+### RS-04 UAT Evidence (2026-03-01)
+
+- Client dropdown: populated from `/api/admin/participants`, uses `fullName` field, auto-selects first participant.
+- Worker dropdown (Default + Reviewer): populated from `/api/admin/staff`, auto-selects SUPERVISOR for reviewer and SUPPORT_WORKER for default worker.
+- Weekday assignment: 7-day grid in `<details>` collapsible; each day falls back to default worker if empty.
+- Payload validation: `onGenerate` checks all non-empty `workerScheduleByDow` entries against known `staffOptions` IDs; inline error shown (no alert) if any DOW references an invalid staffId.
+- Payload shape: `workerScheduleByDow` filtered to non-empty values before POST to `/api/engine/preview` — unchanged from Codex RS-04 implementation.
 
 ### Gemini Dispatches
 

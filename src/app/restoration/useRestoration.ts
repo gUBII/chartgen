@@ -153,6 +153,15 @@ export function useRestoration() {
       return;
     }
 
+    const validStaffIds = new Set(staffOptions.map((s) => s.id));
+    const invalidDows = Object.entries(workerScheduleByDow)
+      .filter(([, staffId]) => staffId && !validStaffIds.has(staffId))
+      .map(([dow]) => dow);
+    if (invalidDows.length > 0) {
+      setErrorText(`Weekday worker assignment has invalid staff for day(s): ${invalidDows.join(", ")}. Please re-select.`);
+      return;
+    }
+
     setErrorText("");
     setStatusText("Generating preview batch...");
     setLoadingGenerate(true);
