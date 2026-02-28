@@ -35,16 +35,19 @@ function NavLink({
   label,
   active,
   restricted,
+  onClick,
 }: {
   href: string;
   label: string;
   active: boolean;
   restricted: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={restricted ? "/login" : href}
       aria-disabled={restricted}
+      onClick={onClick}
       className={`tab-link ${active ? "tab-link-active" : ""} ${restricted ? "tab-link-login-required" : ""}`}
     >
       <span className="tab-dot" aria-hidden />
@@ -70,14 +73,7 @@ function NavDropdown({
   restrictedView: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [trackedPath, setTrackedPath] = useState(pathname);
   const ref = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on route change
-  if (trackedPath !== pathname) {
-    setTrackedPath(pathname);
-    if (open) setOpen(false);
-  }
 
   useEffect(() => {
     if (!open) return;
@@ -133,6 +129,7 @@ function NavDropdown({
               <Link
                 key={item.href}
                 href={restricted ? "/login" : item.href}
+                onClick={() => setOpen(false)}
                 className={`block px-4 py-2 text-xs transition ${
                   active
                     ? "text-cyan-100 bg-cyan-400/10"
@@ -215,13 +212,6 @@ function MobileNavDrawer({
   onClose: () => void;
 }) {
   const drawerRef = useRef<HTMLDivElement>(null);
-  const [trackedPath, setTrackedPath] = useState(pathname);
-
-  // Close drawer on route change
-  if (trackedPath !== pathname) {
-    setTrackedPath(pathname);
-    if (open) onClose();
-  }
 
   useEffect(() => {
     if (!open) return;
@@ -251,6 +241,7 @@ function MobileNavDrawer({
               label={item.label}
               active={active}
               restricted={!!restricted}
+              onClick={onClose}
             />
           );
         })}
