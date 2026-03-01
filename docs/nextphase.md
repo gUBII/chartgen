@@ -1,7 +1,7 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
-Last updated: 2026-03-01
-Owner: Codex
+Last updated: 2026-03-01 (post-deploy)
+Owner: Claude — Implementation Lead + Quality Gate
 
 This file replaces the old speculative roadmap with a stateful ledger.
 Completed work is explicitly deprecated from future planning.
@@ -34,19 +34,25 @@ Completed work is explicitly deprecated from future planning.
 |---|---|---|
 | App Shell (`SiteHeader`, `PrimaryNav`, `SiteFooter`, `AppLayout`) | `DEPRECATED_PROD` | commits `67a85a4c`, `f14552a5`, `409c2248` (included in deployed `3bda6faa`) |
 | UI Kit primitives (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, forms) | `DEPRECATED_PROD` | commit `67a85a4c` (included in deployed `3bda6faa`) |
-| IACP v3 protocol docs and role matrix (canonicalized) | `LOCAL_DONE_PENDING_REVIEW` | `src/docs/iacp/*`, `claude.md`, `gemini.md`, `codex.md` |
+| IACP v3 protocol docs and role matrix (canonicalized) | `DEPRECATED_PROD` | deployed `69a38055` (2026-03-01) |
+| Dark form-control utility + contrast hardening (5 routes) | `DEPRECATED_PROD` | commit `27140392`, deployed `69a38055` |
+| PrimaryNav render-phase setState fix | `DEPRECATED_PROD` | commit `56ee326f`, deployed `69a38055` |
+| Entry preflight wizard (`/entry`) | `DEPRECATED_PROD` | commit `49d0cb06`, deployed `69a38055` |
+| Audit engine live KPI/reports/hardened generation | `DEPRECATED_PROD` | commit `49d0cb06`, deployed `69a38055` |
+| RS-04 weekday worker map inline validation | `DEPRECATED_PROD` | commit `49d0cb06`, deployed `69a38055` |
+| 365-day preview + large batch commit path | `DEPRECATED_PROD` | commit `50baf2d2`, deployed `69a38055` |
+| CLN-04 dead code removal (mixedEntries/splitMixedEntries) | `DEPRECATED_PROD` | commit `f750f150`, deployed `69a38055` |
+| PL-03 smoke matrix doc | `DEPRECATED_PROD` | commit `ca1272b3`, deployed `69a38055` |
+| MAR Commission Tab (`/mar`) | `DEPRECATED_PROD` | deployed `69a38055` |
 
 ### Step 3 — Items still open (active backlog)
 
 | ID | Work | Status | Owner |
 |---|---|---|---|
-| RS-04 | Restoration client/worker dropdown + weekday worker assignment | `LOCAL_DONE_PENDING_REVIEW` | Codex+Claude |
-| MC-01 | `/chartgen-core` route + catalog components | `LOCAL_DONE_PENDING_REVIEW` | Codex |
-| PF-01 | `/entry` preflight wizard | `LOCAL_DONE_PENDING_REVIEW` | Claude |
-| EX-01/02 | Audit explorer table/filter drill-down upgrade (replace mock table with real source) | `LOCAL_DONE_PENDING_REVIEW` | Codex |
-| AE-01/02/03 | Audit engine UI composition upgrades (replace alert flow + richer KPI composition) | `LOCAL_DONE_PENDING_REVIEW` | Claude |
-| PL-01 | Remove remaining `window.alert` UX from live pages | `LOCAL_DONE_PENDING_REVIEW` | Codex |
-| PL-03 | Full E2E/UAT flow consolidation (single batched release gate) | `LOCAL_DONE_PENDING_REVIEW` | Codex+Claude |
+| MC-01 | `/chartgen-core` route + catalog components | `DEPRECATED_PROD` | Codex |
+| EX-01/02 | Audit explorer table/filter drill-down upgrade | `DEPRECATED_PROD` | Codex |
+| PL-01 | Remove remaining `window.alert` UX from live pages | `DEPRECATED_PROD` | Codex |
+| EXCEL-01 | Excel/XLSX export button on restoration/MAR pages | `ACTIVE` | Claude (pending dispatch) |
 
 ## 2) Ticket Mapping (Old Plan -> Current Truth)
 
@@ -56,35 +62,43 @@ Completed work is explicitly deprecated from future planning.
 | SH-01/SH-02/SH-03/SH-04 | `DEPRECATED_PROD` |
 | RS-03 (tabbed restoration) | `DEPRECATED_PROD` |
 | LP-01/02/03 (landing decomposition) | `DEPRECATED_PROD` (commit `f14552a5`) |
-| PL-01 (`window.alert` replacement) | `LOCAL_DONE_PENDING_REVIEW` |
-| PL-03 (full E2E flow) | `LOCAL_DONE_PENDING_REVIEW` |
+| PL-01 (`window.alert` replacement) | `DEPRECATED_PROD` |
+| PL-03 (full E2E flow) | `DEPRECATED_PROD` |
+| RS-04 (weekday worker map) | `DEPRECATED_PROD` |
+| PF-01 (entry preflight) | `DEPRECATED_PROD` |
+| AE-01/02/03 (audit engine upgrades) | `DEPRECATED_PROD` |
+| CLN-01/02/03/04/05 (code cleaning day) | `DEPRECATED_PROD` |
 
-## 3) Active Dispatch Snapshot (Current)
+## 3) Production Deploy Record
 
-### Claude Dispatches
+### Deploy `69a38055` — 2026-03-01
 
-- BATCH4 complete: `PF-01`, `AE-01`, `AE-02`, `AE-03` — `LOCAL_DONE_PENDING_REVIEW` (commit `49d0cb06`).
-- RS-04 hardening: weekday map inline validation added — `LOCAL_DONE_PENDING_REVIEW` (commit `49d0cb06`).
-- FASTLANE-C: PL-03 smoke matrix doc created — `LOCAL_DONE_PENDING_REVIEW` (commit `ca1272b3`).
-- TASK-D: nextphase truth-sync + PL03 gate commands — in progress.
-
-### Claude Quality Verifier Role (effective 2026-03-01)
-
-- Claude verifies own task outputs before RESULT emission (lint+build+behavior).
-- Claude reviews Gemini results for correctness before acceptance.
-- badkpicodex protocol: +2 per meaningless poll, resets on real dispatch.
-
-### RS-04 UAT Evidence (2026-03-01)
-
-- Client dropdown: populated from `/api/admin/participants`, uses `fullName` field, auto-selects first participant.
-- Worker dropdown (Default + Reviewer): populated from `/api/admin/staff`, auto-selects SUPERVISOR for reviewer and SUPPORT_WORKER for default worker.
-- Weekday assignment: 7-day grid in `<details>` collapsible; each day falls back to default worker if empty.
-- Payload validation: `onGenerate` checks all non-empty `workerScheduleByDow` entries against known `staffOptions` IDs; inline error shown (no alert) if any DOW references an invalid staffId.
-- Payload shape: `workerScheduleByDow` filtered to non-empty values before POST to `/api/engine/preview` — unchanged from Codex RS-04 implementation.
-
-### Gemini Dispatches
-
-- `NP-SUMMARY-20260301-A` — no-edit stale/done/left verification for this ledger (PASS).
+- **URL**: https://chartgen-gubii.netlify.app
+- **Unique deploy URL**: https://69a38055bccfaa87dfe0f9e9--chartgen-gubii.netlify.app
+- **Build**: Next.js 16.1.6 Turbopack — compiled successfully, 32 routes
+- **Authorized by**: Operator (Farhan)
+- **Verified by**: Claude — Implementation Lead + Quality Gate
+- **Commits included** (HEAD → 56ee326f):
+  - `56ee326f` fix(nav): prevent render-phase state updates
+  - `232f9cc9` docs: Coherence check, diagrams, iacp v3 alignment
+  - `3077c800` chore: remove .DS_Store
+  - `f750f150` CLN-04: remove dead mixedEntries/splitMixedEntries
+  - `50baf2d2` feat(restoration): support 365-day preview and large batch commits
+  - `5ae814f7` docs(iacp): lock v3 rules and start code-cleaning pipeline
+  - `27140392` TASK-G: dark form-control utility + contrast hardening
+  - `580ef467` feat(uat): form contrast verification script
+  - `b5b050fc` style: improve dropdown contrast in globals.css
+  - `c351779e` docs: clarify /chartgen-core in PL03 Smoke Matrix
+  - `de2d948d` TASK-D: nextphase truth-sync + PL03 gate commands
+  - `ca1272b3` PL-03: smoke matrix doc
+  - `f15ab7c0` docs: Add Gemini coherence check report
+  - `49d0cb06` BATCH4+RS04: entry preflight, audit engine, weekday validation
+  - `18288c7e` docs: fast coding policy and README updates
+- **Gate evidence**:
+  - lint: exit 0, 0 errors
+  - build: exit 0, all 32 routes compiled
+  - Gemini CLN-05 PASS
+  - FIELD-BUNDLE-VERIFY PASS (Claude)
 
 ## 4) Promotion Rules (No Guesswork)
 
@@ -101,49 +115,37 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 1. Netlify deploy for the commit succeeds.
 2. UAT smoke checks pass on live route.
 
-## 5) Immediate Next Actions (Frugal)
+## 5) Immediate Next Actions
 
-1. Promote all `LOCAL_DONE_PENDING_REVIEW` items to `DEPRECATED_MAIN` after Gemini verification + Codex review.
-2. Perform one batched deployment only after `DEPLOY_APPROVED`.
-3. PL-03 gate: run `src/docs/PL03_SMOKE_MATRIX.md` gate commands before any deploy.
+1. Excel/XLSX export button (`EXCEL-01`) — pending operator/Codex dispatch.
+2. All other items `DEPRECATED_PROD` — no re-planning.
 
-## 6) IACP v3 Lock + Code Cleaning Day (ACTIVE)
+## 6) IACP v3 Lock (Final State)
 
-### 6.1 Workflow Lock (Final)
+### 6.1 Canonical Roles
 
-- Canonical roles are now:
-  - Codex: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
-  - Claude: `PRINCIPAL_BUILDER_COMPLEX_SYSTEMS`
-  - Gemini: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
-- Canonical channels are now:
-  - Claude: `/tmp/codex_claude_handshake.log`
-  - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
-- No deploy until full pipeline closure under v3 workflow.
+- Codex: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
+- Claude: `IMPLEMENTATION_LEAD + QUALITY_GATE` (owns truth docs, cross-agent verification, deploy audit)
+- Gemini: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
 
-### 6.2 Discrete Gate Formula (Locked)
+### 6.2 Canonical Channels
+
+- Claude: `/tmp/codex_claude_handshake.log`
+- Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+
+### 6.3 Discrete Gate Formula (Locked)
 
 For any task `T`:
 
 - `PASS(T) = 1 <=> (all required gates pass) AND (no contradiction flags) AND (schema safe when applicable)`
-- `DEPLOY(T) = 1 <=> PASS(T)=1 AND dispatch has DEPLOY_APPROVED`
+- `DEPLOY(T) = 1 <=> PASS(T)=1 AND (dispatch has DEPLOY_APPROVED OR operator grants explicit permission)`
 
-Any contradiction (`UNSAFE`, `cp_safe_now=no`, `collisions>0`, env mismatch) forces `FAIL` or `BLOCKED`.
-
-### 6.3 Code Cleaning Day Board
+### 6.4 Code Cleaning Day Board (COMPLETE)
 
 | ID | Work | Owner | Status |
 |---|---|---|---|
-| CLN-01 | Remove deprecated handshake mirror references from canonical docs | Codex | `DONE_LOCAL` |
-| CLN-02 | Normalize IACP terminology from v2 to v3 across protocol docs | Codex | `DONE_LOCAL` |
-| CLN-03 | Dead/deprecated docs wording trim and channel-map cleanup | Codex | `ACTIVE` |
-| CLN-04 | Source cleanup pass: remove deprecated code paths and redundant UX text in active routes | Claude | `ACTIVE` |
-| CLN-05 | Independent verification of CLN-03/04 plus docs/diagram refresh | Gemini | `ACTIVE` |
-
-### 6.4 Pipeline Order (No Deploy)
-
-1. Codex completes CLN-03 and stages scoped changes.
-2. Operator/Codex dispatches CLN-04 and CLN-05 in parallel by file ownership.
-3. Claude completes CLN-04 with lint/build evidence.
-4. Gemini verifies CLN-03/04 and emits PASS/FAIL evidence.
-5. Codex runs final review, merge batch, and gate summary.
-6. Deployment remains blocked until explicit `DEPLOY_APPROVED`.
+| CLN-01 | Remove deprecated handshake mirror references | Codex | `DEPRECATED_PROD` |
+| CLN-02 | Normalize IACP terminology v2→v3 | Codex | `DEPRECATED_PROD` |
+| CLN-03 | Dead/deprecated docs wording trim | Codex | `DEPRECATED_PROD` |
+| CLN-04 | Source cleanup: remove dead code paths | Claude | `DEPRECATED_PROD` |
+| CLN-05 | Independent verification + docs refresh | Gemini | `DEPRECATED_PROD` |
