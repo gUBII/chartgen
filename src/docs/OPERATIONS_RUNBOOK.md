@@ -258,7 +258,7 @@ Protocol docs:
 
 Runtime logs:
 
-- `/tmp/codex_claude_handshake.log`
+- `/Users/moofasa/chartgen/handoff/claude_handshake.log`
 - `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
 Standard message format:
@@ -274,9 +274,9 @@ RESULT [UUID]
 Quick check commands:
 
 ```bash
-tail -n 80 /tmp/codex_claude_handshake.log
+tail -n 80 /Users/moofasa/chartgen/handoff/claude_handshake.log
 tail -n 80 /Users/moofasa/chartgen/handoff/gemini_handshake.md
-rg -n "INSTRUCTION|RESULT|DIGEST" /tmp/codex_claude_handshake.log
+rg -n "INSTRUCTION|RESULT|DIGEST" /Users/moofasa/chartgen/handoff/claude_handshake.log
 rg -n "INSTRUCTION|RESULT|DIGEST" /Users/moofasa/chartgen/handoff/gemini_handshake.md
 ```
 
