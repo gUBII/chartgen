@@ -1,15 +1,34 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { prisma } from "../../../../lib/prisma";
+import { mapPrismaApiError } from "../../../../lib/prisma-api-errors";
+import { findMissingTables } from "../../../../lib/schema-readiness";
 
 export const runtime = "nodejs";
 
 const ALLOWED_COMMIT_ROLES = new Set(["SUPERVISOR", "CLINICAL_LEAD"]);
 const COMMITTED_STATUS = "APPROVED";
 const CREATE_MANY_CHUNK_SIZE = 500;
-const TX_MAX_WAIT_MS = 20_000;
-const TX_TIMEOUT_MS = 180_000;
+const LEGACY_REQUIRED_TABLES = [
+  "Staff",
+  "Participant",
+  "RestorationBatch",
+  "RestoredMealCandidate",
+  "RestoredMARCandidate",
+  "MealLog",
+  "MARLog",
+  "AuditEvent",
+] as const;
+
+const parsePositiveInt = (raw: string | undefined, fallback: number): number => {
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+};
+
+const TX_MAX_WAIT_MS = parsePositiveInt(process.env.COMMIT_TX_MAX_WAIT_MS, 30_000);
+const TX_TIMEOUT_MS = parsePositiveInt(process.env.COMMIT_TX_TIMEOUT_MS, 300_000);
 
 type LegacyCommitRequestBody = {
   batchId?: string;
@@ -98,6 +117,7 @@ const ensureRequiredModels = (tx: DynamicTx): void => {
     "staff",
     "restorationBatch",
     "restoredMealCandidate",
+    "restoredMARCandidate",
     "mealLog",
     "auditEvent",
   ];
@@ -111,6 +131,18 @@ const ensureRequiredModels = (tx: DynamicTx): void => {
       {
         missingModels,
         hint: "Generate Prisma client from prisma/schema.audit-ready.prisma before using this endpoint.",
+      }
+    );
+  }
+
+  const legacyMarModel = tx.mARLog ?? tx.marLog;
+  if (typeof legacyMarModel !== "object") {
+    throw new CommitApiError(
+      500,
+      "SCHEMA_NOT_READY",
+      "Prisma client does not expose MARLog model required for legacy commit path.",
+      {
+        missingModels: ["mARLog|marLog"],
       }
     );
   }
@@ -270,18 +302,16 @@ const normalizeBristolScore = (value: unknown): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const commitGroupedLogs = async (body: CommitRequestBody) => {
-  const {
-    marLogs = [],
-    mealLogs = [],
-    sleepLogs = [],
-    bglLogs = [],
-    bowelLogs = [],
-    hygieneLogs = [],
-    communityLogs = [],
-    repositionLogs = [],
-  } = parseGroupedBody(body);
-
+const commitGroupedLogs = async ({
+  marLogs,
+  mealLogs,
+  sleepLogs,
+  bglLogs,
+  bowelLogs,
+  hygieneLogs,
+  communityLogs,
+  repositionLogs,
+}: Required<GroupedCommitRequestBody>) => {
   return prisma.$transaction(async (tx) => {
     const txAny = tx as unknown as DynamicTx;
     const marModel = txAny.mARLog ?? txAny.marLog;
@@ -293,18 +323,18 @@ const commitGroupedLogs = async (body: CommitRequestBody) => {
     const communityModel = txAny.communityAccessLog ?? txAny.communityAccessQaLog;
     const repositionModel = txAny.repositioningLog ?? txAny.repositioningQaLog;
 
-    const groupedModelChecks: Array<{ name: string; model: any }> = [
-      { name: "MARLog", model: marModel },
-      { name: "MealLog", model: mealModel },
-      { name: "SleepSettlingLog", model: sleepModel },
-      { name: "BglDiabetesLog", model: bglModel },
-      { name: "BowelFluidLog", model: bowelModel },
-      { name: "HygieneLog", model: hygieneModel },
-      { name: "CommunityAccessQaLog", model: communityModel },
-      { name: "RepositioningQaLog", model: repositionModel },
+    const groupedModelChecks: Array<{ name: string; model: any; required: boolean }> = [
+      { name: "MARLog", model: marModel, required: marLogs.length > 0 },
+      { name: "MealLog", model: mealModel, required: mealLogs.length > 0 },
+      { name: "SleepSettlingLog", model: sleepModel, required: sleepLogs.length > 0 },
+      { name: "BglDiabetesLog", model: bglModel, required: bglLogs.length > 0 },
+      { name: "BowelFluidLog", model: bowelModel, required: bowelLogs.length > 0 },
+      { name: "HygieneLog", model: hygieneModel, required: hygieneLogs.length > 0 },
+      { name: "CommunityAccessQaLog", model: communityModel, required: communityLogs.length > 0 },
+      { name: "RepositioningQaLog", model: repositionModel, required: repositionLogs.length > 0 },
     ];
     const missingGroupedModels = groupedModelChecks
-      .filter((item) => typeof item.model?.createMany !== "function")
+      .filter((item) => item.required && typeof item.model?.createMany !== "function")
       .map((item) => item.name);
 
     if (missingGroupedModels.length > 0) {
@@ -486,8 +516,39 @@ export async function POST(request: NextRequest) {
     const body = await parseJsonBody(request);
 
     if (hasGroupedPayload(body)) {
-      const groupedResult = await commitGroupedLogs(body);
+      const groupedBody = parseGroupedBody(body);
+      const groupedRequiredTables: string[] = ["Staff", "Participant"];
+      if (groupedBody.marLogs.length > 0) groupedRequiredTables.push("MARLog");
+      if (groupedBody.mealLogs.length > 0) groupedRequiredTables.push("MealLog");
+      if (groupedBody.sleepLogs.length > 0) groupedRequiredTables.push("SleepSettlingLog");
+      if (groupedBody.bglLogs.length > 0) groupedRequiredTables.push("BglDiabetesLog");
+      if (groupedBody.bowelLogs.length > 0) groupedRequiredTables.push("BowelFluidLog");
+      if (groupedBody.hygieneLogs.length > 0) groupedRequiredTables.push("HygieneLog");
+      if (groupedBody.communityLogs.length > 0) groupedRequiredTables.push("CommunityAccessQaLog");
+      if (groupedBody.repositionLogs.length > 0) groupedRequiredTables.push("RepositioningQaLog");
+
+      const missingGroupedTables = await findMissingTables(prisma, groupedRequiredTables);
+      if (missingGroupedTables.length > 0) {
+        throw new CommitApiError(
+          503,
+          "SCHEMA_NOT_READY",
+          "Database schema is missing required grouped commit tables.",
+          { missingTables: missingGroupedTables }
+        );
+      }
+
+      const groupedResult = await commitGroupedLogs(groupedBody);
       return NextResponse.json({ ok: true, data: groupedResult }, { status: 200 });
+    }
+
+    const missingLegacyTables = await findMissingTables(prisma, [...LEGACY_REQUIRED_TABLES]);
+    if (missingLegacyTables.length > 0) {
+      throw new CommitApiError(
+        503,
+        "SCHEMA_NOT_READY",
+        "Database schema is missing required legacy commit tables.",
+        { missingTables: missingLegacyTables }
+      );
     }
 
     const { batchId, actorStaffId } = parseLegacyBody(body);
@@ -522,15 +583,21 @@ export async function POST(request: NextRequest) {
         },
       });
       const legacyMarModel = txAny.mARLog ?? txAny.marLog;
+      if (typeof legacyMarModel?.count !== "function" || typeof legacyMarModel?.create !== "function") {
+        throw new CommitApiError(
+          500,
+          "SCHEMA_NOT_READY",
+          "MARLog model is not writable in current Prisma client.",
+          { missingModels: ["mARLog|marLog"] }
+        );
+      }
       const existingMarCommittedCount =
-        typeof legacyMarModel?.count === "function"
-          ? await legacyMarModel.count({
-              where: {
-                restorationBatchId: batchId,
-                source: "RESTORED_APPROVED",
-              },
-            })
-          : 0;
+        await legacyMarModel.count({
+          where: {
+            restorationBatchId: batchId,
+            source: "RESTORED_APPROVED",
+          },
+        });
 
       if (existingMealCommittedCount > 0 || existingMarCommittedCount > 0) {
         throw new CommitApiError(409, "BATCH_ALREADY_COMMITTED", "This batch has already been committed.");
@@ -617,26 +684,24 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      if (typeof legacyMarModel?.create === "function") {
-        for (const candidate of approvedMarCandidates) {
-          await legacyMarModel.create({
-            data: {
-              participantId: candidate.participantId,
-              createdByStaffId: candidate.generatedByStaffId,
-              approvedByStaffId: actorStaffId,
-              restorationBatchId: batchId,
-              source: "RESTORED_APPROVED",
-              scheduledAdminTime: candidate.scheduledAdminTime,
-              actualAdminTime: candidate.actualAdminTime,
-              medicationName: candidate.medicationName,
-              dosage: candidate.dosage,
-              route: candidate.route,
-              status: candidate.status,
-              omissionReason: candidate.omissionReason,
-              provenanceHash: candidate.provenanceHash,
-            },
-          });
-        }
+      for (const candidate of approvedMarCandidates) {
+        await legacyMarModel.create({
+          data: {
+            participantId: candidate.participantId,
+            createdByStaffId: candidate.generatedByStaffId,
+            approvedByStaffId: actorStaffId,
+            restorationBatchId: batchId,
+            source: "RESTORED_APPROVED",
+            scheduledAdminTime: candidate.scheduledAdminTime,
+            actualAdminTime: candidate.actualAdminTime,
+            medicationName: candidate.medicationName,
+            dosage: candidate.dosage,
+            route: candidate.route,
+            status: candidate.status,
+            omissionReason: candidate.omissionReason,
+            provenanceHash: candidate.provenanceHash,
+          },
+        });
       }
 
       const batchStatus = await updateBatchAsCommitted(txAny, batchId, actorStaffId, now);
@@ -694,16 +759,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error instanceof Prisma.PrismaClientInitializationError) {
+    const prismaError = mapPrismaApiError(error);
+    if (prismaError) {
       return NextResponse.json(
         {
           ok: false,
           error: {
-            code: "DATABASE_UNAVAILABLE",
-            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+            code: prismaError.code,
+            message: prismaError.message,
+            details: prismaError.details ?? null,
           },
         },
-        { status: 503 }
+        { status: prismaError.status }
       );
     }
 

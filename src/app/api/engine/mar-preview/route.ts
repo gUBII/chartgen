@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { mapPrismaApiError } from "../../../../lib/prisma-api-errors";
+import { findMissingTables } from "../../../../lib/schema-readiness";
 import { RestorationEngine } from "../../../../services/restoration/restorationEngine";
 import { deriveParticipantBaselines } from "../../../../services/restoration/personalizationEngine";
 
@@ -10,6 +11,18 @@ export const runtime = "nodejs";
 const MAX_PREVIEW_DAYS = 365;
 const MAX_MEDICATIONS = 24;
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const MAR_PREVIEW_REQUIRED_TABLES = [
+  "Staff",
+  "Participant",
+  "RestorationBatch",
+  "RestoredMARCandidate",
+] as const;
+
+const MAR_PREVIEW_PATCH_REQUIRED_TABLES = [
+  "Staff",
+  "RestorationBatch",
+  "RestoredMARCandidate",
+] as const;
 
 type MARPreviewRequestBody = {
   participantId?: string;
@@ -189,6 +202,16 @@ const makeScheduledAdminTime = (baseDay: Date, hour: number, minute: number): Da
 
 export async function POST(request: NextRequest) {
   try {
+    const missingTables = await findMissingTables(prisma, [...MAR_PREVIEW_REQUIRED_TABLES]);
+    if (missingTables.length > 0) {
+      throw new MARPreviewApiError(
+        503,
+        "SCHEMA_NOT_READY",
+        "Database schema is missing required tables for MAR preview generation.",
+        { missingTables }
+      );
+    }
+
     let body: MARPreviewRequestBody;
     try {
       body = (await request.json()) as MARPreviewRequestBody;
@@ -421,16 +444,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error instanceof Prisma.PrismaClientInitializationError) {
+    const prismaError = mapPrismaApiError(error);
+    if (prismaError) {
       return NextResponse.json(
         {
           ok: false,
           error: {
-            code: "DATABASE_UNAVAILABLE",
-            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+            code: prismaError.code,
+            message: prismaError.message,
+            details: prismaError.details ?? null,
           },
         },
-        { status: 503 }
+        { status: prismaError.status }
       );
     }
 
@@ -458,6 +483,16 @@ type MARPatchRequestBody = {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const missingTables = await findMissingTables(prisma, [...MAR_PREVIEW_PATCH_REQUIRED_TABLES]);
+    if (missingTables.length > 0) {
+      throw new MARPreviewApiError(
+        503,
+        "SCHEMA_NOT_READY",
+        "Database schema is missing required tables for MAR preview updates.",
+        { missingTables }
+      );
+    }
+
     let body: MARPatchRequestBody;
     try {
       body = (await request.json()) as MARPatchRequestBody;
@@ -640,16 +675,18 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (error instanceof Prisma.PrismaClientInitializationError) {
+    const prismaError = mapPrismaApiError(error);
+    if (prismaError) {
       return NextResponse.json(
         {
           ok: false,
           error: {
-            code: "DATABASE_UNAVAILABLE",
-            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+            code: prismaError.code,
+            message: prismaError.message,
+            details: prismaError.details ?? null,
           },
         },
-        { status: 503 }
+        { status: prismaError.status }
       );
     }
 

@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
-import { MealType, Prisma } from "@prisma/client";
+import { MealType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { mapPrismaApiError } from "../../../../lib/prisma-api-errors";
+import { findMissingTables } from "../../../../lib/schema-readiness";
 import { RestorationEngine } from "../../../../services/restoration/restorationEngine";
 import { deriveParticipantBaselines } from "../../../../services/restoration/personalizationEngine";
 
@@ -10,6 +12,19 @@ export const runtime = "nodejs";
 const MAX_PREVIEW_DAYS = 365;
 const MAX_MEDICATION_TEMPLATES = 24;
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const PREVIEW_REQUIRED_TABLES = [
+  "Staff",
+  "Participant",
+  "RestorationBatch",
+  "RestoredMealCandidate",
+  "RestoredMARCandidate",
+] as const;
+
+const PREVIEW_PATCH_REQUIRED_TABLES = [
+  "Staff",
+  "RestorationBatch",
+  "RestoredMealCandidate",
+] as const;
 
 type MedicationTemplate = {
   name: string;
@@ -292,6 +307,16 @@ const parseWorkerSchedule = (value: unknown): Record<number, string> => {
 
 export async function POST(request: NextRequest) {
   try {
+    const missingTables = await findMissingTables(prisma, [...PREVIEW_REQUIRED_TABLES]);
+    if (missingTables.length > 0) {
+      throw new PreviewApiError(
+        503,
+        "SCHEMA_NOT_READY",
+        "Database schema is missing required tables for preview generation.",
+        { missingTables }
+      );
+    }
+
     let body: PreviewRequestBody;
     try {
       body = (await request.json()) as PreviewRequestBody;
@@ -687,16 +712,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error instanceof Prisma.PrismaClientInitializationError) {
+    const prismaError = mapPrismaApiError(error);
+    if (prismaError) {
       return NextResponse.json(
         {
           ok: false,
           error: {
-            code: "DATABASE_UNAVAILABLE",
-            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+            code: prismaError.code,
+            message: prismaError.message,
+            details: prismaError.details ?? null,
           },
         },
-        { status: 503 }
+        { status: prismaError.status }
       );
     }
 
@@ -724,6 +751,16 @@ type PatchRequestBody = {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const missingTables = await findMissingTables(prisma, [...PREVIEW_PATCH_REQUIRED_TABLES]);
+    if (missingTables.length > 0) {
+      throw new PreviewApiError(
+        503,
+        "SCHEMA_NOT_READY",
+        "Database schema is missing required tables for preview updates.",
+        { missingTables }
+      );
+    }
+
     let body: PatchRequestBody;
     try {
       body = (await request.json()) as PatchRequestBody;
@@ -904,16 +941,18 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (error instanceof Prisma.PrismaClientInitializationError) {
+    const prismaError = mapPrismaApiError(error);
+    if (prismaError) {
       return NextResponse.json(
         {
           ok: false,
           error: {
-            code: "DATABASE_UNAVAILABLE",
-            message: "Database is not reachable. Check DATABASE_URL and database service state.",
+            code: prismaError.code,
+            message: prismaError.message,
+            details: prismaError.details ?? null,
           },
         },
-        { status: 503 }
+        { status: prismaError.status }
       );
     }
 
