@@ -2,7 +2,7 @@
 
 ## Canonical Handshake Channels
 
-- Claude: `/tmp/codex_claude_handshake.log`
+- Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
 - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
 Only these paths are canonical.

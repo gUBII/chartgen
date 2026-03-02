@@ -48,7 +48,7 @@ Required Netlify Environment Keys
 - NODE_VERSION
 
 Claude Handshake Channel
-- /tmp/codex_claude_handshake.log
+- /Users/moofasa/chartgen/handoff/claude_handshake.log
 
 Gemini Handshake Channel
-- handoff/gemini_handshake.log
+- handoff/gemini_handshake.md

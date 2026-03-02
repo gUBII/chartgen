@@ -254,6 +254,13 @@ This creates:
 
 ---
 
+## Canonical Handshake Channels
+
+- **Claude:** `/Users/moofasa/chartgen/handoff/claude_handshake.log`
+- **Gemini:** `handoff/gemini_handshake.md`
+
+---
+
 ## Next Steps (v3.9)
 
 - [ ] Add integration tests for admin CRUD and unified preview API parity.
