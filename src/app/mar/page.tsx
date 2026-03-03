@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 
 type MARStatus = "ADMINISTERED" | "REFUSED" | "HELD";
 
@@ -130,6 +131,7 @@ export default function MARPage() {
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [loadingXlsx, setLoadingXlsx] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
 
   const copyBatchId = async () => {
@@ -302,6 +304,41 @@ export default function MARPage() {
       setStatusText("Commit failed.");
     } finally {
       setLoadingCommit(false);
+    }
+  };
+
+  const onDownloadXlsx = () => {
+    if (!batchId) {
+      setErrorText("No batch to export. Generate MAR preview first.");
+      return;
+    }
+
+    setErrorText("");
+    setStatusText("Generating XLSX...");
+    setLoadingXlsx(true);
+
+    try {
+      const wb = XLSX.utils.book_new();
+      const marData = rows.map((r) => ({
+        "Scheduled Time": r.scheduledAdminTime,
+        "Actual Time": r.actualAdminTime,
+        Medication: r.medicationName,
+        Dosage: r.dosage,
+        Route: r.route,
+        Status: r.status,
+        "Omission Reason": r.omissionReason ?? "",
+        "Status Comment": r.statusComment ?? "",
+        "Status Review": r.statusReview,
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(marData), "MAR Candidates");
+      const filename = `mar-batch-${batchId}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      setStatusText(`XLSX downloaded: ${filename}`);
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : "Failed to generate XLSX.");
+      setStatusText("XLSX export failed.");
+    } finally {
+      setLoadingXlsx(false);
     }
   };
 
@@ -694,6 +731,14 @@ export default function MARPage() {
           disabled={loadingPdf || !batchId || rows.length === 0}
         >
           {loadingPdf ? "Downloading..." : "Download PDF"}
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-emerald-500 px-4 py-2 text-emerald-300 disabled:opacity-50"
+          onClick={onDownloadXlsx}
+          disabled={loadingXlsx || !batchId || rows.length === 0}
+        >
+          {loadingXlsx ? "Preparing XLSX..." : "Download XLSX"}
         </button>
         <button
           type="button"

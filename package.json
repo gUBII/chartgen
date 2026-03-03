@@ -10,6 +10,7 @@
     "db:health:trend": "node scripts/db-health-trend.mjs",
     "db:stress": "node scripts/stress-db.mjs",
     "db:cleanup:uat": "node scripts/cleanup-uat-data.mjs",
+    "env:check:remote-db": "node scripts/check-remote-db-host.mjs",
     "dev": "next dev",
     "build": "next build",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -40,7 +41,8 @@
     "next": "^16.1.6",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.0",

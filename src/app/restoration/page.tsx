@@ -87,15 +87,25 @@ export default function RestorationPage() {
       </section>
 
       <section className="mt-6 flex items-center justify-between">
-        <button
-          type="button"
-          className="rounded-md border border-slate-300 px-4 py-2 text-slate-100 disabled:opacity-50"
-          onClick={state.onDownloadPdf}
-          disabled={state.loadingPdf || state.rows.length === 0 || !state.batchId || state.hasDirtyRows}
-          title={state.hasDirtyRows ? "Save edited rows before exporting PDF." : undefined}
-        >
-          {state.loadingPdf ? "Preparing PDF..." : "Download PDF"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 px-4 py-2 text-slate-100 disabled:opacity-50"
+            onClick={state.onDownloadPdf}
+            disabled={state.loadingPdf || state.rows.length === 0 || !state.batchId || state.hasDirtyRows}
+            title={state.hasDirtyRows ? "Save edited rows before exporting PDF." : undefined}
+          >
+            {state.loadingPdf ? "Preparing PDF..." : "Download PDF"}
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-emerald-500 px-4 py-2 text-emerald-300 disabled:opacity-50"
+            onClick={state.onDownloadXlsx}
+            disabled={state.loadingXlsx || !state.hasPreviewData || !state.batchId}
+          >
+            {state.loadingXlsx ? "Preparing XLSX..." : "Download XLSX"}
+          </button>
+        </div>
         <button
           type="button"
           className="rounded-md bg-green-700 px-4 py-2 text-white disabled:opacity-50"

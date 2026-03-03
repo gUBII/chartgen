@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 import type { AmountEaten } from "@prisma/client";
 import type { CandidateRow, ChartLog, ActiveTab, ParticipantOption, StaffOption } from "./types";
 import {
@@ -49,6 +50,7 @@ export function useRestoration() {
   const [errorText, setErrorText] = useState("");
   const [loadingGenerate, setLoadingGenerate] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [loadingXlsx, setLoadingXlsx] = useState(false);
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
 
@@ -461,6 +463,66 @@ export function useRestoration() {
     }
   };
 
+  const onDownloadXlsx = () => {
+    if (!batchId) {
+      setErrorText("No batch to export. Generate preview first.");
+      return;
+    }
+
+    setErrorText("");
+    setStatusText("Generating XLSX...");
+    setLoadingXlsx(true);
+
+    try {
+      const wb = XLSX.utils.book_new();
+
+      if (rows.length > 0) {
+        const mealData = rows.map((r) => ({
+          Timestamp: r.timestamp,
+          "Meal Type": r.mealType,
+          "Food Texture": r.foodTexture,
+          "Fluid Thickness": r.fluidThickness,
+          "Volume (mL)": r.volumeMl,
+          "Amount Eaten": r.amountEaten,
+          "Deviation Reason": r.deviationReason ?? "",
+          Status: r.status,
+        }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mealData), "Meal Candidates");
+      }
+
+      if (marLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(marLogs as object[]), "MAR Logs");
+      }
+      if (sleepLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sleepLogs as object[]), "Sleep Logs");
+      }
+      if (bglLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bglLogs as object[]), "BGL Logs");
+      }
+      if (bowelLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bowelLogs as object[]), "Bowel Logs");
+      }
+      if (hygieneLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(hygieneLogs as object[]), "Hygiene Logs");
+      }
+      if (communityLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(communityLogs as object[]), "Community Logs");
+      }
+      if (repositionLogs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(repositionLogs as object[]), "Reposition Logs");
+      }
+
+      const filename = `restoration-batch-${batchId}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      setStatusText(`XLSX downloaded: ${filename}`);
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : "Failed to generate XLSX.");
+      setStatusText("XLSX export failed.");
+    } finally {
+      setLoadingXlsx(false);
+    }
+  };
+
   const hasDirtyRows = rows.some((row) => row.dirty);
   const hasPreviewData =
     rows.length > 0 ||
@@ -492,9 +554,9 @@ export function useRestoration() {
     bowelLogs, hygieneLogs, communityLogs, repositionLogs,
     // UI state
     statusText, errorText,
-    loadingGenerate, loadingPdf, loadingCommit, savingRowId,
+    loadingGenerate, loadingPdf, loadingXlsx, loadingCommit, savingRowId,
     hasDirtyRows, hasPreviewData,
     // Actions
-    onGenerate, updateRow, onSaveRow, onCommit, onDownloadPdf,
+    onGenerate, updateRow, onSaveRow, onCommit, onDownloadPdf, onDownloadXlsx,
   };
 }
