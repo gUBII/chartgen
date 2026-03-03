@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import * as XLSX from "xlsx";
 import type { AmountEaten } from "@prisma/client";
-import type { CandidateRow, ChartLog, ActiveTab, ParticipantOption, StaffOption } from "./types";
+import type { CandidateRow, ChartLog, ActiveTab, ParticipantOption, StaffOption, InjectorButton } from "./types";
 import {
   toDateInput,
   toLocalDateTimeInput,
@@ -50,7 +50,22 @@ export function useRestoration() {
   const [hygieneLogs, setHygieneLogs] = useState<ChartLog[]>([]);
   const [communityLogs, setCommunityLogs] = useState<ChartLog[]>([]);
   const [repositionLogs, setRepositionLogs] = useState<ChartLog[]>([]);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("medication");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("nutrition");
+
+  // Injector buttons
+  const [injectorButtons, setInjectorButtons] = useState<InjectorButton[]>([]);
+  const [loadingInjectors, setLoadingInjectors] = useState(false);
+  const [injectorError, setInjectorError] = useState("");
+  // Create/edit form
+  const [injectorForm, setInjectorForm] = useState<{
+    id?: string;
+    label: string;
+    participantId: string;
+    staffId: string;
+    enabled: boolean;
+    rangePreset: "day" | "week_plus" | "month_plus";
+    sortOrder: number;
+  } | null>(null);
 
   const [statusText, setStatusText] = useState("Ready.");
   const [errorText, setErrorText] = useState("");
@@ -90,9 +105,10 @@ export function useRestoration() {
     const loadOptions = async () => {
       setLoadingOptions(true);
       try {
-        const [participantsRes, staffRes] = await Promise.all([
+        const [participantsRes, staffRes, injectorsRes] = await Promise.all([
           fetch("/api/admin/participants"),
           fetch("/api/admin/staff"),
+          fetch("/api/admin/injector-buttons"),
         ]);
         const participantsPayload = await parseApiPayload(participantsRes);
         const staffPayload = await parseApiPayload(staffRes);
@@ -102,6 +118,13 @@ export function useRestoration() {
         }
         if (!staffRes.ok || !staffPayload?.ok) {
           throw new Error(getErrorMessage(staffPayload?.error));
+        }
+
+        if (injectorsRes.ok) {
+          const injectorsPayload = await parseApiPayload(injectorsRes);
+          if (injectorsPayload?.buttons) {
+            if (!cancelled) setInjectorButtons(injectorsPayload.buttons as InjectorButton[]);
+          }
         }
 
         const participantRows: ParticipantOption[] = asArray(participantsPayload.data).map((row) => ({
@@ -529,6 +552,80 @@ export function useRestoration() {
     }
   };
 
+  const applyInjectorButton = (btn: InjectorButton) => {
+    const base = startDate || toDateInput(today);
+    let end = base;
+    if (btn.rangePreset === "week_plus") {
+      const d = new Date(base);
+      d.setDate(d.getDate() + 6);
+      end = toDateInput(d);
+    } else if (btn.rangePreset === "month_plus") {
+      const d = new Date(base);
+      d.setDate(d.getDate() + 29);
+      end = toDateInput(d);
+    }
+    setParticipantId(btn.participantId);
+    setDefaultWorkerStaffId(btn.staffId);
+    setStartDate(base);
+    setEndDate(end);
+    setStartTime("00:00");
+    setEndTime("23:59");
+  };
+
+  const reloadInjectors = async () => {
+    setLoadingInjectors(true);
+    setInjectorError("");
+    try {
+      const res = await fetch("/api/admin/injector-buttons");
+      const payload = await parseApiPayload(res);
+      if (res.ok && payload?.buttons) {
+        setInjectorButtons(payload.buttons as InjectorButton[]);
+      }
+    } catch {
+      setInjectorError("Failed to reload injector buttons.");
+    } finally {
+      setLoadingInjectors(false);
+    }
+  };
+
+  const saveInjectorForm = async () => {
+    if (!injectorForm) return;
+    setLoadingInjectors(true);
+    setInjectorError("");
+    try {
+      const isEdit = Boolean(injectorForm.id);
+      const res = await fetch("/api/admin/injector-buttons", {
+        method: isEdit ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(injectorForm),
+      });
+      const payload = await parseApiPayload(res);
+      if (!res.ok) {
+        throw new Error(payload?.error ?? "Save failed.");
+      }
+      setInjectorForm(null);
+      await reloadInjectors();
+    } catch (e) {
+      setInjectorError(e instanceof Error ? e.message : "Save failed.");
+    } finally {
+      setLoadingInjectors(false);
+    }
+  };
+
+  const deleteInjectorButton = async (id: string) => {
+    setLoadingInjectors(true);
+    setInjectorError("");
+    try {
+      const res = await fetch(`/api/admin/injector-buttons?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed.");
+      await reloadInjectors();
+    } catch (e) {
+      setInjectorError(e instanceof Error ? e.message : "Delete failed.");
+    } finally {
+      setLoadingInjectors(false);
+    }
+  };
+
   const hasDirtyRows = rows.some((row) => row.dirty);
   const hasPreviewData =
     rows.length > 0 ||
@@ -562,6 +659,10 @@ export function useRestoration() {
     statusText, errorText,
     loadingGenerate, loadingPdf, loadingXlsx, loadingCommit, savingRowId,
     hasDirtyRows, hasPreviewData,
+    // Injector buttons
+    injectorButtons, loadingInjectors, injectorError,
+    injectorForm, setInjectorForm,
+    applyInjectorButton, saveInjectorForm, deleteInjectorButton, reloadInjectors,
     // Actions
     onGenerate, updateRow, onSaveRow, onCommit, onDownloadPdf, onDownloadXlsx,
   };

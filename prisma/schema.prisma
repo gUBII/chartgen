@@ -93,6 +93,7 @@ model Participant {
   mealCandidates     RestoredMealCandidate[]
   marCandidates      RestoredMARCandidate[]
   auditEvents        AuditEvent[]
+  injectorButtons    InjectorButton[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,6 +126,7 @@ model Staff {
   generatedMARCandidates      RestoredMARCandidate[]  @relation("MARCandidateGeneratedBy")
   reviewedMARCandidates       RestoredMARCandidate[]  @relation("MARCandidateReviewedBy")
   auditEvents                 AuditEvent[]
+  injectorButtons             InjectorButton[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -690,4 +692,27 @@ model GapReport {
   @@index([createdAt])
   @@index([from, to])
   @@index([expiresAt])
+}
+
+enum RangePreset {
+  day
+  week_plus
+  month_plus
+}
+
+model InjectorButton {
+  id            String      @id @default(uuid())
+  label         String
+  participantId String
+  staffId       String
+  enabled       Boolean     @default(true)
+  rangePreset   RangePreset @default(day)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  participant   Participant @relation(fields: [participantId], references: [id])
+  staff         Staff       @relation(fields: [staffId], references: [id])
+
+  @@index([enabled, sortOrder])
 }

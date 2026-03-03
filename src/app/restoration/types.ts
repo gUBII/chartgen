@@ -34,7 +34,21 @@ export type StaffOption = {
   role: "SUPPORT_WORKER" | "SUPERVISOR" | "CLINICAL_LEAD" | string;
 };
 
-export type ActiveTab = "medication" | "nutrition" | "night" | "health";
+export type ActiveTab = "nutrition" | "night" | "health";
+
+export type RangePreset = "day" | "week_plus" | "month_plus";
+
+export type InjectorButton = {
+  id: string;
+  label: string;
+  participantId: string;
+  staffId: string;
+  enabled: boolean;
+  rangePreset: RangePreset;
+  sortOrder: number;
+  participant: { id: string; fullName: string };
+  staff: { id: string; displayName: string };
+};
 
 export const AMOUNT_EATEN_OPTIONS: AmountEaten[] = [
   "ZERO",
@@ -46,8 +60,13 @@ export const AMOUNT_EATEN_OPTIONS: AmountEaten[] = [
 ];
 
 export const TAB_LABELS: Array<{ id: ActiveTab; label: string }> = [
-  { id: "medication", label: "Medication (MAR)" },
   { id: "nutrition", label: "Nutrition & Bowel" },
   { id: "night", label: "Night Routine" },
   { id: "health", label: "Health & Vitals" },
 ];
+
+export const RANGE_PRESET_LABELS: Record<RangePreset, string> = {
+  day: "Day",
+  week_plus: "Week+",
+  month_plus: "Month+",
+};

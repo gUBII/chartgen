@@ -1,11 +1,11 @@
 "use client";
 
 import { Suspense } from "react";
-import { TAB_LABELS } from "./types";
+import { TAB_LABELS, RANGE_PRESET_LABELS } from "./types";
+import type { InjectorButton } from "./types";
 import { useRestoration } from "./useRestoration";
 import { GenerateForm } from "./GenerateForm";
 import { StatusBar } from "./StatusBar";
-import { MedicationTab } from "./MedicationTab";
 import { NutritionTab } from "./NutritionTab";
 import { NightTab } from "./NightTab";
 import { HealthTab } from "./HealthTab";
@@ -19,6 +19,151 @@ function RestorationPageInner() {
       <p className="mt-2 text-sm text-slate-300">
         Generate synthetic chart timelines, inspect defects, and commit grouped logs to the ledger.
       </p>
+
+      {/* Injector Buttons Panel */}
+      <section className="mt-4 rounded-md border border-slate-600 p-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="text-sm font-semibold text-slate-200">Injector Shortcuts</h2>
+          <button
+            type="button"
+            className="rounded border border-blue-500 px-3 py-1 text-xs text-blue-300 hover:bg-blue-900/30"
+            onClick={() =>
+              state.setInjectorForm({
+                label: "",
+                participantId: state.participants[0]?.id ?? "",
+                staffId: state.staffOptions[0]?.id ?? "",
+                enabled: true,
+                rangePreset: "day",
+                sortOrder: 0,
+              })
+            }
+          >
+            + Add Button
+          </button>
+        </div>
+
+        {state.injectorError ? (
+          <p className="mt-1 text-xs text-red-400">{state.injectorError}</p>
+        ) : null}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {state.injectorButtons.filter((b: InjectorButton) => b.enabled).map((btn: InjectorButton) => (
+            <div key={btn.id} className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => state.applyInjectorButton(btn)}
+                className="rounded-md border border-slate-500 bg-slate-800 px-3 py-1.5 text-xs text-slate-100 hover:bg-slate-700"
+                title={`${btn.participant.fullName} / ${btn.staff.displayName} / ${RANGE_PRESET_LABELS[btn.rangePreset]}`}
+              >
+                {btn.label}
+                <span className="ml-1 text-slate-400">({RANGE_PRESET_LABELS[btn.rangePreset]})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  state.setInjectorForm({
+                    id: btn.id,
+                    label: btn.label,
+                    participantId: btn.participantId,
+                    staffId: btn.staffId,
+                    enabled: btn.enabled,
+                    rangePreset: btn.rangePreset,
+                    sortOrder: btn.sortOrder,
+                  })
+                }
+                className="text-slate-500 hover:text-slate-300 text-xs px-1"
+                title="Edit"
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                onClick={() => state.deleteInjectorButton(btn.id)}
+                className="text-slate-500 hover:text-red-400 text-xs px-1"
+                title="Delete"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          {state.injectorButtons.length === 0 && !state.loadingInjectors ? (
+            <p className="text-xs text-slate-500">No injector buttons yet. Add one above.</p>
+          ) : null}
+        </div>
+
+        {/* Create / Edit form */}
+        {state.injectorForm ? (
+          <div className="mt-4 rounded border border-slate-600 bg-slate-900 p-3 text-xs space-y-2">
+            <p className="font-semibold text-slate-200">{state.injectorForm.id ? "Edit Button" : "New Button"}</p>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="text"
+                placeholder="Label"
+                value={state.injectorForm.label}
+                onChange={(e) => state.setInjectorForm({ ...state.injectorForm!, label: e.target.value })}
+                className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100 w-36"
+              />
+              <select
+                value={state.injectorForm.participantId}
+                onChange={(e) => state.setInjectorForm({ ...state.injectorForm!, participantId: e.target.value })}
+                className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100"
+              >
+                {state.participants.map((p) => (
+                  <option key={p.id} value={p.id}>{p.fullName}</option>
+                ))}
+              </select>
+              <select
+                value={state.injectorForm.staffId}
+                onChange={(e) => state.setInjectorForm({ ...state.injectorForm!, staffId: e.target.value })}
+                className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100"
+              >
+                {state.staffOptions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.displayName}</option>
+                ))}
+              </select>
+              <select
+                value={state.injectorForm.rangePreset}
+                onChange={(e) =>
+                  state.setInjectorForm({
+                    ...state.injectorForm!,
+                    rangePreset: e.target.value as "day" | "week_plus" | "month_plus",
+                  })
+                }
+                className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100"
+              >
+                <option value="day">Day</option>
+                <option value="week_plus">Week+</option>
+                <option value="month_plus">Month+</option>
+              </select>
+              <label className="flex items-center gap-1 text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={state.injectorForm.enabled}
+                  onChange={(e) => state.setInjectorForm({ ...state.injectorForm!, enabled: e.target.checked })}
+                />
+                Enabled
+              </label>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={state.saveInjectorForm}
+                disabled={state.loadingInjectors || !state.injectorForm.label}
+                className="rounded border border-emerald-500 px-3 py-1 text-emerald-300 disabled:opacity-50"
+              >
+                {state.loadingInjectors ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => state.setInjectorForm(null)}
+                className="rounded border border-slate-500 px-3 py-1 text-slate-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <GenerateForm
         participantId={state.participantId} setParticipantId={state.setParticipantId}
@@ -60,8 +205,6 @@ function RestorationPageInner() {
             </button>
           ))}
         </div>
-
-        {state.activeTab === "medication" ? <MedicationTab marLogs={state.marLogs} /> : null}
 
         {state.activeTab === "nutrition" ? (
           <NutritionTab
