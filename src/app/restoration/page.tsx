@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { TAB_LABELS } from "./types";
 import { useRestoration } from "./useRestoration";
 import { GenerateForm } from "./GenerateForm";
@@ -9,7 +10,7 @@ import { NutritionTab } from "./NutritionTab";
 import { NightTab } from "./NightTab";
 import { HealthTab } from "./HealthTab";
 
-export default function RestorationPage() {
+function RestorationPageInner() {
   const state = useRestoration();
 
   return (
@@ -116,5 +117,13 @@ export default function RestorationPage() {
         </button>
       </section>
     </main>
+  );
+}
+
+export default function RestorationPage() {
+  return (
+    <Suspense>
+      <RestorationPageInner />
+    </Suspense>
   );
 }

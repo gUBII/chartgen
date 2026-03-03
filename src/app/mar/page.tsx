@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import * as XLSX from "xlsx";
 
 type MARStatus = "ADMINISTERED" | "REFUSED" | "HELD";
@@ -109,7 +110,12 @@ const getStatusCounts = (rows: CandidateRow[]): { approved: number; pending: num
   };
 };
 
-export default function MARPage() {
+function MARPageInner() {
+  const searchParams = useSearchParams();
+  const injectedParticipantId = searchParams.get("participantId") ?? "";
+  const injectedStaffId = searchParams.get("staffId") ?? "";
+  const injectedDate = searchParams.get("date") ?? "";
+
   const today = useMemo(() => new Date(), []);
   const nextWeek = useMemo(() => {
     const d = new Date();
@@ -117,11 +123,11 @@ export default function MARPage() {
     return d;
   }, []);
 
-  const [participantId, setParticipantId] = useState("");
-  const [actorStaffId, setActorStaffId] = useState("");
-  const [startDate, setStartDate] = useState(toDateInput(today));
+  const [participantId, setParticipantId] = useState(injectedParticipantId);
+  const [actorStaffId, setActorStaffId] = useState(injectedStaffId);
+  const [startDate, setStartDate] = useState(injectedDate || toDateInput(today));
   const [startTime, setStartTime] = useState("00:00");
-  const [endDate, setEndDate] = useState(toDateInput(nextWeek));
+  const [endDate, setEndDate] = useState(injectedDate || toDateInput(nextWeek));
   const [endTime, setEndTime] = useState("23:59");
   const [medications, setMedications] = useState<MedicationInput[]>([emptyMedication()]);
   const [batchId, setBatchId] = useState("");
@@ -750,5 +756,13 @@ export default function MARPage() {
         </button>
       </section>
     </main>
+  );
+}
+
+export default function MARPage() {
+  return (
+    <Suspense>
+      <MARPageInner />
+    </Suspense>
   );
 }

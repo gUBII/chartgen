@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import * as XLSX from "xlsx";
 import type { AmountEaten } from "@prisma/client";
 import type { CandidateRow, ChartLog, ActiveTab, ParticipantOption, StaffOption } from "./types";
@@ -15,6 +16,11 @@ import {
 const GROUPED_COMMIT_ROW_LIMIT = 5_000;
 
 export function useRestoration() {
+  const searchParams = useSearchParams();
+  const injectedParticipantId = searchParams.get("participantId") ?? "";
+  const injectedStaffId = searchParams.get("staffId") ?? "";
+  const injectedDate = searchParams.get("date") ?? "";
+
   const today = useMemo(() => new Date(), []);
   const nextWeek = useMemo(() => {
     const d = new Date();
@@ -22,16 +28,16 @@ export function useRestoration() {
     return d;
   }, []);
 
-  const [participantId, setParticipantId] = useState("");
+  const [participantId, setParticipantId] = useState(injectedParticipantId);
   const [reviewerStaffId, setReviewerStaffId] = useState("");
-  const [defaultWorkerStaffId, setDefaultWorkerStaffId] = useState("");
+  const [defaultWorkerStaffId, setDefaultWorkerStaffId] = useState(injectedStaffId);
   const [workerScheduleByDow, setWorkerScheduleByDow] = useState<Record<string, string>>({});
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
   const [staffOptions, setStaffOptions] = useState<StaffOption[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
-  const [startDate, setStartDate] = useState(toDateInput(today));
+  const [startDate, setStartDate] = useState(injectedDate || toDateInput(today));
   const [startTime, setStartTime] = useState("00:00");
-  const [endDate, setEndDate] = useState(toDateInput(nextWeek));
+  const [endDate, setEndDate] = useState(injectedDate || toDateInput(nextWeek));
   const [endTime, setEndTime] = useState("23:59");
   const [batchId, setBatchId] = useState("");
   const [rows, setRows] = useState<CandidateRow[]>([]);
