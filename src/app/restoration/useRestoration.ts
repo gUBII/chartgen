@@ -74,6 +74,7 @@ export function useRestoration() {
   const [loadingXlsx, setLoadingXlsx] = useState(false);
   const [loadingCommit, setLoadingCommit] = useState(false);
   const [savingRowId, setSavingRowId] = useState<string | null>(null);
+  const [loadingDiscard, setLoadingDiscard] = useState(false);
 
   const parseApiPayload = async (response: Response): Promise<any> => {
     try {
@@ -552,6 +553,43 @@ export function useRestoration() {
     }
   };
 
+  const onDiscardBatch = async () => {
+    if (!batchId) {
+      setErrorText("No active batch to discard.");
+      return;
+    }
+    setErrorText("");
+    setStatusText("Discarding batch...");
+    setLoadingDiscard(true);
+    try {
+      const response = await fetch("/api/engine/preview", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batchId }),
+      });
+      const payload = await parseApiPayload(response);
+      if (!response.ok || !payload?.ok) {
+        throw new Error(getErrorMessage(payload?.error));
+      }
+      setBatchId("");
+      setRows([]);
+      setMarLogs([]);
+      setMealLogs([]);
+      setSleepLogs([]);
+      setBglLogs([]);
+      setBowelLogs([]);
+      setHygieneLogs([]);
+      setCommunityLogs([]);
+      setRepositionLogs([]);
+      setStatusText("Batch discarded.");
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : "Failed to discard batch.");
+      setStatusText("Discard failed.");
+    } finally {
+      setLoadingDiscard(false);
+    }
+  };
+
   const applyInjectorButton = (btn: InjectorButton) => {
     const base = startDate || toDateInput(today);
     let end = base;
@@ -664,6 +702,7 @@ export function useRestoration() {
     injectorForm, setInjectorForm,
     applyInjectorButton, saveInjectorForm, deleteInjectorButton, reloadInjectors,
     // Actions
-    onGenerate, updateRow, onSaveRow, onCommit, onDownloadPdf, onDownloadXlsx,
+    onGenerate, updateRow, onSaveRow, onCommit, onDownloadPdf, onDownloadXlsx, onDiscardBatch,
+    loadingDiscard,
   };
 }

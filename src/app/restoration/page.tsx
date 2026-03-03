@@ -252,6 +252,14 @@ function RestorationPageInner() {
         </div>
         <button
           type="button"
+          className="rounded-md border border-red-600 px-4 py-2 text-red-300 disabled:opacity-50"
+          onClick={state.onDiscardBatch}
+          disabled={state.loadingDiscard || state.loadingCommit || !state.batchId}
+        >
+          {state.loadingDiscard ? "Discarding..." : "Discard Batch"}
+        </button>
+        <button
+          type="button"
           className="rounded-md bg-green-700 px-4 py-2 text-white disabled:opacity-50"
           onClick={state.onCommit}
           disabled={state.loadingCommit || !state.hasPreviewData}

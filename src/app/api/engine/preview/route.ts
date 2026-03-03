@@ -977,3 +977,51 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => null);
+    const batchId = String(body?.batchId ?? "").trim();
+    if (!batchId) {
+      throw new PreviewApiError(400, "MISSING_FIELD", "batchId is required.");
+    }
+
+    const batch = await prisma.restorationBatch.findUnique({
+      where: { id: batchId },
+      select: { id: true, status: true },
+    });
+    if (!batch) {
+      throw new PreviewApiError(404, "BATCH_NOT_FOUND", "Restoration batch not found.");
+    }
+    if (batch.status !== "PENDING") {
+      throw new PreviewApiError(
+        409,
+        "BATCH_NOT_PENDING",
+        `Cannot discard batch with status ${batch.status}. Only PENDING batches can be discarded.`
+      );
+    }
+
+    // Cascade deletes RestoredMealCandidate + RestoredMARCandidate via onDelete: Cascade
+    await prisma.restorationBatch.delete({ where: { id: batchId } });
+
+    return NextResponse.json({ ok: true, data: { deleted: batchId } });
+  } catch (error) {
+    if (error instanceof PreviewApiError) {
+      return NextResponse.json(
+        { ok: false, error: { code: error.code, message: error.message } },
+        { status: error.status }
+      );
+    }
+    const prismaError = mapPrismaApiError(error);
+    if (prismaError) {
+      return NextResponse.json(
+        { ok: false, error: { code: prismaError.code, message: prismaError.message } },
+        { status: prismaError.status }
+      );
+    }
+    return NextResponse.json(
+      { ok: false, error: { code: "INTERNAL_ERROR", message: "Unexpected error while discarding batch." } },
+      { status: 500 }
+    );
+  }
+}
