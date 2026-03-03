@@ -29,7 +29,13 @@ type CleanupPayload = {
   confirmationText?: string;
 };
 
-type UatPayload = StressPayload | CleanupPayload;
+type GlobalNukePayload = {
+  action: "global_nuke";
+  apply?: boolean;
+  confirmationText?: string;
+};
+
+type UatPayload = StressPayload | CleanupPayload | GlobalNukePayload;
 
 type ReportArtifact = {
   artifactId: string;
@@ -382,6 +388,110 @@ async function executeCleanup(payload: CleanupPayload) {
   };
 }
 
+const GLOBAL_NUKE_CONFIRMATION = "NUKE-ENTIRE-DB-CONFIRMED";
+
+async function executeGlobalNuke(payload: GlobalNukePayload) {
+  if (process.env.ENABLE_GLOBAL_NUKE_DB !== "true") {
+    throw new OpsApiError(
+      403,
+      "GLOBAL_NUKE_DISABLED",
+      "Global nuke is disabled. Set ENABLE_GLOBAL_NUKE_DB=true to enable.",
+    );
+  }
+
+  const marLogModel = (prisma as any).mARLog ?? (prisma as any).marLog;
+  if (!marLogModel) {
+    throw new OpsApiError(500, "MAR_MODEL_UNAVAILABLE", "Prisma MARLog model is unavailable on this client.");
+  }
+
+  const apply = Boolean(payload.apply);
+  const requiredConfirmationText = GLOBAL_NUKE_CONFIRMATION;
+
+  const counts = {
+    auditEvent: await prisma.auditEvent.count(),
+    restoredMealCandidate: await prisma.restoredMealCandidate.count(),
+    restoredMARCandidate: await prisma.restoredMARCandidate.count(),
+    mealLog: await prisma.mealLog.count(),
+    marLog: await marLogModel.count(),
+    restorationBatch: await prisma.restorationBatch.count(),
+    sleepSettlingLog: await prisma.sleepSettlingLog.count(),
+    bglDiabetesLog: await prisma.bglDiabetesLog.count(),
+    bowelFluidLog: await prisma.bowelFluidLog.count(),
+    hygieneLog: await prisma.hygieneLog.count(),
+    communityAccessQaLog: await prisma.communityAccessQaLog.count(),
+    repositioningQaLog: await prisma.repositioningQaLog.count(),
+    shiftNote: await prisma.shiftNote.count(),
+    gapReport: await prisma.gapReport.count(),
+  };
+
+  if (!apply) {
+    return { mode: "DRY_RUN" as const, requiredConfirmationText, counts };
+  }
+
+  if (payload.confirmationText !== requiredConfirmationText) {
+    throw new OpsApiError(
+      400,
+      "CONFIRMATION_REQUIRED",
+      "Global nuke apply requires exact confirmation text.",
+      { requiredConfirmationText },
+    );
+  }
+
+  const [
+    auditEvent,
+    restoredMealCandidate,
+    restoredMARCandidate,
+    mealLog,
+    marLog,
+    restorationBatch,
+    sleepSettlingLog,
+    bglDiabetesLog,
+    bowelFluidLog,
+    hygieneLog,
+    communityAccessQaLog,
+    repositioningQaLog,
+    shiftNote,
+    gapReport,
+  ] = await prisma.$transaction([
+    prisma.auditEvent.deleteMany(),
+    prisma.restoredMealCandidate.deleteMany(),
+    prisma.restoredMARCandidate.deleteMany(),
+    prisma.mealLog.deleteMany(),
+    marLogModel.deleteMany(),
+    prisma.restorationBatch.deleteMany(),
+    prisma.sleepSettlingLog.deleteMany(),
+    prisma.bglDiabetesLog.deleteMany(),
+    prisma.bowelFluidLog.deleteMany(),
+    prisma.hygieneLog.deleteMany(),
+    prisma.communityAccessQaLog.deleteMany(),
+    prisma.repositioningQaLog.deleteMany(),
+    prisma.shiftNote.deleteMany(),
+    prisma.gapReport.deleteMany(),
+  ]);
+
+  return {
+    mode: "APPLY" as const,
+    requiredConfirmationText,
+    counts,
+    deleted: {
+      auditEvent: auditEvent.count,
+      restoredMealCandidate: restoredMealCandidate.count,
+      restoredMARCandidate: restoredMARCandidate.count,
+      mealLog: mealLog.count,
+      marLog: marLog.count,
+      restorationBatch: restorationBatch.count,
+      sleepSettlingLog: sleepSettlingLog.count,
+      bglDiabetesLog: bglDiabetesLog.count,
+      bowelFluidLog: bowelFluidLog.count,
+      hygieneLog: hygieneLog.count,
+      communityAccessQaLog: communityAccessQaLog.count,
+      repositioningQaLog: repositioningQaLog.count,
+      shiftNote: shiftNote.count,
+      gapReport: gapReport.count,
+    },
+  };
+}
+
 async function parseBody(request: NextRequest): Promise<UatPayload> {
   try {
     return (await request.json()) as UatPayload;
@@ -411,6 +521,17 @@ export async function POST(request: NextRequest) {
       const artifact = await writeArtifact(result.mode === "APPLY" ? "cleanup-apply" : "cleanup-dry-run", result);
       return NextResponse.json({
         action: "cleanup",
+        ok: true,
+        result,
+        artifact,
+      });
+    }
+
+    if (payload.action === "global_nuke") {
+      const result = await executeGlobalNuke(payload);
+      const artifact = await writeArtifact(result.mode === "APPLY" ? "global-nuke-apply" : "global-nuke-dry-run", result);
+      return NextResponse.json({
+        action: "global_nuke",
         ok: true,
         result,
         artifact,

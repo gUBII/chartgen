@@ -120,6 +120,20 @@ type CleanupApiResponse = {
   artifact: UatArtifact;
 };
 
+type GlobalNukeResult = {
+  mode: "DRY_RUN" | "APPLY";
+  requiredConfirmationText: string;
+  counts: Record<string, number>;
+  deleted?: Record<string, number>;
+};
+
+type GlobalNukeApiResponse = {
+  action: "global_nuke";
+  ok: boolean;
+  result: GlobalNukeResult;
+  artifact: UatArtifact;
+};
+
 const UAT_CASES: UatCase[] = [
   {
     id: "UAT-001",
@@ -230,6 +244,11 @@ export default function UatPage() {
 
   const [confirmationText, setConfirmationText] = useState("");
   const [requiredConfirmationText, setRequiredConfirmationText] = useState("");
+
+  const [isRunningGlobalNuke, setIsRunningGlobalNuke] = useState(false);
+  const [globalNukeResult, setGlobalNukeResult] = useState<GlobalNukeResult | null>(null);
+  const [globalNukeRequiredText, setGlobalNukeRequiredText] = useState("");
+  const [globalNukeConfirmationText, setGlobalNukeConfirmationText] = useState("");
 
   const stressCommand = useMemo(
     () =>
@@ -397,6 +416,52 @@ export default function UatPage() {
       setRunError(error instanceof Error ? error.message : "Cleanup apply failed");
     } finally {
       setIsRunningCleanup(false);
+    }
+  }
+
+  async function runGlobalNukeDryRun() {
+    setRunError("");
+    setIsRunningGlobalNuke(true);
+    try {
+      const payload = await requestJson<GlobalNukeApiResponse>("/api/ops/uat", {
+        method: "POST",
+        body: JSON.stringify({ action: "global_nuke", apply: false }),
+      });
+      setGlobalNukeResult(payload.result);
+      setGlobalNukeRequiredText(payload.result.requiredConfirmationText);
+      setGlobalNukeConfirmationText("");
+      setLatestArtifact(payload.artifact);
+    } catch (error) {
+      setRunError(error instanceof Error ? error.message : "Global nuke dry-run failed");
+    } finally {
+      setIsRunningGlobalNuke(false);
+    }
+  }
+
+  async function runGlobalNukeApply() {
+    if (!globalNukeRequiredText) {
+      setRunError("Run dry-run first to fetch required confirmation text.");
+      return;
+    }
+    setRunError("");
+    setIsRunningGlobalNuke(true);
+    try {
+      const payload = await requestJson<GlobalNukeApiResponse>("/api/ops/uat", {
+        method: "POST",
+        body: JSON.stringify({
+          action: "global_nuke",
+          apply: true,
+          confirmationText: globalNukeConfirmationText,
+        }),
+      });
+      setGlobalNukeResult(payload.result);
+      setGlobalNukeRequiredText("");
+      setGlobalNukeConfirmationText("");
+      setLatestArtifact(payload.artifact);
+    } catch (error) {
+      setRunError(error instanceof Error ? error.message : "Global nuke apply failed");
+    } finally {
+      setIsRunningGlobalNuke(false);
     }
   }
 
@@ -663,6 +728,55 @@ export default function UatPage() {
             </div>
           ) : null}
         </div>
+      </section>
+
+      <section className="futuristic-panel p-6 border-red-500/30">
+        <p className="landing-mono text-xs text-red-300/80">Global Nuke — Entire DB</p>
+        <p className="mt-1 text-xs text-slate-400">
+          Deletes all operational table data across the entire database.
+          Requires <code className="text-red-300">ENABLE_GLOBAL_NUKE_DB=true</code> env gate plus two-step confirmation.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={runGlobalNukeDryRun}
+            disabled={isRunningGlobalNuke}
+            className="rounded-full border border-red-300/50 bg-red-400/10 px-4 py-2 text-xs font-semibold text-red-100 hover:bg-red-400/20 transition disabled:opacity-50"
+          >
+            {isRunningGlobalNuke ? "Running..." : "Global Nuke Dry-Run"}
+          </button>
+        </div>
+
+        {globalNukeRequiredText ? (
+          <div className="mt-4 rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-xs">
+            <p className="text-red-200">Required confirmation text:</p>
+            <p className="mt-1 font-semibold text-red-50 break-all">{globalNukeRequiredText}</p>
+            <p className="mt-2 text-slate-400">
+              Row counts to be deleted: {Object.entries(globalNukeResult?.counts ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ")}
+            </p>
+            <input
+              type="text"
+              value={globalNukeConfirmationText}
+              onChange={(e) => setGlobalNukeConfirmationText(e.target.value)}
+              placeholder="Paste required confirmation text"
+              className="mt-3 w-full rounded-md border border-red-300/35 bg-slate-900/70 px-2 py-2 text-red-50"
+            />
+            <button
+              type="button"
+              onClick={runGlobalNukeApply}
+              disabled={isRunningGlobalNuke || !globalNukeConfirmationText}
+              className="mt-3 rounded-full border border-red-400/60 bg-red-600/30 px-4 py-2 text-xs font-semibold text-red-100 hover:bg-red-600/50 transition disabled:opacity-50"
+            >
+              {isRunningGlobalNuke ? "Nuking..." : "Apply Global Nuke"}
+            </button>
+          </div>
+        ) : null}
+
+        {globalNukeResult ? (
+          <pre className="mt-4 max-h-48 overflow-auto rounded-lg border border-red-500/20 bg-slate-950/70 p-3 text-[11px] text-red-100">
+            {JSON.stringify(globalNukeResult, null, 2)}
+          </pre>
+        ) : null}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
