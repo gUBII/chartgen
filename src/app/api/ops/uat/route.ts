@@ -407,13 +407,19 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
   const apply = Boolean(payload.apply);
   const requiredConfirmationText = GLOBAL_NUKE_CONFIRMATION;
 
+  // Count all operational tables (full coverage)
   const counts = {
+    // Leaf dependents first
     auditEvent: await prisma.auditEvent.count(),
     restoredMealCandidate: await prisma.restoredMealCandidate.count(),
     restoredMARCandidate: await prisma.restoredMARCandidate.count(),
+    sleepSettlingQaLog: await prisma.sleepSettlingQaLog.count(),
+    bowelFluidQaLog: await prisma.bowelFluidQaLog.count(),
+    restrictivePracticeEvent: await prisma.restrictivePracticeEvent.count(),
+    // Mid-level
+    restorationBatch: await prisma.restorationBatch.count(),
     mealLog: await prisma.mealLog.count(),
     marLog: await marLogModel.count(),
-    restorationBatch: await prisma.restorationBatch.count(),
     sleepSettlingLog: await prisma.sleepSettlingLog.count(),
     bglDiabetesLog: await prisma.bglDiabetesLog.count(),
     bowelFluidLog: await prisma.bowelFluidLog.count(),
@@ -422,6 +428,11 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
     repositioningQaLog: await prisma.repositioningQaLog.count(),
     shiftNote: await prisma.shiftNote.count(),
     gapReport: await prisma.gapReport.count(),
+    behaviourSupportPlan: await prisma.behaviourSupportPlan.count(),
+    injectorButton: await prisma.injectorButton.count(),
+    // Roots (deleted last)
+    participant: await prisma.participant.count(),
+    staff: await prisma.staff.count(),
   };
 
   if (!apply) {
@@ -437,13 +448,17 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
     );
   }
 
+  // FK-safe sequential delete order: children before parents
   const [
     auditEvent,
     restoredMealCandidate,
     restoredMARCandidate,
+    sleepSettlingQaLog,
+    bowelFluidQaLog,
+    restrictivePracticeEvent,
+    restorationBatch,         // cascades meal+mar candidates
     mealLog,
     marLog,
-    restorationBatch,
     sleepSettlingLog,
     bglDiabetesLog,
     bowelFluidLog,
@@ -452,13 +467,20 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
     repositioningQaLog,
     shiftNote,
     gapReport,
+    behaviourSupportPlan,
+    injectorButton,
+    participant,
+    staff,
   ] = await prisma.$transaction([
     prisma.auditEvent.deleteMany(),
     prisma.restoredMealCandidate.deleteMany(),
     prisma.restoredMARCandidate.deleteMany(),
+    prisma.sleepSettlingQaLog.deleteMany(),
+    prisma.bowelFluidQaLog.deleteMany(),
+    prisma.restrictivePracticeEvent.deleteMany(),
+    prisma.restorationBatch.deleteMany(),
     prisma.mealLog.deleteMany(),
     marLogModel.deleteMany(),
-    prisma.restorationBatch.deleteMany(),
     prisma.sleepSettlingLog.deleteMany(),
     prisma.bglDiabetesLog.deleteMany(),
     prisma.bowelFluidLog.deleteMany(),
@@ -467,6 +489,10 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
     prisma.repositioningQaLog.deleteMany(),
     prisma.shiftNote.deleteMany(),
     prisma.gapReport.deleteMany(),
+    prisma.behaviourSupportPlan.deleteMany(),
+    prisma.injectorButton.deleteMany(),
+    prisma.participant.deleteMany(),
+    prisma.staff.deleteMany(),
   ]);
 
   return {
@@ -477,9 +503,12 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
       auditEvent: auditEvent.count,
       restoredMealCandidate: restoredMealCandidate.count,
       restoredMARCandidate: restoredMARCandidate.count,
+      sleepSettlingQaLog: sleepSettlingQaLog.count,
+      bowelFluidQaLog: bowelFluidQaLog.count,
+      restrictivePracticeEvent: restrictivePracticeEvent.count,
+      restorationBatch: restorationBatch.count,
       mealLog: mealLog.count,
       marLog: marLog.count,
-      restorationBatch: restorationBatch.count,
       sleepSettlingLog: sleepSettlingLog.count,
       bglDiabetesLog: bglDiabetesLog.count,
       bowelFluidLog: bowelFluidLog.count,
@@ -488,6 +517,10 @@ async function executeGlobalNuke(payload: GlobalNukePayload) {
       repositioningQaLog: repositioningQaLog.count,
       shiftNote: shiftNote.count,
       gapReport: gapReport.count,
+      behaviourSupportPlan: behaviourSupportPlan.count,
+      injectorButton: injectorButton.count,
+      participant: participant.count,
+      staff: staff.count,
     },
   };
 }
