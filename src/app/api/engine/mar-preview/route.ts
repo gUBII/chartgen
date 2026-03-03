@@ -24,6 +24,16 @@ const MAR_PREVIEW_PATCH_REQUIRED_TABLES = [
   "RestoredMARCandidate",
 ] as const;
 
+const parsePositiveInt = (raw: string | undefined, fallback: number): number => {
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+};
+
+const MAR_PREVIEW_TX_MAX_WAIT_MS = parsePositiveInt(process.env.MAR_PREVIEW_TX_MAX_WAIT_MS, 30_000);
+const MAR_PREVIEW_TX_TIMEOUT_MS = parsePositiveInt(process.env.MAR_PREVIEW_TX_TIMEOUT_MS, 300_000);
+
 type MARPreviewRequestBody = {
   participantId?: string;
   startDate?: string;
@@ -320,6 +330,8 @@ export async function POST(request: NextRequest) {
       throw new MARPreviewApiError(404, "PARTICIPANT_NOT_FOUND", "Participant not found.");
     }
 
+    const baselines = await deriveParticipantBaselines(participant.id);
+
     const result = await prisma.$transaction(async (tx) => {
       const batch = await tx.restorationBatch.create({
         data: {
@@ -335,9 +347,6 @@ export async function POST(request: NextRequest) {
 
       const engine = new RestorationEngine();
       const generatedRows: any[] = [];
-
-      // Derive personalization baselines from participant's historical logs
-      const baselines = await deriveParticipantBaselines(participant.id);
 
       for (const day of dayIterator(rangeStart, rangeEnd)) {
         for (const template of medicationTemplates) {
@@ -426,7 +435,7 @@ export async function POST(request: NextRequest) {
         candidateCount: generatedRows.length,
         candidates: generatedRows,
       };
-    });
+    }, { maxWait: MAR_PREVIEW_TX_MAX_WAIT_MS, timeout: MAR_PREVIEW_TX_TIMEOUT_MS });
 
     return NextResponse.json({ ok: true, data: result }, { status: 200 });
   } catch (error) {

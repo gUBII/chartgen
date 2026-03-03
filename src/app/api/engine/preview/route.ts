@@ -26,6 +26,16 @@ const PREVIEW_PATCH_REQUIRED_TABLES = [
   "RestoredMealCandidate",
 ] as const;
 
+const parsePositiveInt = (raw: string | undefined, fallback: number): number => {
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+};
+
+const PREVIEW_TX_MAX_WAIT_MS = parsePositiveInt(process.env.PREVIEW_TX_MAX_WAIT_MS, 30_000);
+const PREVIEW_TX_TIMEOUT_MS = parsePositiveInt(process.env.PREVIEW_TX_TIMEOUT_MS, 300_000);
+
 type MedicationTemplate = {
   name: string;
   dosage: string;
@@ -450,6 +460,7 @@ export async function POST(request: NextRequest) {
 
     const engine = new RestorationEngine();
     const days = dayIterator(rangeStart, rangeEnd);
+    const baselines = await deriveParticipantBaselines(participant.id);
 
     // Phase 1: Transaction for Meal + MAR candidates
     const txResult = await prisma.$transaction(async (tx) => {
@@ -467,8 +478,6 @@ export async function POST(request: NextRequest) {
 
       const mealRows: Record<string, unknown>[] = [];
       const marRows: Record<string, unknown>[] = [];
-
-      const baselines = await deriveParticipantBaselines(participant.id);
 
       // Meal candidates
       for (const day of days) {
@@ -638,7 +647,7 @@ export async function POST(request: NextRequest) {
         mealRows,
         marRows,
       };
-    });
+    }, { maxWait: PREVIEW_TX_MAX_WAIT_MS, timeout: PREVIEW_TX_TIMEOUT_MS });
 
     // Phase 2: Sleep/BGL/Bowel via generateBatch (runs its own transaction)
     const moduleLogs: Record<string, unknown>[] = [];

@@ -17,6 +17,15 @@ export function mapPrismaApiError(error: unknown): PrismaApiError | null {
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2028") {
+      return {
+        status: 503,
+        code: "DATABASE_TRANSACTION_EXPIRED",
+        message: "Database transaction expired during request processing. Retry with a narrower range.",
+        details: { prismaCode: error.code },
+      };
+    }
+
     if (error.code === "P2021" || error.code === "P2022") {
       return {
         status: 503,
