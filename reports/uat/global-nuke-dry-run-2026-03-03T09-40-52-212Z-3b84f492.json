@@ -1,0 +1,34 @@
+{
+  "artifactVersion": "1.0",
+  "artifactId": "global-nuke-dry-run-2026-03-03T09-40-52-212Z-3b84f492",
+  "kind": "global-nuke-dry-run",
+  "createdAt": "2026-03-03T09:40:52.212Z",
+  "commitRef": "unknown",
+  "payload": {
+    "mode": "DRY_RUN",
+    "requiredConfirmationText": "NUKE-ENTIRE-DB-CONFIRMED",
+    "counts": {
+      "auditEvent": 0,
+      "restoredMealCandidate": 0,
+      "restoredMARCandidate": 0,
+      "sleepSettlingQaLog": 0,
+      "bowelFluidQaLog": 0,
+      "restrictivePracticeEvent": 0,
+      "restorationBatch": 0,
+      "mealLog": 0,
+      "marLog": 0,
+      "sleepSettlingLog": 0,
+      "bglDiabetesLog": 0,
+      "bowelFluidLog": 0,
+      "hygieneLog": 0,
+      "communityAccessQaLog": 0,
+      "repositioningQaLog": 0,
+      "shiftNote": 0,
+      "gapReport": 0,
+      "behaviourSupportPlan": 0,
+      "injectorButton": 0,
+      "participant": 0,
+      "staff": 0
+    }
+  }
+}

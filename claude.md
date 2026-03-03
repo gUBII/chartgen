@@ -3,7 +3,7 @@
 ## Current State
 - Role: `PRINCIPAL_BUILDER_COMPLEX_SYSTEMS`
 - State: `STANDBY`
-- Activation: via Operator/Codex-dispatched UUID in `/tmp/codex_claude_handshake.log`
+- Activation: via Operator/Codex-dispatched UUID in `/Users/moofasa/chartgen/handoff/claude_handshake.log`
 
 ## Frugal Release Mode (Active)
 
@@ -13,7 +13,7 @@
 - Respect local/prod env separation from `src/docs/WORKFLOW_FRUGAL.md`.
 
 ## Channel
-- Handshake log: `/tmp/codex_claude_handshake.log`
+- Handshake log: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
 - Protocol source: `src/docs/iacp/`
 
 ## Scope When Active
@@ -46,3 +46,11 @@
 
 ## Result Contract
 - Use templates from `src/docs/iacp/TEMPLATES.md`.
+
+## Protocol Awareness Sync (2026-03-02)
+- Broadcast UUID: `a185fc3b-fcd9-4074-97a1-80b3083abc32`
+- Protocol source remains `src/docs/iacp/`.
+- Use event-driven polling only and respect UUID-bounded objectives.
+- Keep ownership-scoped edits only; no unrelated file changes.
+- `PASS` is disallowed when contradiction/safety flags are present.
+- Deploy actions remain blocked unless dispatch includes `DEPLOY_APPROVED`.

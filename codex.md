@@ -2,7 +2,7 @@
 
 ## Channel
 - Runtime handshake:
-  - Claude: `/tmp/codex_claude_handshake.log`
+  - Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
   - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 - Canonical protocol docs: `src/docs/iacp/`
 
@@ -32,6 +32,13 @@
 - No placeholder result blocks accepted.
 - `PASS` means deploy-eligible for stated scope.
 - If safety flags appear (`UNSAFE`, `cp_safe_now=no`, `collisions>0`), status must be `FAIL` or `BLOCKED`.
+
+## Protocol Awareness Sync (2026-03-02)
+- Broadcast UUID: `a185fc3b-fcd9-4074-97a1-80b3083abc32`
+- Canonical protocol source remains `src/docs/iacp/`.
+- Enforce event-driven polling and ownership-scoped parallel dispatch.
+- Enforce strict status integrity: contradictions cannot produce `PASS`.
+- Enforce deploy lock: only valid when dispatch includes `DEPLOY_APPROVED` and required gates pass.
 
 ## Coordination Model
 - Claude: principal builder for high-complexity implementation and architecture.

@@ -46,3 +46,10 @@
 
 ## Result Contract
 - Use templates from `src/docs/iacp/TEMPLATES.md`.
+
+## Protocol Awareness Sync (2026-03-02)
+- Broadcast UUID: `a185fc3b-fcd9-4074-97a1-80b3083abc32`
+- Protocol source remains `src/docs/iacp/`.
+- Use event-driven polling only and keep UUID scope strict.
+- Verification must keep contradiction logic strict (`PASS` forbidden on contradictions).
+- No deploy execution unless dispatch explicitly contains `DEPLOY_APPROVED`.

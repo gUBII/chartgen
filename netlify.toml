@@ -1,9 +1,9 @@
 [build]
-command = "npx prisma generate && npm run build"
+command = "npm run env:check:remote-db && npx prisma migrate deploy && npx prisma generate && npm run build -- --webpack"
 publish = ".next"
 
 [build.environment]
 NODE_VERSION = "20"
 
 [context.production]
-command = "npx prisma generate && npm run build"
+command = "npm run env:check:remote-db && npx prisma migrate deploy && npx prisma generate && npm run build -- --webpack"

@@ -130,7 +130,7 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 
 ### 6.2 Canonical Channels
 
-- Claude: `/tmp/codex_claude_handshake.log`
+- Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
 - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
 ### 6.3 Discrete Gate Formula (Locked)
