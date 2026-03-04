@@ -14,7 +14,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const url = new URL(request.url);
+    const roleParam = url.searchParams.get("role")?.toUpperCase();
+    const where: Record<string, unknown> = {};
+    if (roleParam && VALID_ROLES.has(roleParam)) {
+      where.role = roleParam;
+    }
+
     const rows = await prisma.staff.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: 50,
       select: {

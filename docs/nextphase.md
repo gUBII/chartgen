@@ -1,6 +1,6 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
-Last updated: 2026-03-01 (post-deploy)
+Last updated: 2026-03-04 (post-cloud-nuke, current reality sync)
 Owner: Claude — Implementation Lead + Quality Gate
 
 This file replaces the old speculative roadmap with a stateful ledger.
@@ -52,7 +52,11 @@ Completed work is explicitly deprecated from future planning.
 | MC-01 | `/chartgen-core` route + catalog components | `DEPRECATED_PROD` | Codex |
 | EX-01/02 | Audit explorer table/filter drill-down upgrade | `DEPRECATED_PROD` | Codex |
 | PL-01 | Remove remaining `window.alert` UX from live pages | `DEPRECATED_PROD` | Codex |
-| EXCEL-01 | Excel/XLSX export button on restoration/MAR pages | `ACTIVE` | Claude (pending dispatch) |
+| EXCEL-01 | Excel/XLSX export button on restoration/MAR pages | `DEPRECATED_PROD` | Claude — commit `cefeed38` |
+| INJ-01 | Injector Buttons panel + MAR sub-tab removal from Restoration | `DEPRECATED_PROD` | Claude — commit `bb8698df` |
+| UAT-NUKE | Global nuke DB control (env-gated, two-step, full table coverage) | `DEPRECATED_PROD` | Claude — commits `294f96e9`, `f57a4cbf` |
+| DISCARD-01 | Discard Batch — full DB delete + state clear | `DEPRECATED_PROD` | Claude — commit `0656fb46` |
+| API-ERR-01 | Preview/commit/MAR routes actionable error mapping + schema readiness | `DEPRECATED_PROD` | Claude — commit `69b3f5ba` |
 
 ## 2) Ticket Mapping (Old Plan -> Current Truth)
 
@@ -70,6 +74,31 @@ Completed work is explicitly deprecated from future planning.
 | CLN-01/02/03/04/05 (code cleaning day) | `DEPRECATED_PROD` |
 
 ## 3) Production Deploy Record
+
+### Deploy `989a1cae` — 2026-03-03 (current HEAD)
+
+- **URL**: https://chartgen-gubii.netlify.app
+- **Netlify deploy ID**: `69a6bd5aa4bbb979` (state=ready)
+- **Build**: Next.js — compiled successfully, 33 routes
+- **Authorized by**: Operator (Farhan)
+- **Verified by**: Ari/Claude — Implementation Lead + Quality Gate
+- **Commits included since last record** (HEAD → 989a1cae):
+  - `989a1cae` chore: rename agent Nidhi → Ari across all channel files
+  - `f57a4cbf` fix(uat): global_nuke full table coverage + FK-safe delete order
+  - `0656fb46` feat(restoration): add Discard Batch — full DB delete + state clear
+  - `bb8698df` feat(restoration): injector buttons panel, remove MAR sub-tab, DB-backed config
+  - `294f96e9` feat(uat): add global nuke DB control with env gate and two-step confirmation
+  - `6b85bc8f` fix(preview): resolve Transaction not found INTERNAL_ERROR
+  - `e2d64ad3` feat(entry): wire injector pointer — prefill restoration and MAR from URL params
+  - `cefeed38` feat(excel-01): add XLSX export to Restoration and MAR pages
+  - `69b3f5ba` fix(api): prisma-api-errors hardening + schema-readiness checks
+- **Gate evidence**:
+  - lint: exit 1, 0 errors, 36 warnings (all pre-existing)
+  - build: exit 0, 33 routes compiled
+  - Remote migrations: 6/6 applied on Neon (up to date)
+  - Cloud smoke: db-health=ok, injector-buttons=200, global_nuke=enabled+verified
+  - Cloud global nuke applied + zero residue confirmed (2026-03-04)
+  - ENABLE_GLOBAL_NUKE_DB=true set in Netlify production env
 
 ### Deploy `69a38055` — 2026-03-01
 
@@ -117,8 +146,9 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 
 ## 5) Immediate Next Actions
 
-1. Excel/XLSX export button (`EXCEL-01`) — pending operator/Codex dispatch.
-2. All other items `DEPRECATED_PROD` — no re-planning.
+1. No open `ACTIVE` items — all tracked backlog is `DEPRECATED_PROD`.
+2. Cloud DB nuked and verified clean (2026-03-04) — ready for fresh UAT seeding.
+3. Await Codex dispatch for next phase or new feature lane.
 
 ## 6) IACP v3 Lock (Final State)
 

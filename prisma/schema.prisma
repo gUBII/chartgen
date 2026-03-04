@@ -93,7 +93,8 @@ model Participant {
   mealCandidates     RestoredMealCandidate[]
   marCandidates      RestoredMARCandidate[]
   auditEvents        AuditEvent[]
-  injectorButtons    InjectorButton[]
+  injectorButtons        InjectorButton[]
+  medicationTemplates    MedicationTemplate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -715,4 +716,28 @@ model InjectorButton {
   staff         Staff       @relation(fields: [staffId], references: [id])
 
   @@index([enabled, sortOrder])
+}
+
+enum TemplateScope {
+  GLOBAL
+  PARTICIPANT
+}
+
+model MedicationTemplate {
+  id                 String        @id @default(uuid())
+  templateKey        String        @unique
+  templateName       String
+  version            Int           @default(1)
+  isActive           Boolean       @default(true)
+  scope              TemplateScope @default(GLOBAL)
+  participantId      String?
+  defaultRangePreset RangePreset   @default(week_plus)
+  items              Json          // MedicationTemplateItem[] stored as JSONB
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  participant        Participant?  @relation(fields: [participantId], references: [id])
+
+  @@index([isActive, scope])
+  @@index([participantId])
 }
