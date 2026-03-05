@@ -1,8 +1,8 @@
 # Latest Links and Instructions
 
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-05
 **Version:** 3.9.0
-**Timeline Window:** October 2025 -> February 2026 (staged release ledger)
+**Timeline Window:** October 2025 -> March 2026 (staged release ledger)
 
 ## Production Links
 
@@ -44,6 +44,17 @@ Single endpoint now handles 8 log types transactionally:
 - **Defect Highlighting:** Rows with `qaAnomalyFlag=true` or `qaMeta.defect` shown with amber background
 - **Smart Classification:** `splitMixedEntries()` classifies mixed log entries by explicit `kind` field, then characteristic fields
 - **Module Coverage:** restoration preview now includes `mealLogs`, `marLogs`, `sleepLogs`, `bglLogs`, `bowelLogs`, `hygieneLogs`, `communityLogs`, and `repositionLogs`
+- **Scale Upgrade:** supports 365-day preview ranges and larger batch commit volumes
+- **Operations Upgrade:** includes Discard Batch state reset and env-gated global nuke controls for UAT
+- **Injector Upgrade:** supports URL-pointer prefill and DB-backed injector button configuration
+
+### MAR Workflow Enhancements (v3.9)
+
+- Tabbed MAR page flow with dropdown-driven medication setup
+- XLSX export support from MAR page
+- MAR template API and seed support:
+  - `GET/POST /api/admin/mar-templates`
+  - `node scripts/seed-mar-templates.mjs`
 
 ---
 
@@ -257,7 +268,7 @@ This creates:
 ## Canonical Handshake Channels
 
 - **Claude:** `/Users/moofasa/chartgen/handoff/claude_handshake.log`
-- **Gemini:** `handoff/gemini_handshake.md`
+- **Gemini:** `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 
 ---
 

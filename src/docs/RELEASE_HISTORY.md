@@ -1,17 +1,22 @@
 # Release History
 
-Last updated: 2026-03-01
+Last updated: 2026-03-05
 
 This document stages all delivered features so far from `v1.0` through `v3.9`.
-Timeline window (staged): October 2025 to February 2026.
+Timeline window (staged): October 2025 to March 2026.
 
 ## v3.9 (Current)
 
-**UI Kit + Admin + Unified Preview APIs**
+**UI Kit + Admin + Unified Preview APIs + Operations Expansion**
 - Added reusable UI primitives and shell components (`Button`, `Badge`, `Panel`, `Tabs`, `DataTable`, form controls) for consistent module UX.
 - Added `/admin` dashboard for chart record operations and participant/staff CRUD support.
 - Unified preview API behavior across 8 chart families (Meal, MAR, Sleep, BGL, Bowel, Hygiene, Community, Repositioning) and removed `/mealtime-chartgen` alias.
 - Completed CM-01/CM-02 by extracting `MealChartModule` and wiring Hygiene/Community/Reposition modules through timeline realization and persistence.
+- Added 365-day preview and larger batch commit support for long-horizon synthetic runs.
+- Added XLSX export actions on Restoration and MAR pages.
+- Added injector-pointer prefill and DB-backed injector button APIs.
+- Added Discard Batch reset flow and env-gated global nuke controls for UAT operations.
+- Added MAR template model/API + seed tooling for faster medication setup in MAR workflows.
 - Synced nextphase ledger, protocol docs, and runtime README truth to match shipped behavior.
 
 ## v3.8

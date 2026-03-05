@@ -1,7 +1,7 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
-Last updated: 2026-03-04 (post-cloud-nuke, current reality sync)
-Owner: Claude — Implementation Lead + Quality Gate
+Last updated: 2026-03-05 (truth-sync to latest main + docs)
+Owner: Codex — Program Director + Release Governor
 
 This file replaces the old speculative roadmap with a stateful ledger.
 Completed work is explicitly deprecated from future planning.
@@ -75,7 +75,7 @@ Completed work is explicitly deprecated from future planning.
 
 ## 3) Production Deploy Record
 
-### Deploy `989a1cae` — 2026-03-03 (current HEAD)
+### Deploy `989a1cae` — 2026-03-03 (latest recorded production deploy)
 
 - **URL**: https://chartgen-gubii.netlify.app
 - **Netlify deploy ID**: `69a6bd5aa4bbb979` (state=ready)

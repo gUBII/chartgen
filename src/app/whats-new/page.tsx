@@ -10,13 +10,18 @@ type Release = {
 const RELEASES: Release[] = [
   {
     version: "v3.9",
-    title: "UI Kit + Admin Dashboard + Preview API Unification",
-    date: "February 28, 2026",
+    title: "UI Kit + Admin + Preview Unification + Ops Expansion",
+    date: "March 3, 2026",
     highlights: [
       "Added reusable UI kit primitives and app shell components for consistent rendering across routes.",
       "Added `/admin` dashboard with participant/staff CRUD and chart-entry management workflows.",
       "Unified preview API behavior across Meal, MAR, Sleep, BGL, Bowel, Hygiene, Community, and Repositioning families.",
       "Completed CM-01/CM-02: extracted `MealChartModule` and wired modular timeline generation/persistence for Hygiene, Community, and Repositioning logs.",
+      "Added 365-day preview support and larger batch commit handling for high-volume synthetic runs.",
+      "Added XLSX export on Restoration and MAR pages.",
+      "Added injector-pointer prefill + DB-backed injector button config.",
+      "Added Discard Batch and env-gated global nuke controls for UAT operations.",
+      "Added MAR template model/API/seed flow for faster medication setup.",
       "Removed legacy `/mealtime-chartgen` alias and updated navigation references to canonical routes.",
       "Synced release/docs/protocol truth to current production behavior.",
     ],
@@ -233,7 +238,7 @@ export default function WhatsNewPage() {
         <p className="landing-mono text-xs text-blue-200">Release Timeline</p>
         <h2 className="landing-mono mt-3 text-[clamp(2rem,5vw,3.4rem)] text-blue-50">What&apos;s New: v1.0 to v3.9</h2>
         <p className="text-muted mt-4 max-w-3xl text-sm sm:text-base">
-          Full staged feature ledger of everything delivered so far, organized by release milestone (timeline window: October 2025 to February 2026).
+          Full staged feature ledger of everything delivered so far, organized by release milestone (timeline window: October 2025 to March 2026).
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link

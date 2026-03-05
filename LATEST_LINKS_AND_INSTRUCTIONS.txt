@@ -1,5 +1,5 @@
 Chartgen by gUBII - Latest Links and Instructions
-Last verified: 2026-03-01
+Last verified: 2026-03-05
 
 Production Links
 - App URL: https://chartgen-gubii.netlify.app
@@ -13,9 +13,15 @@ Creator Links
 Current Release Truth
 - Version line: v3.9.0
 - Timeline route: /whats-new (v1.0 -> v3.9)
+- Timeline window: October 2025 -> March 2026
 - Restoration preview families: Meal, MAR, Sleep, BGL, Bowel, Hygiene, Community, Repositioning
+- Restoration supports 365-day preview windows and larger batch commit volume
 - Grouped commit payload supports all 8 families transactionally at POST /api/engine/commit
 - Gap reports are database-backed via GapReport model (not /tmp-only storage)
+- MAR and Restoration pages support XLSX export
+- Injector pointer + DB-backed injector buttons are live
+- UAT controls include Discard Batch reset and env-gated global nuke
+- MAR template API + seed tooling are available
 
 Operational Commands
 1) Check Netlify project/link status
@@ -51,4 +57,4 @@ Claude Handshake Channel
 - /Users/moofasa/chartgen/handoff/claude_handshake.log
 
 Gemini Handshake Channel
-- handoff/gemini_handshake.md
+- /Users/moofasa/chartgen/handoff/gemini_handshake.md

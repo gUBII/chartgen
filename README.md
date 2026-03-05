@@ -1,6 +1,6 @@
 # Chartgen by gUBII
 
-Last updated: 2026-03-01
+Last updated: 2026-03-05
 
 Governance-first clinical documentation audit modelling platform for NDIS-aligned environments, built with Next.js, Prisma, and PostgreSQL.
 
@@ -15,9 +15,9 @@ Governance-first clinical documentation audit modelling platform for NDIS-aligne
 ## Current Release
 
 - `v3.9.0` (staged feature ledger available at `/whats-new` and `src/docs/RELEASE_HISTORY.md`)
-- Timeline window: `October 2025 -> February 2026` (staged release ledger for historical commits).
-- Added UI kit primitives + shell standardization, admin dashboard CRUD, and restoration module wiring for Meal, Sleep, BGL, Bowel, Hygiene, Community, and Repositioning.
-- Includes prior Phase E grouped commit pipeline, post-release hardening, and Netlify build reliability gates.
+- Timeline window: `October 2025 -> March 2026` (staged release ledger for historical commits).
+- Includes UI kit primitives + shell standardization, admin dashboard CRUD, and restoration module wiring for Meal, Sleep, BGL, Bowel, Hygiene, Community, and Repositioning.
+- Includes post-v3.9 operations upgrades: 365-day preview + larger batch support, XLSX export on Restoration/MAR pages, injector pointer/buttons, Discard Batch reset flow, global nuke controls, and MAR template management.
 
 ## Current Truth
 
@@ -34,6 +34,11 @@ Chartgen currently implements:
 - Protected Ops API for online DB health checks and UAT execution
 - UAT JSON artifact persistence for stress/cleanup runs
 - Admin dashboard for direct chart/staff/participant data operations (`/admin`)
+- 365-day preview window support with larger commit throughput
+- XLSX export actions on both Restoration and MAR workflows
+- Injector pointer prefill + DB-backed injector button templates
+- Discard Batch and env-gated global-nuke cleanup controls
+- MAR templates API + seeding support for fast medication setup
 
 ## Development Policies
 
@@ -297,7 +302,7 @@ npm run lint:report
 npm run lint:strict
 npm run db:health
 npm run db:health:trend -- --url https://chartgen-gubii.netlify.app --samples 3 --interval 1 --cookie "gwc_session=<full-session-token>"
-npm run agent:check:result -- /tmp/codex_claude_handshake.log <UUID>
+npm run agent:check:result -- /Users/moofasa/chartgen/handoff/claude_handshake.log <UUID>
 npm run agent:check:result -- /Users/moofasa/chartgen/handoff/gemini_handshake.md <UUID>
 npx prisma validate
 npx prisma migrate status
