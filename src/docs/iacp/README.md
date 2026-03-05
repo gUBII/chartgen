@@ -1,6 +1,6 @@
 # IACP v3 - Agent Protocol Pack
 
-Last updated: 2026-03-01
+Last updated: 2026-03-05
 Owner: Codex (Program Director + Release Governor)
 
 ## Purpose
@@ -13,6 +13,7 @@ Single source of truth for multi-agent execution, verification, and frugal relea
 - Deploy requires explicit `DEPLOY_APPROVED` plus full gate pass.
 - Channel paths are canonical and non-duplicated.
 - Operator/Codex can trigger dispatch; agents execute in parallel by file ownership.
+- IACP docs are repo-tracked collaborator assets and must not be blocked by ignore rules.
 
 ## Discrete Governance Model
 

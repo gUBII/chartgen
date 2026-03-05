@@ -22,3 +22,11 @@ neon.json
 handoff/*.log
 geminitoclaude.md
 handoff/gemini_handshake.md
+
+# IACP protocol docs must remain trackable for collaborators
+!src/docs/iacp/
+!src/docs/iacp/*.md
+!handoff/README.md
+!handoff/*protocol*.md
+!handoff/*poll*.md
+!handoff/codex_update_*.md
