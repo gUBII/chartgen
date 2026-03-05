@@ -53,8 +53,8 @@ Required Netlify Environment Keys
 - GEMINI_API_KEY
 - NODE_VERSION
 
-Claude Handshake Channel
+ROLE_IMPLEMENTATION_LEAD Handshake Channel
 - /Users/moofasa/chartgen/handoff/claude_handshake.log
 
-Gemini Handshake Channel
+ROLE_INDEPENDENT_VERIFIER Handshake Channel
 - /Users/moofasa/chartgen/handoff/gemini_handshake.md

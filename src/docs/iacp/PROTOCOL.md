@@ -2,8 +2,8 @@
 
 ## Canonical Handshake Channels
 
-- Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
-- Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- `ROLE_IMPLEMENTATION_LEAD`: `/Users/moofasa/chartgen/handoff/claude_handshake.log` (legacy filename retained for compatibility)
+- `ROLE_INDEPENDENT_VERIFIER`: `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (legacy filename retained for compatibility)
 
 Only these paths are canonical.
 
@@ -11,7 +11,7 @@ Only these paths are canonical.
 
 - Instruction header: `INSTRUCTION [UUID]`
 - Result header: `RESULT [UUID]`
-- Every response must start with role/name.
+- Every response must start with a role identifier.
 
 ## Polling Semantics
 
@@ -28,7 +28,7 @@ No free-running poll loops.
 - One UUID = one bounded objective.
 - File ownership must be explicit for parallel lanes.
 - Operator-triggered dispatch is valid.
-- Codex does not block execution lanes; Codex governs release truth.
+- `ROLE_RELEASE_GOVERNOR` does not block execution lanes; it governs release truth.
 - Default scope is `NO_DEPLOY`.
 - Deploy is legal only when instruction includes `DEPLOY_APPROVED`.
 
@@ -64,4 +64,4 @@ If contradiction exists, `Status` cannot be `PASS`.
 
 - No placeholder values in final results.
 - No interactive command flows in agent tasks.
-- No autonomous production deploy calls by Claude or Gemini.
+- No autonomous production deploy calls by non-governor roles.

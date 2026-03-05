@@ -1,7 +1,7 @@
 # Agent Orchestration Plan
 
-Last updated: 2026-03-01
-Owner: Codex (Primary Orchestrator)
+Last updated: 2026-03-05
+Owner: `ROLE_RELEASE_GOVERNOR` (runtime-assigned)
 
 ## Canonical Source
 
@@ -14,15 +14,16 @@ This file is now a high-level pointer. Canonical IACP details live in:
 
 ## Current Operating Truth
 
-- Codex is primary orchestrator (active).
-- Claude is standby implementation architect, activated by Codex dispatch.
-- Gemini is active independent verifier.
+- `ROLE_RELEASE_GOVERNOR` is primary orchestrator (active).
+- `ROLE_IMPLEMENTATION_LEAD` is standby implementation architect, activated by governor dispatch.
+- `ROLE_INDEPENDENT_VERIFIER` is active independent verifier.
+- Runtime model identity is non-canonical; role assignment controls authority.
 - Status integrity is strict: contradictions invalidate PASS.
 - Frugal release mode is active: local-first, batched deploys, explicit deploy approval only.
 
 ## Execution Model
 
-1. Codex dispatches bounded UUID task.
+1. `ROLE_RELEASE_GOVERNOR` dispatches bounded UUID task.
 2. Assigned agent executes within scope.
 3. Results are validated against IACP gates.
-4. Codex decides acceptance and next dispatch.
+4. `ROLE_RELEASE_GOVERNOR` decides acceptance and next dispatch.

@@ -1,20 +1,23 @@
-# Codex Communication Channel
+# Role Communication Channel (Release Governor)
+
+Legacy filename retained for compatibility: `codex.md`
 
 ## Channel
 - Runtime handshake:
-  - Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
-  - Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+  - `ROLE_IMPLEMENTATION_LEAD`: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
+  - `ROLE_INDEPENDENT_VERIFIER`: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
 - Canonical protocol docs: `src/docs/iacp/`
 
 ## Current Role
-- Role: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
+- Role: `ROLE_RELEASE_GOVERNOR` (`PROGRAM_DIRECTOR + RELEASE_GOVERNOR`)
 - Mode: `ACTIVE`
 - Authority:
-  - Trigger or refine dispatch tasks to Claude and Gemini
+  - Trigger or refine dispatch tasks to role lanes
   - Accept/reject agent results
   - Merge readiness decisions based on quality gates
   - Final instruction shaping for next phase execution
   - Deploy budget control and batched-release approval
+  - Runtime assignment of role identifiers per UUID/task window
 
 ## Frugal Release Mode (Active)
 
@@ -41,10 +44,10 @@
 - Enforce deploy lock: only valid when dispatch includes `DEPLOY_APPROVED` and required gates pass.
 
 ## Coordination Model
-- Claude: principal builder for high-complexity implementation and architecture.
-- Gemini: independent QA verifier and docs/diagram coherence lead.
-- Codex: release governance, conflict resolution, release gates, and handoff integrity.
-- Operator-triggered dispatch is valid; Codex is the ship/no-ship authority.
+- `ROLE_IMPLEMENTATION_LEAD`: principal builder for high-complexity implementation and architecture.
+- `ROLE_INDEPENDENT_VERIFIER`: independent QA verifier and docs/diagram coherence lead.
+- `ROLE_RELEASE_GOVERNOR`: release governance, conflict resolution, release gates, and handoff integrity.
+- Operator-triggered dispatch is valid; `ROLE_RELEASE_GOVERNOR` is the ship/no-ship authority.
 
 ## Required Result Minimum
 - Status (`PASS|FAIL|BLOCKED`)

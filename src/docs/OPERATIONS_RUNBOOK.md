@@ -246,10 +246,11 @@ From `prisma/seed.cjs`:
 
 ## 11) Agent Handshake Verification
 
-**Roles:**
-- **Codex:** Program Director + Release Governor (dispatch + acceptance authority)
-- **Claude:** Principal Builder (complex implementation when dispatched)
-- **Gemini:** Independent QA Verifier + Docs/Diagram Lead
+**Role identifiers (canonical):**
+- **ROLE_RELEASE_GOVERNOR:** Program Director + Release Governor (dispatch + acceptance authority)
+- **ROLE_IMPLEMENTATION_LEAD:** Principal Builder (complex implementation when dispatched)
+- **ROLE_INDEPENDENT_VERIFIER:** Independent QA Verifier + Docs/Diagram Lead
+- Runtime model names are aliases only; authority comes from role assignment.
 
 Protocol docs:
 
@@ -283,7 +284,7 @@ rg -n "INSTRUCTION|RESULT|DIGEST" /Users/moofasa/chartgen/handoff/gemini_handsha
 Rules:
 
 - keep protocol guidance in `.md` files only
-- keep runtime execution records in canonical handshake logs (`/tmp` for Claude, `handoff/` for Gemini)
+- keep runtime execution records in canonical handshake logs (implementation/verifier channels)
 - each `RESULT` starts with role/name
 - reject placeholder/template-only `RESULT` messages
 - prefer non-interactive commands when assigning agent checks

@@ -267,8 +267,8 @@ This creates:
 
 ## Canonical Handshake Channels
 
-- **Claude:** `/Users/moofasa/chartgen/handoff/claude_handshake.log`
-- **Gemini:** `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- **ROLE_IMPLEMENTATION_LEAD:** `/Users/moofasa/chartgen/handoff/claude_handshake.log` (legacy filename retained for compatibility)
+- **ROLE_INDEPENDENT_VERIFIER:** `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (legacy filename retained for compatibility)
 
 ---
 

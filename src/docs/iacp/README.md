@@ -1,7 +1,7 @@
 # IACP v3 - Agent Protocol Pack
 
 Last updated: 2026-03-05
-Owner: Codex (Program Director + Release Governor)
+Owner: `ROLE_RELEASE_GOVERNOR` (runtime-assigned)
 
 ## Purpose
 
@@ -12,8 +12,10 @@ Single source of truth for multi-agent execution, verification, and frugal relea
 - Local-first, deploy-last is always the default.
 - Deploy requires explicit `DEPLOY_APPROVED` plus full gate pass.
 - Channel paths are canonical and non-duplicated.
-- Operator/Codex can trigger dispatch; agents execute in parallel by file ownership.
+- Operator or `ROLE_RELEASE_GOVERNOR` can trigger dispatch; lanes execute in parallel by file ownership.
 - IACP docs are repo-tracked collaborator assets and must not be blocked by ignore rules.
+- Role identifiers are canonical; runtime model names are non-canonical aliases.
+- Any logged-in agent may be assigned any role identifier for a bounded UUID/task window.
 
 ## Discrete Governance Model
 
@@ -50,14 +52,14 @@ If either expression is false, status must be `FAIL` or `BLOCKED`.
 
 ## Channel Truth
 
-- Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
-- Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- `ROLE_IMPLEMENTATION_LEAD`: `/Users/moofasa/chartgen/handoff/claude_handshake.log` (legacy filename retained for compatibility)
+- `ROLE_INDEPENDENT_VERIFIER`: `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (legacy filename retained for compatibility)
 
 No dual-channel mirroring for canonical truth.
 
 ## Hard Rules
 
-- Every response starts with role/name.
+- Every response starts with a role identifier.
 - One UUID maps to one bounded objective.
 - No placeholder results.
 - `PASS` is forbidden when any contradiction signal exists.

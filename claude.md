@@ -1,9 +1,11 @@
-# Claude Communication Channel
+# Role Communication Channel (Implementation Lead)
+
+Legacy filename retained for compatibility: `claude.md`
 
 ## Current State
-- Role: `PRINCIPAL_BUILDER_COMPLEX_SYSTEMS`
+- Role: `ROLE_IMPLEMENTATION_LEAD` (`PRINCIPAL_BUILDER_COMPLEX_SYSTEMS`)
 - State: `STANDBY`
-- Activation: via Operator/Codex-dispatched UUID in `/Users/moofasa/chartgen/handoff/claude_handshake.log`
+- Activation: via Operator/`ROLE_RELEASE_GOVERNOR` dispatched UUID in `/Users/moofasa/chartgen/handoff/claude_handshake.log`
 
 ## Frugal Release Mode (Active)
 
@@ -13,7 +15,7 @@
 - Respect local/prod env separation from `src/docs/WORKFLOW_FRUGAL.md`.
 
 ## Channel
-- Handshake log: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
+- Handshake log: `/Users/moofasa/chartgen/handoff/claude_handshake.log` (legacy filename retained for compatibility)
 - Protocol source: `src/docs/iacp/`
 
 ## Scope When Active

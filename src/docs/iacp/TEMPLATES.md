@@ -2,10 +2,10 @@
 
 ## Core Rule
 
-- Every result starts with role/name.
+- Every result starts with a role identifier.
 - One UUID = one bounded objective.
 
-## Implementation Task (Operator/Codex -> Claude)
+## Implementation Task (Operator/ROLE_RELEASE_GOVERNOR -> ROLE_IMPLEMENTATION_LEAD)
 
 ```text
 INSTRUCTION [UUID]
@@ -25,7 +25,7 @@ Constraints:
 - no deploy unless `DEPLOY_APPROVED` is explicitly present
 Reply:
 RESULT [UUID]
-Role: CLAUDE
+Role: ROLE_IMPLEMENTATION_LEAD
 Status: PASS|FAIL|BLOCKED
 Files changed: <list|none>
 Validation:
@@ -35,7 +35,7 @@ Blockers: <none|single blocker>
 Next: <single next step>
 ```
 
-## Verification Task (Operator/Codex -> Gemini)
+## Verification Task (Operator/ROLE_RELEASE_GOVERNOR -> ROLE_INDEPENDENT_VERIFIER)
 
 ```text
 INSTRUCTION [UUID]
@@ -43,10 +43,10 @@ No edits. Verify:
 1) <assertion>
 2) <assertion>
 Reply one line:
-RESULT [UUID] Role=GEMINI PASS|FAIL <k1>=<yes|no> <k2>=<yes|no> risk=<short>
+RESULT [UUID] Role=ROLE_INDEPENDENT_VERIFIER PASS|FAIL <k1>=<yes|no> <k2>=<yes|no> risk=<short>
 ```
 
-## Deploy Verification Task (Operator/Codex -> Gemini)
+## Deploy Verification Task (Operator/ROLE_RELEASE_GOVERNOR -> ROLE_INDEPENDENT_VERIFIER)
 
 ```text
 INSTRUCTION [UUID]
@@ -56,7 +56,7 @@ Scope:
 2) Confirm deploy state is ready.
 3) Confirm production env DB host is remote (not localhost).
 Reply:
-RESULT [UUID] Role=GEMINI PASS|FAIL commit_match=<yes|no> ready=<yes|no> remote_db=<yes|no> risk=<short>
+RESULT [UUID] Role=ROLE_INDEPENDENT_VERIFIER PASS|FAIL commit_match=<yes|no> ready=<yes|no> remote_db=<yes|no> risk=<short>
 ```
 
 ## Schema Safety Task
@@ -67,7 +67,7 @@ No edits.
 Run: npm run schema:check:collision
 Reply:
 RESULT [UUID]
-Role: <CLAUDE|GEMINI>
+Role: <ROLE_IMPLEMENTATION_LEAD|ROLE_INDEPENDENT_VERIFIER>
 Status: PASS|FAIL|BLOCKED
 CpSafeNow: yes|no
 CollisionCount: <n>

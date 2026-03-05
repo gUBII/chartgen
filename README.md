@@ -321,7 +321,7 @@ Use this checklist for independent verifier lane before merge/deploy:
 5. Defect-highlighted rows remain visible in restoration preview.
 6. `/api/qa/detect-anomalies` returns expected breach types for seeded synthetic records.
 
-### Claude Wave-1 Verification Checklist
+### Implementation Lane Wave-1 Verification Checklist
 
 1. **Admin Dashboard (AD-01/02):**
    - [ ] `/admin` route loads with list view.

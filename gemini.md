@@ -1,12 +1,14 @@
-# Gemini Communication Channel
+# Role Communication Channel (Independent Verifier)
+
+Legacy filename retained for compatibility: `gemini.md`
 
 ## Current State
-- Role: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
+- Role: `ROLE_INDEPENDENT_VERIFIER` (`INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`)
 - State: `ACTIVE`
-- Dispatch source: Operator/Codex UUIDs via workspace handshake file
+- Dispatch source: Operator/`ROLE_RELEASE_GOVERNOR` UUIDs via workspace handshake file
 
 ## Channel
-- Handshake log (canonical): `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- Handshake log (canonical): `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (legacy filename retained for compatibility)
 - Protocol source: `src/docs/iacp/`
 
 ## Frugal Release Mode (Active)

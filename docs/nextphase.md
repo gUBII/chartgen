@@ -1,7 +1,7 @@
 # NEXTPHASE — Execution Ledger (Revamped)
 
 Last updated: 2026-03-05 (truth-sync to latest main + docs)
-Owner: Codex — Program Director + Release Governor
+Owner: `ROLE_RELEASE_GOVERNOR` — Program Director + Release Governor
 
 This file replaces the old speculative roadmap with a stateful ledger.
 Completed work is explicitly deprecated from future planning.
@@ -49,14 +49,14 @@ Completed work is explicitly deprecated from future planning.
 
 | ID | Work | Status | Owner |
 |---|---|---|---|
-| MC-01 | `/chartgen-core` route + catalog components | `DEPRECATED_PROD` | Codex |
-| EX-01/02 | Audit explorer table/filter drill-down upgrade | `DEPRECATED_PROD` | Codex |
-| PL-01 | Remove remaining `window.alert` UX from live pages | `DEPRECATED_PROD` | Codex |
-| EXCEL-01 | Excel/XLSX export button on restoration/MAR pages | `DEPRECATED_PROD` | Claude — commit `cefeed38` |
-| INJ-01 | Injector Buttons panel + MAR sub-tab removal from Restoration | `DEPRECATED_PROD` | Claude — commit `bb8698df` |
-| UAT-NUKE | Global nuke DB control (env-gated, two-step, full table coverage) | `DEPRECATED_PROD` | Claude — commits `294f96e9`, `f57a4cbf` |
-| DISCARD-01 | Discard Batch — full DB delete + state clear | `DEPRECATED_PROD` | Claude — commit `0656fb46` |
-| API-ERR-01 | Preview/commit/MAR routes actionable error mapping + schema readiness | `DEPRECATED_PROD` | Claude — commit `69b3f5ba` |
+| MC-01 | `/chartgen-core` route + catalog components | `DEPRECATED_PROD` | `ROLE_RELEASE_GOVERNOR` |
+| EX-01/02 | Audit explorer table/filter drill-down upgrade | `DEPRECATED_PROD` | `ROLE_RELEASE_GOVERNOR` |
+| PL-01 | Remove remaining `window.alert` UX from live pages | `DEPRECATED_PROD` | `ROLE_RELEASE_GOVERNOR` |
+| EXCEL-01 | Excel/XLSX export button on restoration/MAR pages | `DEPRECATED_PROD` | `ROLE_IMPLEMENTATION_LEAD` — commit `cefeed38` |
+| INJ-01 | Injector Buttons panel + MAR sub-tab removal from Restoration | `DEPRECATED_PROD` | `ROLE_IMPLEMENTATION_LEAD` — commit `bb8698df` |
+| UAT-NUKE | Global nuke DB control (env-gated, two-step, full table coverage) | `DEPRECATED_PROD` | `ROLE_IMPLEMENTATION_LEAD` — commits `294f96e9`, `f57a4cbf` |
+| DISCARD-01 | Discard Batch — full DB delete + state clear | `DEPRECATED_PROD` | `ROLE_IMPLEMENTATION_LEAD` — commit `0656fb46` |
+| API-ERR-01 | Preview/commit/MAR routes actionable error mapping + schema readiness | `DEPRECATED_PROD` | `ROLE_IMPLEMENTATION_LEAD` — commit `69b3f5ba` |
 
 ## 2) Ticket Mapping (Old Plan -> Current Truth)
 
@@ -81,7 +81,7 @@ Completed work is explicitly deprecated from future planning.
 - **Netlify deploy ID**: `69a6bd5aa4bbb979` (state=ready)
 - **Build**: Next.js — compiled successfully, 33 routes
 - **Authorized by**: Operator (Farhan)
-- **Verified by**: Ari/Claude — Implementation Lead + Quality Gate
+- **Verified by**: `ROLE_IMPLEMENTATION_LEAD` — Implementation Lead + Quality Gate
 - **Commits included since last record** (HEAD → 989a1cae):
   - `989a1cae` chore: rename agent Nidhi → Ari across all channel files
   - `f57a4cbf` fix(uat): global_nuke full table coverage + FK-safe delete order
@@ -106,7 +106,7 @@ Completed work is explicitly deprecated from future planning.
 - **Unique deploy URL**: https://69a38055bccfaa87dfe0f9e9--chartgen-gubii.netlify.app
 - **Build**: Next.js 16.1.6 Turbopack — compiled successfully, 32 routes
 - **Authorized by**: Operator (Farhan)
-- **Verified by**: Claude — Implementation Lead + Quality Gate
+- **Verified by**: `ROLE_IMPLEMENTATION_LEAD` — Implementation Lead + Quality Gate
 - **Commits included** (HEAD → 56ee326f):
   - `56ee326f` fix(nav): prevent render-phase state updates
   - `232f9cc9` docs: Coherence check, diagrams, iacp v3 alignment
@@ -126,8 +126,8 @@ Completed work is explicitly deprecated from future planning.
 - **Gate evidence**:
   - lint: exit 0, 0 errors
   - build: exit 0, all 32 routes compiled
-  - Gemini CLN-05 PASS
-  - FIELD-BUNDLE-VERIFY PASS (Claude)
+  - `ROLE_INDEPENDENT_VERIFIER` CLN-05 PASS
+  - FIELD-BUNDLE-VERIFY PASS (`ROLE_IMPLEMENTATION_LEAD`)
 
 ## 4) Promotion Rules (No Guesswork)
 
@@ -135,8 +135,8 @@ Move any `LOCAL_DONE_PENDING_REVIEW` item to `DEPRECATED_MAIN` only after:
 
 1. `npm run build` passes.
 2. `npm run lint:report` has no new errors.
-3. Independent verification PASS from Gemini.
-4. Codex code review PASS.
+3. Independent verification PASS from `ROLE_INDEPENDENT_VERIFIER`.
+4. `ROLE_RELEASE_GOVERNOR` code review PASS.
 5. Commit is merged to `main`.
 
 Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
@@ -148,20 +148,20 @@ Move any `DEPRECATED_MAIN` item to `DEPRECATED_PROD` only after:
 
 1. No open `ACTIVE` items — all tracked backlog is `DEPRECATED_PROD`.
 2. Cloud DB nuked and verified clean (2026-03-04) — ready for fresh UAT seeding.
-3. Await Codex dispatch for next phase or new feature lane.
+3. Await `ROLE_RELEASE_GOVERNOR` dispatch for next phase or new feature lane.
 
 ## 6) IACP v3 Lock (Final State)
 
 ### 6.1 Canonical Roles
 
-- Codex: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
-- Claude: `IMPLEMENTATION_LEAD + QUALITY_GATE` (owns truth docs, cross-agent verification, deploy audit)
-- Gemini: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
+- `ROLE_RELEASE_GOVERNOR`: `PROGRAM_DIRECTOR + RELEASE_GOVERNOR`
+- `ROLE_IMPLEMENTATION_LEAD`: `IMPLEMENTATION_LEAD + QUALITY_GATE` (owns truth docs, cross-agent verification, deploy audit)
+- `ROLE_INDEPENDENT_VERIFIER`: `INDEPENDENT_QA_VERIFIER + DOCS_DIAGRAM_LEAD`
 
 ### 6.2 Canonical Channels
 
-- Claude: `/Users/moofasa/chartgen/handoff/claude_handshake.log`
-- Gemini: `/Users/moofasa/chartgen/handoff/gemini_handshake.md`
+- `ROLE_IMPLEMENTATION_LEAD`: `/Users/moofasa/chartgen/handoff/claude_handshake.log` (legacy filename retained for compatibility)
+- `ROLE_INDEPENDENT_VERIFIER`: `/Users/moofasa/chartgen/handoff/gemini_handshake.md` (legacy filename retained for compatibility)
 
 ### 6.3 Discrete Gate Formula (Locked)
 
@@ -174,8 +174,8 @@ For any task `T`:
 
 | ID | Work | Owner | Status |
 |---|---|---|---|
-| CLN-01 | Remove deprecated handshake mirror references | Codex | `DEPRECATED_PROD` |
-| CLN-02 | Normalize IACP terminology v2→v3 | Codex | `DEPRECATED_PROD` |
-| CLN-03 | Dead/deprecated docs wording trim | Codex | `DEPRECATED_PROD` |
-| CLN-04 | Source cleanup: remove dead code paths | Claude | `DEPRECATED_PROD` |
-| CLN-05 | Independent verification + docs refresh | Gemini | `DEPRECATED_PROD` |
+| CLN-01 | Remove deprecated handshake mirror references | `ROLE_RELEASE_GOVERNOR` | `DEPRECATED_PROD` |
+| CLN-02 | Normalize IACP terminology v2→v3 | `ROLE_RELEASE_GOVERNOR` | `DEPRECATED_PROD` |
+| CLN-03 | Dead/deprecated docs wording trim | `ROLE_RELEASE_GOVERNOR` | `DEPRECATED_PROD` |
+| CLN-04 | Source cleanup: remove dead code paths | `ROLE_IMPLEMENTATION_LEAD` | `DEPRECATED_PROD` |
+| CLN-05 | Independent verification + docs refresh | `ROLE_INDEPENDENT_VERIFIER` | `DEPRECATED_PROD` |
