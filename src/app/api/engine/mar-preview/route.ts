@@ -41,6 +41,7 @@ type MARPreviewRequestBody = {
   endDate?: string;
   endTime?: string;
   generatedByStaffId?: string;
+  workerScheduleByDow?: Record<string, string>;
   seed?: number;
   profile?: "balanced" | "strict";
   medications?: Array<{
@@ -309,6 +310,28 @@ export async function POST(request: NextRequest) {
           select: { id: true, role: true },
         });
 
+    // Pre-validate worker-per-day schedule staff IDs
+    const workerScheduleByDow: Record<string, string> = body.workerScheduleByDow ?? {};
+    const dowStaffMap = new Map<string, { id: string; role: string }>();
+    const uniqueDowStaffIds = [...new Set(
+      Object.values(workerScheduleByDow).map((id) => id?.trim()).filter(Boolean)
+    )];
+    if (uniqueDowStaffIds.length > 0) {
+      const dowStaffRows = await prisma.staff.findMany({
+        where: { id: { in: uniqueDowStaffIds } },
+        select: { id: true, role: true },
+      });
+      for (const s of dowStaffRows) dowStaffMap.set(s.id, s);
+      const invalidIds = uniqueDowStaffIds.filter((id) => !dowStaffMap.has(id));
+      if (invalidIds.length > 0) {
+        throw new MARPreviewApiError(
+          400,
+          "INVALID_DOW_STAFF",
+          `Worker schedule contains invalid staff IDs: ${invalidIds.join(", ")}`
+        );
+      }
+    }
+
     if (!generatedByStaff) {
       throw new MARPreviewApiError(
         409,
@@ -349,6 +372,11 @@ export async function POST(request: NextRequest) {
       const generatedRows: any[] = [];
 
       for (const day of dayIterator(rangeStart, rangeEnd)) {
+        // Resolve effective worker for this day-of-week ("0"=Sun … "6"=Sat)
+        const dow = String(day.getDay());
+        const dowStaffId = workerScheduleByDow[dow]?.trim();
+        const effectiveStaff = (dowStaffId && dowStaffMap.get(dowStaffId)) ?? generatedByStaff;
+
         for (const template of medicationTemplates) {
           const scheduledAdminTime = makeScheduledAdminTime(day, template.hour, template.minute);
           if (!isWithinWindow(scheduledAdminTime, recoveryStart, recoveryEnd)) {
@@ -371,7 +399,7 @@ export async function POST(request: NextRequest) {
             },
             {
               restorationBatchId: batch.id,
-              generatedByStaffId: generatedByStaff.id,
+              generatedByStaffId: effectiveStaff.id,
               generatedAt,
             }
           );
@@ -387,7 +415,7 @@ export async function POST(request: NextRequest) {
             omissionReason: generated.omissionReason,
             statusComment: generated.statusComment,
             restorationBatchId: batch.id,
-            generatedByStaffId: generatedByStaff.id,
+            generatedByStaffId: effectiveStaff.id,
             createdAt: generatedAt,
           });
 
@@ -395,7 +423,7 @@ export async function POST(request: NextRequest) {
             data: {
               restorationBatchId: batch.id,
               participantId: generated.participantId,
-              generatedByStaffId: generatedByStaff.id,
+              generatedByStaffId: effectiveStaff.id,
               scheduledAdminTime: generated.scheduledAdminTime,
               actualAdminTime: generated.actualAdminTime,
               medicationName: generated.medicationName,
@@ -421,6 +449,7 @@ export async function POST(request: NextRequest) {
               statusComment: true,
               statusReview: true,
               provenanceHash: true,
+              generatedByStaffId: true,
             },
           });
 
@@ -488,6 +517,7 @@ type MARPatchRequestBody = {
   actorStaffId?: string;
   status?: string;
   actualAdminTime?: string;
+  generatedByStaffId?: string;
 };
 
 export async function PATCH(request: NextRequest) {
@@ -600,6 +630,18 @@ export async function PATCH(request: NextRequest) {
       data.actualAdminTime = actualAdminTime;
     }
 
+    if (body.generatedByStaffId !== undefined) {
+      const staffId = String(body.generatedByStaffId).trim();
+      if (!staffId) {
+        throw new MARPreviewApiError(400, "INVALID_FIELD", "generatedByStaffId must be a non-empty string.");
+      }
+      const staffExists = await prisma.staff.findUnique({ where: { id: staffId }, select: { id: true } });
+      if (!staffExists) {
+        throw new MARPreviewApiError(404, "STAFF_NOT_FOUND", `Staff ${staffId} not found.`);
+      }
+      data.generatedByStaffId = staffId;
+    }
+
     if (Object.keys(data).length === 0) {
       throw new MARPreviewApiError(400, "NO_FIELDS", "Provide at least one field to update.");
     }
@@ -631,6 +673,7 @@ export async function PATCH(request: NextRequest) {
       scheduledAdminTime: existing.scheduledAdminTime,
       actualAdminTime: (data.actualAdminTime as Date | undefined) ?? existing.actualAdminTime,
       status: (data.status as string | undefined) ?? existing.status,
+      generatedByStaffId: (data.generatedByStaffId as string | undefined) ?? existing.generatedByStaffId,
     };
     const provenanceHash = computeMarCandidateHash({
       participantId: nextState.participantId,
@@ -665,6 +708,7 @@ export async function PATCH(request: NextRequest) {
         statusComment: true,
         statusReview: true,
         provenanceHash: true,
+        generatedByStaffId: true,
       },
     });
 

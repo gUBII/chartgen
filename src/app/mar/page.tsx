@@ -20,6 +20,7 @@ type CandidateRow = {
   statusComment: string | null;
   statusReview: string;
   provenanceHash: string;
+  generatedByStaffId: string;
   dirty?: boolean;
 };
 
@@ -175,6 +176,7 @@ function MARPageInner() {
   const [participantUuidOverride, setParticipantUuidOverride] = useState("");
   const [staffUuidOverride, setStaffUuidOverride] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [workerScheduleByDow, setWorkerScheduleByDow] = useState<Record<string, string>>({});
 
   // Form state
   const [startDate, setStartDate] = useState(injectedDate || toDateInput(today));
@@ -328,6 +330,12 @@ function MARPageInner() {
     setStatusText("Generating MAR preview batch...");
     setLoadingGenerate(true);
     try {
+      // Build dow payload — only include days that have an explicit override
+      const dowPayload: Record<string, string> = {};
+      for (const [dow, staffId] of Object.entries(workerScheduleByDow)) {
+        if (staffId.trim()) dowPayload[dow] = staffId.trim();
+      }
+
       const response = await fetch("/api/engine/mar-preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -335,6 +343,7 @@ function MARPageInner() {
           participantId: resolvedParticipantId,
           startDate, startTime, endDate, endTime,
           generatedByStaffId: resolvedStaffId || undefined,
+          workerScheduleByDow: Object.keys(dowPayload).length > 0 ? dowPayload : undefined,
           medications,
         }),
       });
@@ -346,6 +355,7 @@ function MARPageInner() {
           ...c,
           scheduledAdminTime: toLocalDateTimeInput(String(c.scheduledAdminTime)),
           actualAdminTime: toLocalDateTimeInput(String(c.actualAdminTime)),
+          generatedByStaffId: String(c.generatedByStaffId ?? ""),
           dirty: false,
         }))
       );
@@ -374,6 +384,7 @@ function MARPageInner() {
           candidateId: row.id,
           status: row.status,
           actualAdminTime: toIsoFromLocalDateTime(row.actualAdminTime),
+          generatedByStaffId: row.generatedByStaffId || undefined,
         }),
       });
       const payload = await response.json();
@@ -384,6 +395,7 @@ function MARPageInner() {
             ...existing, ...payload.data,
             scheduledAdminTime: toLocalDateTimeInput(String(payload.data.scheduledAdminTime)),
             actualAdminTime: toLocalDateTimeInput(String(payload.data.actualAdminTime)),
+            generatedByStaffId: String(payload.data.generatedByStaffId ?? existing.generatedByStaffId),
             dirty: false,
           }
         )
@@ -482,10 +494,15 @@ function MARPageInner() {
     setMedications(medications.map((med, i) => (i === index ? { ...med, ...patch } : med)));
   };
 
+  const setWorkerForDow = (dow: string, staffId: string) => {
+    setWorkerScheduleByDow((prev) => ({ ...prev, [dow]: staffId }));
+  };
+
   /* ── Render helpers ─────────────────────────────────────── */
 
   const selectedParticipantLabel = participants.find((p) => p.id === selectedParticipantId)?.fullName ?? "";
   const selectedStaffLabel = staffList.find((s) => s.id === selectedStaffId)?.displayName ?? "";
+  const staffById = useMemo(() => new Map(staffList.map((s) => [s.id, s])), [staffList]);
 
   /* ── Tab: Setup ─────────────────────────────────────────── */
 
@@ -571,6 +588,45 @@ function MARPageInner() {
           </div>
         )}
       </div>
+
+      {/* Worker schedule by day of week */}
+      <details className="rounded-lg border border-gray-200 p-4">
+        <summary className="cursor-pointer text-sm font-semibold">
+          Worker Schedule by Day (optional)
+        </summary>
+        <p className="mt-2 text-xs text-gray-500">
+          Override the default support worker for specific days. Leave blank to use the default worker.
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+          {(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const).map((label, i) => {
+            const dow = String(i === 6 ? 0 : i + 1); // Mon=1 … Sat=6, Sun=0
+            return (
+              <label key={dow} className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-600">{label}</span>
+                <select
+                  className="form-control text-xs"
+                  value={workerScheduleByDow[dow] ?? ""}
+                  onChange={(e) => setWorkerForDow(dow, e.target.value)}
+                >
+                  <option value="">Default</option>
+                  {staffList.map((s) => (
+                    <option key={s.id} value={s.id}>{s.displayName}</option>
+                  ))}
+                </select>
+              </label>
+            );
+          })}
+        </div>
+        {Object.values(workerScheduleByDow).some((v) => v) && (
+          <button
+            type="button"
+            className="mt-3 text-xs text-gray-400 hover:text-red-400"
+            onClick={() => setWorkerScheduleByDow({})}
+          >
+            Clear all day overrides
+          </button>
+        )}
+      </details>
 
       {/* Date Range */}
       <div className="rounded-lg border border-gray-200 p-4">
@@ -729,6 +785,7 @@ function MARPageInner() {
               <th className="border-b px-3 py-2 text-left">Medication</th>
               <th className="border-b px-3 py-2 text-left">Dosage</th>
               <th className="border-b px-3 py-2 text-left">Route</th>
+              <th className="border-b px-3 py-2 text-left">Worker</th>
               <th className="border-b px-3 py-2 text-left">Actual Time</th>
               <th className="border-b px-3 py-2 text-left">Status</th>
               <th className="border-b px-3 py-2 text-left">Review Status</th>
@@ -751,6 +808,20 @@ function MARPageInner() {
                   </td>
                   <td className="border-b px-3 py-2">{row.dosage}</td>
                   <td className="border-b px-3 py-2">{row.route}</td>
+                  <td className="border-b px-3 py-2">
+                    <select
+                      className="form-control text-xs"
+                      value={row.generatedByStaffId ?? ""}
+                      onChange={(e) => updateRow(row.id, { generatedByStaffId: e.target.value })}
+                    >
+                      {!staffById.has(row.generatedByStaffId) && row.generatedByStaffId && (
+                        <option value={row.generatedByStaffId}>{row.generatedByStaffId.slice(0, 8)}…</option>
+                      )}
+                      {staffList.map((s) => (
+                        <option key={s.id} value={s.id}>{s.displayName}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="border-b px-3 py-2">
                     <input className="form-control w-44 text-xs" type="datetime-local" value={row.actualAdminTime}
                       onChange={(e) => updateRow(row.id, { actualAdminTime: e.target.value })} />
